@@ -66,7 +66,7 @@ export interface ProgressBarProps {
 
 // Drag and Drop Types
 export interface DragDropContextProps {
-  onDragEnd: (result: any) => void;
+  onDragEnd: (result: unknown) => void;
   children: React.ReactNode;
 }
 

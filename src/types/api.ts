@@ -1,5 +1,5 @@
 // API Request and Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -70,7 +70,7 @@ export interface FileUploadResponse {
 export interface ApiError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 // Import types from other files

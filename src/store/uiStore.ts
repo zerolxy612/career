@@ -14,7 +14,7 @@ interface UIState {
   
   // Modals and dialogs
   activeModal: string | null;
-  modalData: any;
+  modalData: unknown;
   
   // Loading states
   globalLoading: boolean;
@@ -51,7 +51,7 @@ interface UIActions {
   setChatLoading: (loading: boolean) => void;
   
   // Modal actions
-  openModal: (modalId: string, data?: any) => void;
+  openModal: (modalId: string, data?: unknown) => void;
   closeModal: () => void;
   
   // Loading actions
