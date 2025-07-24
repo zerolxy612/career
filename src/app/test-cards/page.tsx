@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import YellowIndustryCard from '../../components/cards/YellowIndustryCard';
 
 const mockIndustries = [
@@ -66,10 +67,12 @@ export default function TestCardsPage() {
           maxWidth: '400px'
         }}>
           <div style={{ marginBottom: '1rem' }}>
-            <img
+            <Image
               src="/ai_avatar.png"
               alt="AI Avatar"
-              style={{ width: '64px', height: '64px', marginBottom: '1rem' }}
+              width={64}
+              height={64}
+              style={{ marginBottom: '1rem' }}
             />
             <p style={{ color: '#666', marginBottom: '0.5rem' }}>Enter your career goals here!</p>
             <p style={{ color: '#666' }}>Let&apos;s explore your career profile together!</p>
