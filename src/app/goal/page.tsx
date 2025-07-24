@@ -118,7 +118,7 @@ export default function GoalPage() {
       setIndustries(transformedFields);
     } catch (error) {
       console.error('Error analyzing goal:', error);
-      setUploadError('分析失败，请重试');
+      setUploadError('Analysis failed, please try again');
     } finally {
       setIsLoading(false);
     }
@@ -162,12 +162,12 @@ export default function GoalPage() {
       const fileIcon = getFileIcon(file.name);
 
       if (!fileIcon) {
-        setUploadError(`不支持的文件类型: ${file.name}`);
+        setUploadError(`Unsupported file type: ${file.name}`);
         return;
       }
 
       if (uploadedFiles.some(f => f.name === file.name)) {
-        setUploadError(`文件已存在: ${file.name}`);
+        setUploadError(`File already exists: ${file.name}`);
         return;
       }
 

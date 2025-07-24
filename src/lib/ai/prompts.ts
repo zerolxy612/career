@@ -53,25 +53,25 @@ Requirements:
 `;
 
 export const FILE_PARSING_PROMPT = `
-请解析以下文件内容，提取关键信息用于职业规划分析：
+Please parse the following file content and extract key information for career planning analysis:
 
-文件内容：
+File Content:
 {fileContent}
 
-请提取以下信息：
-1. 教育背景
-2. 工作经历
-3. 技能和专长
-4. 项目经验
-5. 个人特质和兴趣
+Please extract the following information:
+1. Educational background
+2. Work experience
+3. Skills and expertise
+4. Project experience
+5. Personal traits and interests
 
-以结构化的方式返回这些信息。
+Return this information in a structured format.
 `;
 
 export const EXPERIENCE_EXTRACTION_PROMPT = `
-从用户上传的文件中提取经历信息，按照指定结构整理成经历卡片。
+Extract experience information from user uploaded files and organize them into experience cards according to the specified structure.
 
-文件内容：
+File Content:
 {fileContent}
 
 目标行业：
