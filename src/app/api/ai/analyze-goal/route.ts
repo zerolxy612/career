@@ -3,12 +3,18 @@ import { generateWithGemini } from '@/lib/ai/gemini';
 import { INDUSTRY_RECOMMENDATION_PROMPT } from '@/lib/ai/prompts';
 
 export async function POST(request: NextRequest) {
+  console.log('🔥 [API] /api/ai/analyze-goal - Request received');
+
   try {
     const formData = await request.formData();
     const userInput = formData.get('userInput') as string;
     const files = formData.getAll('files') as File[];
 
+    console.log('📝 [API] User input received:', userInput);
+    console.log('📁 [API] Number of files received:', files.length);
+
     if (!userInput) {
+      console.error('❌ [API] No user input provided');
       return NextResponse.json(
         { error: 'User input is required' },
         { status: 400 }
@@ -18,30 +24,83 @@ export async function POST(request: NextRequest) {
     // Process uploaded files
     let fileContent = '';
     if (files && files.length > 0) {
-      for (const file of files) {
-        const text = await file.text();
-        fileContent += `\n文件名: ${file.name}\n内容: ${text}\n`;
+      console.log('📁 [API] Processing uploaded files...');
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        console.log(`📁 [API] Processing file ${i + 1}/${files.length}:`, {
+          name: file.name,
+          type: file.type,
+          size: file.size
+        });
+
+        try {
+          const text = await file.text();
+          console.log(`📁 [API] File ${i + 1} content extracted:`, {
+            fileName: file.name,
+            contentLength: text.length,
+            contentPreview: text.substring(0, 200) + (text.length > 200 ? '...' : '')
+          });
+
+          fileContent += `\n文件名: ${file.name}\n内容: ${text}\n`;
+        } catch (fileError) {
+          console.error(`❌ [API] Failed to read file ${file.name}:`, fileError);
+          fileContent += `\n文件名: ${file.name}\n内容: [文件读取失败: ${fileError}]\n`;
+        }
       }
+
+      console.log('📁 [API] All files processed. Total content length:', fileContent.length);
+    } else {
+      console.log('📁 [API] No files uploaded');
     }
 
     // Prepare the prompt
+    console.log('🤖 [API] Preparing AI prompt...');
     const prompt = INDUSTRY_RECOMMENDATION_PROMPT
       .replace('{userInput}', userInput)
       .replace('{fileContent}', fileContent || '无上传文件');
 
+    console.log('🤖 [API] Final prompt prepared:', {
+      promptLength: prompt.length,
+      hasFileContent: fileContent.length > 0,
+      fileContentLength: fileContent.length
+    });
+
     // Generate response with Gemini
     let parsedResponse;
     try {
+      console.log('🤖 [API] Calling Gemini AI...');
+      const aiStartTime = Date.now();
+
       const response = await generateWithGemini(prompt);
 
+      const aiEndTime = Date.now();
+      console.log(`🤖 [API] Gemini AI response received in ${aiEndTime - aiStartTime}ms`);
+      console.log('🤖 [API] Raw AI response length:', response.length);
+      console.log('🤖 [API] Raw AI response preview:', response.substring(0, 500) + (response.length > 500 ? '...' : ''));
+
       // Try to parse JSON response
+      console.log('🔄 [API] Parsing AI response...');
       const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
       const jsonString = jsonMatch ? jsonMatch[1] : response;
+
+      console.log('🔄 [API] JSON extraction result:', {
+        foundJsonBlock: !!jsonMatch,
+        jsonStringLength: jsonString.length,
+        jsonStringPreview: jsonString.substring(0, 300) + (jsonString.length > 300 ? '...' : '')
+      });
+
       parsedResponse = JSON.parse(jsonString);
+      console.log('✅ [API] AI response parsed successfully');
+      console.log('✅ [API] Parsed response structure:', {
+        hasRecommendedFields: !!parsedResponse.RecommendedFields,
+        fieldsCount: parsedResponse.RecommendedFields?.length || 0
+      });
     } catch (error) {
-      console.error('AI generation failed, using mock data:', error);
+      console.error('❌ [API] AI generation failed, using mock data:', error);
 
       // Fallback to mock data for testing
+      console.log('🔄 [API] Using fallback mock data due to AI failure');
       parsedResponse = {
         "RecommendedFields": [
           {
@@ -136,11 +195,20 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    console.log('🎉 [API] Successfully prepared response');
+    console.log('🎉 [API] Response data:', {
+      hasRecommendedFields: !!parsedResponse.RecommendedFields,
+      fieldsCount: parsedResponse.RecommendedFields?.length || 0,
+      firstFieldName: parsedResponse.RecommendedFields?.[0]?.CardPreview?.FieldName || 'N/A'
+    });
+
     return NextResponse.json(parsedResponse);
   } catch (error) {
-    console.error('Error in analyze-goal API:', error);
+    console.error('❌ [API] Critical error in analyze-goal API:', error);
+    console.error('❌ [API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

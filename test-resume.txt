@@ -1,0 +1,33 @@
+John Doe
+Software Engineer
+
+Education:
+- Bachelor of Computer Science, MIT (2018-2022)
+- GPA: 3.8/4.0
+
+Work Experience:
+- Software Engineer at Google (2022-2024)
+  - Developed web applications using React and Node.js
+  - Worked on machine learning projects with Python
+  - Led a team of 3 junior developers
+
+- Intern at Microsoft (Summer 2021)
+  - Built mobile applications using React Native
+  - Participated in code reviews and agile development
+
+Skills:
+- Programming: JavaScript, Python, Java, C++
+- Frameworks: React, Node.js, Django, Spring Boot
+- Databases: MySQL, PostgreSQL, MongoDB
+- Cloud: AWS, Azure, Google Cloud Platform
+
+Projects:
+- E-commerce Platform: Built a full-stack e-commerce application
+- AI Chatbot: Developed a customer service chatbot using NLP
+- Data Visualization Tool: Created interactive dashboards for business analytics
+
+Interests:
+- Machine Learning and AI
+- Web Development
+- Mobile App Development
+- Data Science

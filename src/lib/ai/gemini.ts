@@ -37,49 +37,91 @@ export const safetySettings = [
 // Helper function to generate content with Gemini
 export async function generateWithGemini(prompt: string): Promise<string> {
   try {
-    console.log('Calling Gemini API with prompt length:', prompt.length);
-    console.log('API Key exists:', !!process.env.GEMINI_API_KEY);
-    console.log('API Key starts with:', process.env.GEMINI_API_KEY?.substring(0, 10));
+    console.log('🤖 [GEMINI] Starting Gemini API call');
+    console.log('🤖 [GEMINI] Prompt length:', prompt.length);
+    console.log('🤖 [GEMINI] API Key exists:', !!process.env.GEMINI_API_KEY);
+    console.log('🤖 [GEMINI] API Key prefix:', process.env.GEMINI_API_KEY?.substring(0, 10) + '...');
+    console.log('🤖 [GEMINI] Prompt preview:', prompt.substring(0, 500) + (prompt.length > 500 ? '...' : ''));
 
     // Use direct fetch call to Gemini API
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ [GEMINI] Request timeout after 60 seconds');
+      controller.abort();
+    }, 60000); // 60 second timeout
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+    const requestBody = {
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt
+            }
+          ]
+        }
+      ]
+    };
+
+    console.log('🤖 [GEMINI] Request body prepared:', {
+      contentsCount: requestBody.contents.length,
+      partsCount: requestBody.contents[0].parts.length,
+      textLength: requestBody.contents[0].parts[0].text.length
+    });
+
+    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+    console.log('🤖 [GEMINI] Making request to:', apiUrl);
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-goog-api-key': process.env.GEMINI_API_KEY || '',
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt
-              }
-            ]
-          }
-        ]
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal
     });
 
     clearTimeout(timeoutId);
 
+    console.log('🤖 [GEMINI] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      console.error('❌ [GEMINI] HTTP error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText.substring(0, 1000) + (errorText.length > 1000 ? '...' : '')
+      });
       throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Gemini API response received');
+    console.log('🤖 [GEMINI] Response data structure:', {
+      hasCandidates: !!data.candidates,
+      candidatesCount: data.candidates?.length || 0,
+      hasContent: !!data.candidates?.[0]?.content,
+      hasParts: !!data.candidates?.[0]?.content?.parts,
+      partsCount: data.candidates?.[0]?.content?.parts?.length || 0
+    });
 
     // Extract text from response
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    console.log('Response text length:', text.length);
+    console.log('🤖 [GEMINI] Extracted text:', {
+      textLength: text.length,
+      textPreview: text.substring(0, 500) + (text.length > 500 ? '...' : '')
+    });
 
+    if (!text) {
+      console.error('❌ [GEMINI] No text content in response:', data);
+      throw new Error('No text content in Gemini response');
+    }
+
+    console.log('✅ [GEMINI] Successfully generated content');
     return text;
 
     // Fallback mock response if needed
@@ -236,7 +278,16 @@ export async function generateWithGemini(prompt: string): Promise<string> {
 
     */
   } catch (error) {
-    console.error('Error generating content with Gemini:', error);
-    throw new Error(`Failed to generate content with Gemini AI: ${error}`);
+    console.error('❌ [GEMINI] Error generating content:', error);
+    console.error('❌ [GEMINI] Error type:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('❌ [GEMINI] Error message:', error instanceof Error ? error.message : String(error));
+    console.error('❌ [GEMINI] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('❌ [GEMINI] Request was aborted (timeout)');
+      throw new Error('Gemini API request timed out after 60 seconds');
+    }
+
+    throw new Error(`Failed to generate content with Gemini AI: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
