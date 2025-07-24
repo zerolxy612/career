@@ -2,8 +2,10 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { File, Upload, X } from 'lucide-react';
+import { File, Upload, X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import IndustryCardList from '@/components/cards/IndustryCardList';
+import { IndustryRecommendation } from '@/types/api';
 
 interface UploadedFile {
   name: string;
@@ -16,10 +18,73 @@ export default function Home() {
   const [goalText, setGoalText] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadError, setUploadError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [industries, setIndustries] = useState<IndustryRecommendation[]>([]);
+  const [selectedIndustry, setSelectedIndustry] = useState<IndustryRecommendation | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleConfirm = () => {
-    router.push('/experience');
+  const handleConfirm = async () => {
+    if (!goalText.trim()) {
+      setUploadError('请输入目标行业或领域');
+      return;
+    }
+
+    setIsLoading(true);
+    setUploadError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('userInput', goalText);
+
+      uploadedFiles.forEach(file => {
+        formData.append('files', file.file);
+      });
+
+      const response = await fetch('/api/ai/analyze-goal', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze goal');
+      }
+
+      const data = await response.json();
+      console.log('API Response:', data); // Debug log
+
+      // Transform API response to match our TypeScript types
+      const rawFields = data.RecommendedFields || data.recommendedFields || [];
+      const transformedFields = rawFields.map((field: any) => ({
+        cardPreview: {
+          fieldName: field.CardPreview?.FieldName || field.cardPreview?.fieldName || '',
+          fieldSummary: field.CardPreview?.FieldSummary || field.cardPreview?.fieldSummary || '',
+          fieldTags: field.CardPreview?.FieldTags || field.cardPreview?.fieldTags || []
+        },
+        cardDetail: {
+          fieldOverview: field.CardDetail?.FieldOverview || field.cardDetail?.fieldOverview || '',
+          suitableForYouIf: field.CardDetail?.SuitableForYouIf || field.cardDetail?.suitableForYouIf || [],
+          typicalTasksAndChallenges: field.CardDetail?.TypicalTasksAndChallenges || field.cardDetail?.typicalTasksAndChallenges || [],
+          fieldTags: field.CardDetail?.FieldTags || field.cardDetail?.fieldTags || []
+        }
+      }));
+
+      console.log('Transformed fields:', transformedFields); // Debug log
+      setIndustries(transformedFields);
+    } catch (error) {
+      console.error('Error analyzing goal:', error);
+      setUploadError('分析失败，请重试');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (selectedIndustry) {
+      // Store selected industry and navigate to experience page
+      localStorage.setItem('selectedIndustry', JSON.stringify(selectedIndustry));
+      localStorage.setItem('userGoal', goalText);
+      router.push('/experience');
+    }
   };
 
   const getFileIcon = (fileName: string) => {
@@ -99,130 +164,303 @@ export default function Home() {
 
   return (
     <div className="goal-container">
-      <div className="goal-content">
-        {/* Page title */}
-        <div className="goal-title">
-          <h1>GOAL SETTING</h1>
-        </div>
+      {/* Page title - always centered at top */}
+      <div className="goal-title">
+        <h1>GOAL SETTING</h1>
+      </div>
 
-        {/* Header elements moved outside the card */}
-        <div className="goal-header-external">
-          <div className="goal-icon-external">
-            <Image
-              src="/ai_avatar.png"
-              alt="AI Avatar"
-              width={64}
-              height={64}
-            />
-          </div>
-          <div className="goal-text-external">
-            <p>Enter your career goals here!</p>
-            <p>Let&apos;s explore your career profile together!</p>
-          </div>
-        </div>
-
-        {/* Main content card */}
-        <div className="goal-card">
-          {/* Input label */}
-          <div className="goal-label">
-            <span>Your target industry or field?</span>
-          </div>
-
-          {/* Input area */}
-          <div className="goal-input-container">
-            <div
-              className="goal-textarea-container"
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <textarea
-                value={goalText}
-                onChange={(e) => setGoalText(e.target.value)}
-                placeholder="Enter Message..."
-                className="goal-textarea"
-              />
-
-              {/* File upload button */}
-              <button
-                className="file-upload-button"
-                onClick={() => fileInputRef.current?.click()}
-                type="button"
-              >
-                <Upload size={16} />
-              </button>
-
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".docx,.doc,.jpg,.jpeg,.png,.txt,.pdf"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
+      {/* Dynamic layout based on whether cards are shown */}
+      {industries.length > 0 ? (
+        // Two-column layout when cards are shown
+        <div className="goal-page-content">
+          {/* Left side - Input area */}
+          <div className="goal-input-section">
+            {/* Header elements */}
+            <div className="goal-header-external">
+              <div className="goal-icon-external">
+                <Image
+                  src="/ai_avatar.png"
+                  alt="AI Avatar"
+                  width={64}
+                  height={64}
+                />
+              </div>
+              <div className="goal-text-external">
+                <p>Enter your career goals here!</p>
+                <p>Let&apos;s explore your career profile together!</p>
+              </div>
             </div>
 
-            {/* Error message */}
-            {uploadError && (
-              <div className="upload-error">
-                {uploadError}
+            {/* Main content card */}
+            <div className="goal-card">
+              {/* Input label */}
+              <div className="goal-label">
+                <span>Your target industry or field?</span>
+              </div>
+
+              {/* Input area */}
+              <div className="goal-input-container">
+                <div
+                  className="goal-textarea-container"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                >
+                  <textarea
+                    value={goalText}
+                    onChange={(e) => setGoalText(e.target.value)}
+                    placeholder="Enter Message..."
+                    className="goal-textarea"
+                    disabled={isLoading}
+                  />
+
+                  {/* File upload button */}
+                  <button
+                    className="file-upload-button"
+                    onClick={() => fileInputRef.current?.click()}
+                    type="button"
+                    disabled={isLoading}
+                  >
+                    <Upload size={16} />
+                  </button>
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".docx,.doc,.jpg,.jpeg,.png,.txt,.pdf"
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+
+                {/* Error message */}
+                {uploadError && (
+                  <div className="upload-error">
+                    {uploadError}
+                  </div>
+                )}
+
+                {/* File icons at bottom of textarea */}
+                <div className="file-icons">
+                  {uploadedFiles.length > 0 ? (
+                    uploadedFiles.map((file, index) => {
+                      const fileIcon = getFileIcon(file.name);
+                      return (
+                        <div key={index} className="file-icon">
+                          <div className={`file-icon-box ${fileIcon?.color}`}>
+                            <File />
+                            <button
+                              className="file-remove-button"
+                              onClick={() => removeFile(file.name)}
+                              type="button"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                          <span>{file.name}</span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <>
+                      <div className="file-icon file-icon-placeholder">
+                        <div className="file-icon-box file-icon-blue">
+                          <File />
+                        </div>
+                        <span>File name...</span>
+                      </div>
+                      <div className="file-icon file-icon-placeholder">
+                        <div className="file-icon-box file-icon-orange">
+                          <File />
+                        </div>
+                        <span>File name...</span>
+                      </div>
+                      <div className="file-icon file-icon-placeholder">
+                        <div className="file-icon-box file-icon-red">
+                          <File />
+                        </div>
+                        <span>File name...</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Confirm button */}
+              <div className="goal-button-container">
+                <button
+                  onClick={handleConfirm}
+                  className="goal-button"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={16} />
+                      分析中...
+                    </>
+                  ) : (
+                    'Confirm'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right side - Industry recommendations */}
+          <div className="goal-recommendations-section">
+            <IndustryCardList
+              industries={industries}
+              onSelectionChange={setSelectedIndustry}
+            />
+
+            {selectedIndustry && (
+              <div className="goal-next-container">
+                <button
+                  onClick={handleNext}
+                  className="goal-next-button active"
+                >
+                  Next
+                </button>
               </div>
             )}
-
-            {/* File icons at bottom of textarea */}
-            <div className="file-icons">
-              {uploadedFiles.length > 0 ? (
-                uploadedFiles.map((file, index) => {
-                  const fileIcon = getFileIcon(file.name);
-                  return (
-                    <div key={index} className="file-icon">
-                      <div className={`file-icon-box ${fileIcon?.color}`}>
-                        <File />
-                        <button
-                          className="file-remove-button"
-                          onClick={() => removeFile(file.name)}
-                          type="button"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                      <span>{file.name}</span>
-                    </div>
-                  );
-                })
-              ) : (
-                <>
-                  <div className="file-icon file-icon-placeholder">
-                    <div className="file-icon-box file-icon-blue">
-                      <File />
-                    </div>
-                    <span>File name...</span>
-                  </div>
-                  <div className="file-icon file-icon-placeholder">
-                    <div className="file-icon-box file-icon-orange">
-                      <File />
-                    </div>
-                    <span>File name...</span>
-                  </div>
-                  <div className="file-icon file-icon-placeholder">
-                    <div className="file-icon-box file-icon-red">
-                      <File />
-                    </div>
-                    <span>File name...</span>
-                  </div>
-                </>
-              )}
+          </div>
+        </div>
+      ) : (
+        // Centered layout when no cards are shown
+        <div className="goal-content">
+          {/* Header elements */}
+          <div className="goal-header-external">
+            <div className="goal-icon-external">
+              <Image
+                src="/ai_avatar.png"
+                alt="AI Avatar"
+                width={64}
+                height={64}
+              />
+            </div>
+            <div className="goal-text-external">
+              <p>Enter your career goals here!</p>
+              <p>Let&apos;s explore your career profile together!</p>
             </div>
           </div>
 
-          {/* Confirm button */}
-          <div className="goal-button-container">
-            <button onClick={handleConfirm} className="goal-button">
-              Confirm
-            </button>
+          {/* Main content card */}
+          <div className="goal-card">
+            {/* Input label */}
+            <div className="goal-label">
+              <span>Your target industry or field?</span>
+            </div>
+
+            {/* Input area */}
+            <div className="goal-input-container">
+              <div
+                className="goal-textarea-container"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <textarea
+                  value={goalText}
+                  onChange={(e) => setGoalText(e.target.value)}
+                  placeholder="Enter Message..."
+                  className="goal-textarea"
+                  disabled={isLoading}
+                />
+
+                {/* File upload button */}
+                <button
+                  className="file-upload-button"
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                  disabled={isLoading}
+                >
+                  <Upload size={16} />
+                </button>
+
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".docx,.doc,.jpg,.jpeg,.png,.txt,.pdf"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                />
+              </div>
+
+              {/* Error message */}
+              {uploadError && (
+                <div className="upload-error">
+                  {uploadError}
+                </div>
+              )}
+
+              {/* File icons at bottom of textarea */}
+              <div className="file-icons">
+                {uploadedFiles.length > 0 ? (
+                  uploadedFiles.map((file, index) => {
+                    const fileIcon = getFileIcon(file.name);
+                    return (
+                      <div key={index} className="file-icon">
+                        <div className={`file-icon-box ${fileIcon?.color}`}>
+                          <File />
+                          <button
+                            className="file-remove-button"
+                            onClick={() => removeFile(file.name)}
+                            type="button"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                        <span>{file.name}</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <>
+                    <div className="file-icon file-icon-placeholder">
+                      <div className="file-icon-box file-icon-blue">
+                        <File />
+                      </div>
+                      <span>File name...</span>
+                    </div>
+                    <div className="file-icon file-icon-placeholder">
+                      <div className="file-icon-box file-icon-orange">
+                        <File />
+                      </div>
+                      <span>File name...</span>
+                    </div>
+                    <div className="file-icon file-icon-placeholder">
+                      <div className="file-icon-box file-icon-red">
+                        <File />
+                      </div>
+                      <span>File name...</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Confirm button */}
+            <div className="goal-button-container">
+              <button
+                onClick={handleConfirm}
+                className="goal-button"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    分析中...
+                  </>
+                ) : (
+                  'Confirm'
+                )}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -20,7 +20,7 @@ An AI-driven career planning tool that helps users create comprehensive career p
 - **Icons**: Lucide React
 - **File Handling**: React Dropzone
 - **Charts**: Recharts (planned)
-- **AI Integration**: AI SDK (planned)
+- **AI Integration**: Google Gemini API
 - **PDF Export**: @react-pdf/renderer (planned)
 
 ## 📁 Project Structure
@@ -74,8 +74,7 @@ cp .env.example .env.local
 
 Edit `.env.local` and add your API keys:
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
@@ -85,6 +84,24 @@ npm run dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 📋 Current Development Status
+
+### ✅ Completed (Phase 1 & 2)
+- **Homepage**: Goal input interface with file upload
+- **Goal Setting Page**: Dual-panel layout with industry recommendations
+- **Gemini AI Integration**: Industry analysis and recommendation generation
+- **Industry Cards**: Interactive cards with detailed information
+- **Selection System**: Single industry selection with visual feedback
+
+### 🚧 In Development
+- **Experience Card Generation**: Transform user experiences into structured cards
+- **Card Combination System**: Intelligent experience combination recommendations
+
+### 📅 Planned Features
+- **Career Profile Generation**: Comprehensive career insights
+- **Job Recommendations**: Personalized job matching
+- **PDF Export**: Complete profile export functionality
 
 ## 🎯 Usage
 

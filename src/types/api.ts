@@ -73,7 +73,30 @@ export interface ApiError {
   details?: unknown;
 }
 
+// Industry Recommendation Types
+export interface IndustryCardPreview {
+  fieldName: string;
+  fieldSummary: string;
+  fieldTags: string[];
+}
+
+export interface IndustryCardDetail {
+  fieldOverview: string;
+  suitableForYouIf: string[];
+  typicalTasksAndChallenges: string[];
+  fieldTags: string[];
+}
+
+export interface IndustryRecommendation {
+  cardPreview: IndustryCardPreview;
+  cardDetail: IndustryCardDetail;
+}
+
+export interface IndustryRecommendationResponse {
+  recommendedFields: IndustryRecommendation[];
+}
+
 // Import types from other files
-import type { IndustryRecommendation, ExperienceCard, CardCategory, CardCombination } from './card';
+import type { ExperienceCard, CardCategory, CardCombination } from './card';
 import type { CareerProfile } from './profile';
 import type { JobRecommendation } from './job';
