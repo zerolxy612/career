@@ -57,23 +57,5 @@ export interface RisksAndAdvice {
   actionSuggestions: string[];
 }
 
-// Industry Recommendation Types
-export interface IndustryRecommendation {
-  id: string;
-  cardPreview: IndustryCardPreview;
-  cardDetail: IndustryCardDetail;
-}
-
-export interface IndustryCardPreview {
-  fieldName: string;
-  fieldSummary: string;
-  fieldTags: string[];
-}
-
-export interface IndustryCardDetail {
-  fieldName: string;
-  fieldOverview: string;
-  suitableForYouIf: string[];
-  typicalTasksAndChallenges: string[];
-  fieldTags: string[];
-}
+// Industry Recommendation Types - imported from api.ts to avoid duplication
+export type { IndustryRecommendation, IndustryCardPreview, IndustryCardDetail } from './api';

@@ -13,6 +13,31 @@ interface UploadedFile {
   file: File;
 }
 
+interface RawFieldData {
+  CardPreview?: {
+    FieldName?: string;
+    FieldSummary?: string;
+    FieldTags?: string[];
+  };
+  cardPreview?: {
+    fieldName?: string;
+    fieldSummary?: string;
+    fieldTags?: string[];
+  };
+  CardDetail?: {
+    FieldOverview?: string;
+    SuitableForYouIf?: string[];
+    TypicalTasksAndChallenges?: string[];
+    FieldTags?: string[];
+  };
+  cardDetail?: {
+    fieldOverview?: string;
+    suitableForYouIf?: string[];
+    typicalTasksAndChallenges?: string[];
+    fieldTags?: string[];
+  };
+}
+
 export default function Home() {
   const router = useRouter();
   const [goalText, setGoalText] = useState('');
@@ -25,7 +50,7 @@ export default function Home() {
 
   const handleConfirm = async () => {
     if (!goalText.trim()) {
-      setUploadError('请输入目标行业或领域');
+      setUploadError('Please enter your target industry or field');
       return;
     }
 
@@ -81,7 +106,7 @@ export default function Home() {
       console.log('🔄 [CONFIRM] Raw fields from API:', rawFields);
       console.log('🔄 [CONFIRM] Number of raw fields:', rawFields.length);
 
-      const transformedFields = rawFields.map((field: any, index: number) => {
+      const transformedFields = rawFields.map((field: RawFieldData, index: number) => {
         console.log(`🔄 [CONFIRM] Transforming field ${index + 1}:`, field);
 
         const transformed = {
@@ -107,7 +132,7 @@ export default function Home() {
       setIndustries(transformedFields);
     } catch (error) {
       console.error('❌ [CONFIRM] Error analyzing goal:', error);
-      setUploadError('分析失败，请重试');
+      setUploadError('Analysis failed, please try again');
     } finally {
       setIsLoading(false);
       console.log('🏁 [CONFIRM] Goal analysis process completed');
@@ -162,7 +187,7 @@ export default function Home() {
       const fileIcon = getFileIcon(file.name);
 
       if (!fileIcon) {
-        const errorMsg = `不支持的文件类型: ${file.name}`;
+        const errorMsg = `Unsupported file type: ${file.name}`;
         console.error('❌ [FILE UPLOAD] Unsupported file type:', file.name);
         setUploadError(errorMsg);
         return;
@@ -170,7 +195,7 @@ export default function Home() {
 
       // Check if file already exists
       if (uploadedFiles.some(f => f.name === file.name)) {
-        const errorMsg = `文件已存在: ${file.name}`;
+        const errorMsg = `File already exists: ${file.name}`;
         console.warn('⚠️ [FILE UPLOAD] Duplicate file:', file.name);
         setUploadError(errorMsg);
         return;
@@ -355,7 +380,7 @@ export default function Home() {
                   {isLoading ? (
                     <>
                       <Loader2 className="animate-spin" size={16} />
-                      分析中...
+                      Analyzing...
                     </>
                   ) : (
                     'Confirm'
@@ -509,7 +534,7 @@ export default function Home() {
                 {isLoading ? (
                   <>
                     <Loader2 className="animate-spin" size={16} />
-                    分析中...
+                    Analyzing...
                   </>
                 ) : (
                   'Confirm'

@@ -42,10 +42,10 @@ export async function POST(request: NextRequest) {
             contentPreview: text.substring(0, 200) + (text.length > 200 ? '...' : '')
           });
 
-          fileContent += `\n文件名: ${file.name}\n内容: ${text}\n`;
+          fileContent += `\nFile name: ${file.name}\nContent: ${text}\n`;
         } catch (fileError) {
           console.error(`❌ [API] Failed to read file ${file.name}:`, fileError);
-          fileContent += `\n文件名: ${file.name}\n内容: [文件读取失败: ${fileError}]\n`;
+          fileContent += `\nFile name: ${file.name}\nContent: [File reading failed: ${fileError}]\n`;
         }
       }
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     console.log('🤖 [API] Preparing AI prompt...');
     const prompt = INDUSTRY_RECOMMENDATION_PROMPT
       .replace('{userInput}', userInput)
-      .replace('{fileContent}', fileContent || '无上传文件');
+      .replace('{fileContent}', fileContent || 'No files uploaded');
 
     console.log('🤖 [API] Final prompt prepared:', {
       promptLength: prompt.length,

@@ -4,13 +4,38 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { File, Upload, X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import IndustryCardList from '@/components/cards/IndustryCardList';
-import { IndustryRecommendation } from '@/types/api';
+import IndustryCardList from '../../components/cards/IndustryCardList';
+import { IndustryRecommendation } from '../../types/api';
 
 interface UploadedFile {
   name: string;
   type: string;
   file: File;
+}
+
+interface RawFieldData {
+  CardPreview?: {
+    FieldName?: string;
+    FieldSummary?: string;
+    FieldTags?: string[];
+  };
+  cardPreview?: {
+    fieldName?: string;
+    fieldSummary?: string;
+    fieldTags?: string[];
+  };
+  CardDetail?: {
+    FieldOverview?: string;
+    SuitableForYouIf?: string[];
+    TypicalTasksAndChallenges?: string[];
+    FieldTags?: string[];
+  };
+  cardDetail?: {
+    fieldOverview?: string;
+    suitableForYouIf?: string[];
+    typicalTasksAndChallenges?: string[];
+    fieldTags?: string[];
+  };
 }
 
 export default function GoalPage() {
@@ -75,7 +100,7 @@ export default function GoalPage() {
 
       // Transform API response to match our TypeScript types
       const rawFields = data.RecommendedFields || data.recommendedFields || [];
-      const transformedFields = rawFields.map((field: any) => ({
+      const transformedFields = rawFields.map((field: RawFieldData) => ({
         cardPreview: {
           fieldName: field.CardPreview?.FieldName || field.cardPreview?.fieldName || '',
           fieldSummary: field.CardPreview?.FieldSummary || field.cardPreview?.fieldSummary || '',

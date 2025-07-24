@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { NavigationStep, ChatMessage } from '@/types';
+import type { NavigationStep, ChatMessage } from '../types';
 
 interface UIState {
   // Navigation

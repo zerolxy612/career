@@ -49,7 +49,7 @@ export default function YellowIndustryCard({
         <span className="yellow-card-tags-text">
           {tags.map((tag, index) => (
             <span key={index}>
-              "{tag}"{index < tags.length - 1 ? ', ' : ''}
+              &quot;{tag}&quot;{index < tags.length - 1 ? ', ' : ''}
             </span>
           ))}
         </span>

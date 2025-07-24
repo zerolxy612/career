@@ -1,7 +1,7 @@
 'use client';
 
 import { Copy } from 'lucide-react';
-import { IndustryRecommendation } from '@/types/api';
+import { IndustryRecommendation } from '../../types/api';
 
 interface IndustryCardProps {
   industry: IndustryRecommendation;
@@ -51,7 +51,7 @@ export default function IndustryCard({ industry, isSelected, onSelect }: Industr
         <span className="yellow-card-tags-text">
           {industry.cardPreview.fieldTags.map((tag, index) => (
             <span key={index}>
-              "{tag}"{index < industry.cardPreview.fieldTags.length - 1 ? ', ' : ''}
+              &quot;{tag}&quot;{index < industry.cardPreview.fieldTags.length - 1 ? ', ' : ''}
             </span>
           ))}
         </span>

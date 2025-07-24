@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import IndustryCardList from '@/components/cards/IndustryCardList';
-import { IndustryRecommendation } from '@/types/api';
+import IndustryCardList from '../../components/cards/IndustryCardList';
+import { IndustryRecommendation } from '../../types/api';
 
 const mockIndustries: IndustryRecommendation[] = [
   {

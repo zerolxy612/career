@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import YellowIndustryCard from '@/components/cards/YellowIndustryCard';
+import YellowIndustryCard from '../../components/cards/YellowIndustryCard';
 
 const mockIndustries = [
   {
@@ -72,7 +72,7 @@ export default function TestCardsPage() {
               style={{ width: '64px', height: '64px', marginBottom: '1rem' }}
             />
             <p style={{ color: '#666', marginBottom: '0.5rem' }}>Enter your career goals here!</p>
-            <p style={{ color: '#666' }}>Let's explore your career profile together!</p>
+            <p style={{ color: '#666' }}>Let&apos;s explore your career profile together!</p>
           </div>
 
           <div style={{ marginBottom: '1rem' }}>

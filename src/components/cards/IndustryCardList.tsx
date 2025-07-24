@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import IndustryCard from './IndustryCard';
-import { IndustryRecommendation } from '@/types/api';
+import { IndustryRecommendation } from '../../types/api';
 
 interface IndustryCardListProps {
   industries: IndustryRecommendation[];

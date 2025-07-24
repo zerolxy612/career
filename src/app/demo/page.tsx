@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { File, Upload, X, Loader2 } from 'lucide-react';
+import { File, Upload } from 'lucide-react';
 import Image from 'next/image';
-import IndustryCardList from '@/components/cards/IndustryCardList';
-import { IndustryRecommendation } from '@/types/api';
+import IndustryCardList from '../../components/cards/IndustryCardList';
+import { IndustryRecommendation } from '../../types/api';
 
 const mockIndustries: IndustryRecommendation[] = [
   {
