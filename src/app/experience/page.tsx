@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { IndustryRecommendation } from '@/types/api';
-import { CardDirection, CompletionLevel } from '@/types/card';
+import { CardDirection, CompletionLevel, ExperienceCard, CardCategory as CardCategoryType } from '@/types/card';
 import { CardCategory } from '@/components/CardCategory';
 import { FloatingUploadButton } from '@/components/FileUpload';
 import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
@@ -54,6 +54,10 @@ export default function ExperiencePage() {
   const [isGeneratingCards, setIsGeneratingCards] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
+  // Suppress unused variable warnings for future use
+  void savedCards;
+  void uploadedFiles;
+
   // Calculate completion percentage for experience data
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
     const fields = Object.values(data);
@@ -97,14 +101,36 @@ export default function ExperiencePage() {
     if (storedIndustry && storedGoal) {
       generateAICards(storedGoal, JSON.parse(storedIndustry), storedFiles ? JSON.parse(storedFiles) : []);
     }
-  }, [router]);
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Define types for AI response
+  interface AICardResponse {
+    卡片分组: string;
+    小卡展示: {
+      经历名称: string;
+      时间与地点: string;
+      一句话概述: string;
+    };
+    详情卡展示: {
+      经历名称: string;
+      时间与地点: string;
+      背景与情境说明: string;
+      我的角色与任务: string;
+      任务细节描述: string;
+      反思与结果总结: string;
+      高光总结句: string;
+      生成来源: {
+        类型: string;
+      };
+    };
+  }
 
   // Convert AI response to ExperienceCard format
-  const convertAICardToExperienceCard = (aiCard: any): any => {
+  const convertAICardToExperienceCard = (aiCard: AICardResponse): ExperienceCard => {
     const cardId = `ai-card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
     // Map AI card category to our category system
-    const categoryMap: { [key: string]: string } = {
+    const categoryMap: { [key: string]: CardCategoryType } = {
       'Focus Match': 'Focus Match',
       'Growth Potential': 'Growth Potential',
       'Foundation Skills': 'Foundation Skills'
@@ -140,7 +166,7 @@ export default function ExperiencePage() {
   };
 
   // Generate AI cards based on user goal and industry
-  const generateAICards = async (goal: string, industry: IndustryRecommendation, files: any[] = []) => {
+  const generateAICards = async (goal: string, industry: IndustryRecommendation, files: File[] = []) => {
     console.log('🤖 Generating AI cards...', { goal, industry: industry.cardPreview.fieldName, filesCount: files.length });
     setIsGeneratingCards(true);
 
@@ -151,8 +177,8 @@ export default function ExperiencePage() {
 
       // Add files if available (though we can't restore File objects from localStorage)
       // This is a limitation - in a real app, files would be stored on server
-      files.forEach((fileInfo, index) => {
-        console.log(`File ${index + 1} info:`, fileInfo);
+      files.forEach((file, index) => {
+        console.log(`File ${index + 1} info:`, file.name);
         // We can't recreate File objects, so we'll just generate AI suggestions
       });
 
@@ -173,13 +199,13 @@ export default function ExperiencePage() {
       const aiCards = data.经验卡片推荐.map(convertAICardToExperienceCard);
 
       // Group cards by category
-      const cardsByCategory: { [key: string]: any[] } = {
+      const cardsByCategory: { [key: string]: ReturnType<typeof convertAICardToExperienceCard>[] } = {
         'Focus Match': [],
         'Growth Potential': [],
         'Foundation Skills': []
       };
 
-      aiCards.forEach((card: any) => {
+      aiCards.forEach((card: ReturnType<typeof convertAICardToExperienceCard>) => {
         const category = card.category;
         if (cardsByCategory[category]) {
           cardsByCategory[category].push(card);
@@ -447,7 +473,7 @@ export default function ExperiencePage() {
 
       // Add new cards to existing directions
       setDirections(prev => prev.map(dir => {
-        const newCards = newAICards.filter((card: any) => {
+        const newCards = newAICards.filter((card: ExperienceCard) => {
           if (dir.id === 'direction-1' && card.category === 'Focus Match') return true;
           if (dir.id === 'direction-2' && card.category === 'Growth Potential') return true;
           if (dir.id === 'direction-3' && card.category === 'Foundation Skills') return true;
@@ -458,8 +484,8 @@ export default function ExperiencePage() {
           return {
             ...dir,
             cards: [...dir.cards, ...newCards],
-            extractedCount: dir.extractedCount + newCards.filter((c: any) => c.source.type === 'uploaded_resume').length,
-            aiRecommendedCount: dir.aiRecommendedCount + newCards.filter((c: any) => c.source.type === 'ai_generated').length
+            extractedCount: dir.extractedCount + newCards.filter((c: ExperienceCard) => c.source.type === 'uploaded_resume').length,
+            aiRecommendedCount: dir.aiRecommendedCount + newCards.filter((c: ExperienceCard) => c.source.type === 'ai_generated').length
           };
         }
         return dir;
