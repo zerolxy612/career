@@ -51,6 +51,8 @@ export default function ExperiencePage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
   const [savedCards, setSavedCards] = useState<Map<string, ExperienceDetailData>>(new Map());
+  const [isGeneratingCards, setIsGeneratingCards] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   // Calculate completion percentage for experience data
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
@@ -63,6 +65,7 @@ export default function ExperiencePage() {
     // Load selected industry from localStorage
     const storedIndustry = localStorage.getItem('selectedIndustry');
     const storedGoal = localStorage.getItem('userGoal');
+    const storedFiles = localStorage.getItem('uploadedFiles');
 
     if (storedIndustry) {
       setSelectedIndustry(JSON.parse(storedIndustry));
@@ -72,11 +75,161 @@ export default function ExperiencePage() {
       setUserGoal(storedGoal);
     }
 
+    // Load uploaded files if any
+    if (storedFiles) {
+      try {
+        const filesData = JSON.parse(storedFiles);
+        // Note: We can't restore File objects from localStorage,
+        // but we can check if files were uploaded
+        console.log('Files were uploaded in previous step:', filesData.length);
+      } catch (error) {
+        console.error('Error parsing stored files:', error);
+      }
+    }
+
     // If no selected industry, redirect back to goal setting
     if (!storedIndustry) {
       router.push('/');
+      return;
+    }
+
+    // Generate AI cards when component loads
+    if (storedIndustry && storedGoal) {
+      generateAICards(storedGoal, JSON.parse(storedIndustry), storedFiles ? JSON.parse(storedFiles) : []);
     }
   }, [router]);
+
+  // Convert AI response to ExperienceCard format
+  const convertAICardToExperienceCard = (aiCard: any): any => {
+    const cardId = `ai-card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+
+    // Map AI card category to our category system
+    const categoryMap: { [key: string]: string } = {
+      'Focus Match': 'Focus Match',
+      'Growth Potential': 'Growth Potential',
+      'Foundation Skills': 'Foundation Skills'
+    };
+
+    const category = categoryMap[aiCard.卡片分组] || 'Focus Match';
+
+    return {
+      id: cardId,
+      category: category,
+      cardPreview: {
+        experienceName: aiCard.小卡展示.经历名称,
+        timeAndLocation: aiCard.小卡展示.时间与地点,
+        oneSentenceSummary: aiCard.小卡展示.一句话概述
+      },
+      cardDetail: {
+        experienceName: aiCard.详情卡展示.经历名称,
+        timeAndLocation: aiCard.详情卡展示.时间与地点,
+        backgroundContext: aiCard.详情卡展示.背景与情境说明,
+        myRoleAndTasks: aiCard.详情卡展示.我的角色与任务,
+        taskDetails: aiCard.详情卡展示.任务细节描述,
+        reflectionAndResults: aiCard.详情卡展示.反思与结果总结,
+        highlightSentence: aiCard.详情卡展示.高光总结句,
+        editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence']
+      },
+      completionLevel: 'complete' as const,
+      source: {
+        type: aiCard.详情卡展示.生成来源.类型 === 'uploaded_resume' ? 'uploaded_resume' : 'ai_generated'
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  };
+
+  // Generate AI cards based on user goal and industry
+  const generateAICards = async (goal: string, industry: IndustryRecommendation, files: any[] = []) => {
+    console.log('🤖 Generating AI cards...', { goal, industry: industry.cardPreview.fieldName, filesCount: files.length });
+    setIsGeneratingCards(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('userGoal', goal);
+      formData.append('selectedIndustry', industry.cardPreview.fieldName);
+
+      // Add files if available (though we can't restore File objects from localStorage)
+      // This is a limitation - in a real app, files would be stored on server
+      files.forEach((fileInfo, index) => {
+        console.log(`File ${index + 1} info:`, fileInfo);
+        // We can't recreate File objects, so we'll just generate AI suggestions
+      });
+
+      console.log('📤 Sending request to generate experience cards...');
+      const response = await fetch('/api/ai/generate-experience-cards', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ AI cards generated successfully:', data);
+
+      // Convert AI cards to our format and organize by category
+      const aiCards = data.经验卡片推荐.map(convertAICardToExperienceCard);
+
+      // Group cards by category
+      const cardsByCategory: { [key: string]: any[] } = {
+        'Focus Match': [],
+        'Growth Potential': [],
+        'Foundation Skills': []
+      };
+
+      aiCards.forEach((card: any) => {
+        const category = card.category;
+        if (cardsByCategory[category]) {
+          cardsByCategory[category].push(card);
+        }
+      });
+
+      // Update directions with AI generated cards
+      const updatedDirections = [
+        {
+          id: 'direction-1',
+          title: 'Focus Match',
+          subtitle: 'Experiences highly aligned with your career goal',
+          description: 'These experiences directly support your target industry and role',
+          isExpanded: true,
+          cards: cardsByCategory['Focus Match'],
+          extractedCount: cardsByCategory['Focus Match'].filter(c => c.source.type === 'uploaded_resume').length,
+          aiRecommendedCount: cardsByCategory['Focus Match'].filter(c => c.source.type === 'ai_generated').length
+        },
+        {
+          id: 'direction-2',
+          title: 'Growth Potential',
+          subtitle: 'Experiences that show your development potential',
+          description: 'These experiences demonstrate your ability to learn and grow',
+          isExpanded: false,
+          cards: cardsByCategory['Growth Potential'],
+          extractedCount: cardsByCategory['Growth Potential'].filter(c => c.source.type === 'uploaded_resume').length,
+          aiRecommendedCount: cardsByCategory['Growth Potential'].filter(c => c.source.type === 'ai_generated').length
+        },
+        {
+          id: 'direction-3',
+          title: 'Foundation Skills',
+          subtitle: 'Core skills and foundational experiences',
+          description: 'These experiences build the foundation for your career development',
+          isExpanded: false,
+          cards: cardsByCategory['Foundation Skills'],
+          extractedCount: cardsByCategory['Foundation Skills'].filter(c => c.source.type === 'uploaded_resume').length,
+          aiRecommendedCount: cardsByCategory['Foundation Skills'].filter(c => c.source.type === 'ai_generated').length
+        }
+      ];
+
+      setDirections(updatedDirections);
+      console.log('🎉 Directions updated with AI cards');
+
+    } catch (error) {
+      console.error('❌ Error generating AI cards:', error);
+      // Keep the mock directions as fallback
+    } finally {
+      setIsGeneratingCards(false);
+    }
+  };
 
   const toggleDirection = (directionId: string) => {
     setDirections(prev => prev.map(dir =>
@@ -90,9 +243,29 @@ export default function ExperiencePage() {
     console.log('Card clicked:', cardId);
     setHasInteracted(true);
 
-    // Find the card data (for now, we'll use empty data since cards are empty in mock)
-    // In a real implementation, you would find the actual card data
-    setCurrentCardData(undefined); // Will create new card
+    // Find the card in all directions
+    let foundCard = null;
+    for (const direction of directions) {
+      foundCard = direction.cards.find(card => card.id === cardId);
+      if (foundCard) break;
+    }
+
+    if (foundCard) {
+      // Convert card detail to ExperienceDetailData format
+      const cardData: ExperienceDetailData = {
+        experienceName: foundCard.cardDetail.experienceName,
+        locationAndTime: foundCard.cardDetail.timeAndLocation,
+        scenarioIntroduction: foundCard.cardDetail.backgroundContext,
+        myRole: foundCard.cardDetail.myRoleAndTasks,
+        eventProcess: foundCard.cardDetail.taskDetails,
+        reflection: foundCard.cardDetail.reflectionAndResults,
+        oneLineHighlight: foundCard.cardDetail.highlightSentence
+      };
+      setCurrentCardData(cardData);
+    } else {
+      setCurrentCardData(undefined); // Create new card
+    }
+
     setIsDetailModalOpen(true);
   };
 
@@ -112,50 +285,112 @@ export default function ExperiencePage() {
     console.log('Saving experience data:', data);
     setHasInteracted(true);
 
-    // Generate a unique ID for the card
-    const cardId = `card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-
-    // Save the card data
-    setSavedCards(prev => new Map(prev.set(cardId, data)));
-
     // Calculate completion percentage
     const completionPercentage = calculateCompletionPercentage(data);
 
-    // Create a new card object that matches ExperienceCard interface
-    const newCard = {
-      id: cardId,
-      category: 'Focus Match' as const,
-      cardPreview: {
-        experienceName: data.experienceName || 'Untitled Experience',
-        timeAndLocation: data.locationAndTime || '',
-        oneSentenceSummary: data.oneLineHighlight || 'No summary available'
-      },
-      cardDetail: {
-        experienceName: data.experienceName || 'Untitled Experience',
-        timeAndLocation: data.locationAndTime || '',
-        backgroundContext: data.scenarioIntroduction || '',
-        myRoleAndTasks: data.myRole || '',
-        taskDetails: data.eventProcess || '',
-        reflectionAndResults: data.reflection || '',
-        highlightSentence: data.oneLineHighlight || '',
-        editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence']
-      },
-      completionLevel: (completionPercentage >= 70 ? 'complete' : completionPercentage >= 30 ? 'partial' : 'incomplete') as CompletionLevel,
-      source: {
-        type: 'user_input' as const
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Check if we're editing an existing card
+    let existingCardId = null;
+    let existingCard = null;
 
-    // Add the card to the first direction (AI DIRECTION 1)
-    setDirections(prev => prev.map(dir =>
-      dir.id === 'direction-1'
-        ? { ...dir, cards: [...dir.cards, newCard] }
-        : dir
-    ));
+    for (const direction of directions) {
+      existingCard = direction.cards.find(card => {
+        const cardData = {
+          experienceName: card.cardDetail.experienceName,
+          locationAndTime: card.cardDetail.timeAndLocation,
+          scenarioIntroduction: card.cardDetail.backgroundContext,
+          myRole: card.cardDetail.myRoleAndTasks,
+          eventProcess: card.cardDetail.taskDetails,
+          reflection: card.cardDetail.reflectionAndResults,
+          oneLineHighlight: card.cardDetail.highlightSentence
+        };
+        return JSON.stringify(cardData) === JSON.stringify(currentCardData);
+      });
+      if (existingCard) {
+        existingCardId = existingCard.id;
+        break;
+      }
+    }
 
-    alert(`Experience card saved successfully! Completion: ${completionPercentage}%`);
+    if (existingCardId && existingCard) {
+      // Update existing card
+      console.log('Updating existing card:', existingCardId);
+
+      const updatedCard = {
+        ...existingCard,
+        cardPreview: {
+          experienceName: data.experienceName || 'Untitled Experience',
+          timeAndLocation: data.locationAndTime || '',
+          oneSentenceSummary: data.oneLineHighlight || 'No summary available'
+        },
+        cardDetail: {
+          ...existingCard.cardDetail,
+          experienceName: data.experienceName || 'Untitled Experience',
+          timeAndLocation: data.locationAndTime || '',
+          backgroundContext: data.scenarioIntroduction || '',
+          myRoleAndTasks: data.myRole || '',
+          taskDetails: data.eventProcess || '',
+          reflectionAndResults: data.reflection || '',
+          highlightSentence: data.oneLineHighlight || ''
+        },
+        completionLevel: (completionPercentage >= 70 ? 'complete' : completionPercentage >= 30 ? 'partial' : 'incomplete') as CompletionLevel,
+        updatedAt: new Date()
+      };
+
+      // Update the card in directions
+      setDirections(prev => prev.map(dir => ({
+        ...dir,
+        cards: dir.cards.map(card =>
+          card.id === existingCardId ? updatedCard : card
+        )
+      })));
+
+      // Update saved cards
+      setSavedCards(prev => new Map(prev.set(existingCardId, data)));
+
+      alert(`Experience card updated successfully! Completion: ${completionPercentage}%`);
+    } else {
+      // Create new card
+      const cardId = `card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+
+      const newCard = {
+        id: cardId,
+        category: 'Focus Match' as const,
+        cardPreview: {
+          experienceName: data.experienceName || 'Untitled Experience',
+          timeAndLocation: data.locationAndTime || '',
+          oneSentenceSummary: data.oneLineHighlight || 'No summary available'
+        },
+        cardDetail: {
+          experienceName: data.experienceName || 'Untitled Experience',
+          timeAndLocation: data.locationAndTime || '',
+          backgroundContext: data.scenarioIntroduction || '',
+          myRoleAndTasks: data.myRole || '',
+          taskDetails: data.eventProcess || '',
+          reflectionAndResults: data.reflection || '',
+          highlightSentence: data.oneLineHighlight || '',
+          editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence']
+        },
+        completionLevel: (completionPercentage >= 70 ? 'complete' : completionPercentage >= 30 ? 'partial' : 'incomplete') as CompletionLevel,
+        source: {
+          type: 'user_input' as const
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Add the card to the first direction (Focus Match)
+      setDirections(prev => prev.map(dir =>
+        dir.id === 'direction-1'
+          ? { ...dir, cards: [...dir.cards, newCard] }
+          : dir
+      ));
+
+      // Save the card data
+      setSavedCards(prev => new Map(prev.set(cardId, data)));
+
+      alert(`Experience card created successfully! Completion: ${completionPercentage}%`);
+    }
+
     setIsDetailModalOpen(false);
     setCurrentCardData(undefined);
   };
@@ -175,18 +410,69 @@ export default function ExperiencePage() {
     })));
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     console.log('File uploaded:', file.name);
     setHasInteracted(true);
-    // TODO: Implement file processing logic
-    // This would typically involve:
-    // 1. Upload file to server
-    // 2. Process file content (extract text, analyze)
-    // 3. Generate experience cards from content
-    // 4. Update directions state with new cards
+    setUploadedFiles(prev => [...prev, file]);
 
-    // For now, just show a success message
-    alert(`File "${file.name}" uploaded successfully! Processing will be implemented in the next phase.`);
+    if (!selectedIndustry || !userGoal) {
+      alert('Missing user goal or selected industry. Please go back and complete the setup.');
+      return;
+    }
+
+    try {
+      setIsGeneratingCards(true);
+
+      // Process the uploaded file and generate new AI cards
+      const formData = new FormData();
+      formData.append('userGoal', userGoal);
+      formData.append('selectedIndustry', selectedIndustry.cardPreview.fieldName);
+      formData.append('files', file);
+
+      console.log('📤 Processing uploaded file and generating new cards...');
+      const response = await fetch('/api/ai/generate-experience-cards', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ New AI cards generated from uploaded file:', data);
+
+      // Convert AI cards to our format
+      const newAICards = data.经验卡片推荐.map(convertAICardToExperienceCard);
+
+      // Add new cards to existing directions
+      setDirections(prev => prev.map(dir => {
+        const newCards = newAICards.filter((card: any) => {
+          if (dir.id === 'direction-1' && card.category === 'Focus Match') return true;
+          if (dir.id === 'direction-2' && card.category === 'Growth Potential') return true;
+          if (dir.id === 'direction-3' && card.category === 'Foundation Skills') return true;
+          return false;
+        });
+
+        if (newCards.length > 0) {
+          return {
+            ...dir,
+            cards: [...dir.cards, ...newCards],
+            extractedCount: dir.extractedCount + newCards.filter((c: any) => c.source.type === 'uploaded_resume').length,
+            aiRecommendedCount: dir.aiRecommendedCount + newCards.filter((c: any) => c.source.type === 'ai_generated').length
+          };
+        }
+        return dir;
+      }));
+
+      alert(`File "${file.name}" processed successfully! Generated ${newAICards.length} new experience cards.`);
+
+    } catch (error) {
+      console.error('❌ Error processing uploaded file:', error);
+      alert(`Error processing file "${file.name}". Please try again.`);
+    } finally {
+      setIsGeneratingCards(false);
+    }
   };
 
   const handleBack = () => {
@@ -278,6 +564,35 @@ export default function ExperiencePage() {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isGeneratingCards && (
+          <div style={{
+            backgroundColor: '#e3f2fd',
+            border: '2px solid #2196f3',
+            borderRadius: '12px',
+            padding: '2rem',
+            textAlign: 'center',
+            marginBottom: '2rem'
+          }}>
+            <div style={{
+              display: 'inline-block',
+              width: '2rem',
+              height: '2rem',
+              border: '3px solid #e3f2fd',
+              borderTop: '3px solid #2196f3',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              marginBottom: '1rem'
+            }} />
+            <h3 style={{ color: '#1976d2', margin: '0 0 0.5rem 0' }}>
+              🤖 Generating AI Experience Cards...
+            </h3>
+            <p style={{ color: '#666', margin: 0 }}>
+              Analyzing your content and creating personalized experience cards
+            </p>
+          </div>
+        )}
+
         {/* Card Directions */}
         <div style={{ marginBottom: '2rem' }}>
           {directions.map((direction, index) => (
@@ -354,6 +669,14 @@ export default function ExperiencePage() {
           initialData={currentCardData}
         />
       </div>
+
+      {/* CSS Styles */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

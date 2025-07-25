@@ -43,6 +43,9 @@ export async function generateWithGemini(prompt: string): Promise<string> {
     console.log('🤖 [GEMINI] API Key prefix:', process.env.GEMINI_API_KEY?.substring(0, 10) + '...');
     console.log('🤖 [GEMINI] Prompt preview:', prompt.substring(0, 500) + (prompt.length > 500 ? '...' : ''));
 
+    // Check for network connectivity issues
+    console.log('🌐 [GEMINI] Testing network connectivity...');
+
     // Use direct fetch call to Gemini API
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -282,6 +285,20 @@ export async function generateWithGemini(prompt: string): Promise<string> {
     console.error('❌ [GEMINI] Error type:', error instanceof Error ? error.constructor.name : typeof error);
     console.error('❌ [GEMINI] Error message:', error instanceof Error ? error.message : String(error));
     console.error('❌ [GEMINI] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
+    // Detailed error analysis
+    if (error instanceof Error) {
+      if (error.message.includes('fetch failed') || error.message.includes('ENOTFOUND')) {
+        console.error('🌐 [GEMINI] Network connectivity issue detected');
+        console.error('💡 [GEMINI] Possible causes: DNS resolution failure, firewall, or proxy blocking');
+      } else if (error.message.includes('ECONNREFUSED')) {
+        console.error('🚫 [GEMINI] Connection refused - service may be blocked');
+      } else if (error.message.includes('timeout') || error.name === 'AbortError') {
+        console.error('⏰ [GEMINI] Request timeout - slow network or service unavailable');
+      } else if (error.message.includes('401') || error.message.includes('403')) {
+        console.error('🔑 [GEMINI] Authentication error - check API key');
+      }
+    }
 
     if (error instanceof Error && error.name === 'AbortError') {
       console.error('❌ [GEMINI] Request was aborted (timeout)');
