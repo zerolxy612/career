@@ -57,5 +57,18 @@ export interface RisksAndAdvice {
   actionSuggestions: string[];
 }
 
+// Card Direction Types for Experience Page
+export interface CardDirection {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  isExpanded: boolean;
+  cards: ExperienceCard[];
+  extractedCount: number;
+  aiRecommendedCount: number;
+  alignmentLevel?: 'high' | 'medium' | 'low';
+}
+
 // Industry Recommendation Types - imported from api.ts to avoid duplication
 export type { IndustryRecommendation, IndustryCardPreview, IndustryCardDetail } from './api';

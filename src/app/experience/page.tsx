@@ -3,234 +3,258 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { IndustryRecommendation } from '@/types/api';
+import { CardDirection } from '@/types/card';
+import { CardCategory } from '@/components/CardCategory';
+import { FloatingUploadButton } from '@/components/FileUpload';
+
+// Mock data for demonstration
+const mockDirections: CardDirection[] = [
+  {
+    id: 'direction-1',
+    title: 'AI DIRECTION 1',
+    subtitle: 'Strongly aligned with your current goal, Let\'s fill the Cards together',
+    description: 'Strongly aligned with your current goal',
+    isExpanded: true,
+    cards: [],
+    extractedCount: 0,
+    aiRecommendedCount: 0
+  },
+  {
+    id: 'direction-2',
+    title: 'AI DIRECTION 2',
+    subtitle: 'Potential to support your development path, Let\'s fill the Cards together',
+    description: 'Potential to support your development path',
+    isExpanded: false,
+    cards: [],
+    extractedCount: 3,
+    aiRecommendedCount: 2
+  },
+  {
+    id: 'direction-3',
+    title: 'AI DIRECTION 3',
+    subtitle: 'Potential to support your development path, Let\'s fill the Cards together',
+    description: 'Potential to support your development path',
+    isExpanded: false,
+    cards: [],
+    extractedCount: 3,
+    aiRecommendedCount: 2
+  }
+];
 
 export default function ExperiencePage() {
   const router = useRouter();
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryRecommendation | null>(null);
   const [userGoal, setUserGoal] = useState<string>('');
+  const [directions, setDirections] = useState(mockDirections);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
     // Load selected industry from localStorage
     const storedIndustry = localStorage.getItem('selectedIndustry');
     const storedGoal = localStorage.getItem('userGoal');
-    
+
     if (storedIndustry) {
       setSelectedIndustry(JSON.parse(storedIndustry));
     }
-    
+
     if (storedGoal) {
       setUserGoal(storedGoal);
     }
-    
+
     // If no selected industry, redirect back to goal setting
     if (!storedIndustry) {
       router.push('/');
     }
   }, [router]);
 
+  const toggleDirection = (directionId: string) => {
+    setDirections(prev => prev.map(dir =>
+      dir.id === directionId
+        ? { ...dir, isExpanded: !dir.isExpanded }
+        : dir
+    ));
+  };
+
+  const handleCardClick = (cardId: string) => {
+    console.log('Card clicked:', cardId);
+    setHasInteracted(true);
+    // TODO: Implement card detail view
+  };
+
+  const handleCreateNewCard = () => {
+    console.log('Create new card clicked');
+    setHasInteracted(true);
+    // TODO: Implement create new card functionality
+  };
+
+  const handleFileUpload = (file: File) => {
+    console.log('File uploaded:', file.name);
+    setHasInteracted(true);
+    // TODO: Implement file processing logic
+    // This would typically involve:
+    // 1. Upload file to server
+    // 2. Process file content (extract text, analyze)
+    // 3. Generate experience cards from content
+    // 4. Update directions state with new cards
+
+    // For now, just show a success message
+    alert(`File "${file.name}" uploaded successfully! Processing will be implemented in the next phase.`);
+  };
+
+  const handleBack = () => {
+    router.push('/');
+  };
+
+  const handleNext = () => {
+    // Check if user has at least one card or has interacted with the interface
+    const hasCards = directions.some(dir => dir.cards.length > 0);
+
+    if (!hasCards && !hasInteracted) {
+      alert('Please add at least one experience card or upload a file before proceeding.');
+      return;
+    }
+
+    // Save current state to localStorage for next page
+    localStorage.setItem('experienceDirections', JSON.stringify(directions));
+    localStorage.setItem('hasInteracted', JSON.stringify(hasInteracted));
+
+    // TODO: Navigate to next step (card combination/analysis page)
+    console.log('Proceeding to next step...');
+    alert('Next step will be implemented in the next phase. Your progress has been saved.');
+  };
+
   return (
-    <div style={{ 
-      minHeight: '100vh', 
+    <div style={{
+      minHeight: '100vh',
       backgroundColor: '#f8fafc',
-      padding: '2rem'
+      padding: '2rem',
+      position: 'relative'
     }}>
-      <div style={{ 
-        maxWidth: '1200px', 
+      <div style={{
+        maxWidth: '1000px',
         margin: '0 auto'
       }}>
         {/* Header */}
-        <div style={{ 
-          textAlign: 'center', 
-          marginBottom: '3rem'
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '2rem'
         }}>
-          <h1 style={{ 
-            fontSize: '2.5rem', 
-            fontWeight: 'bold', 
-            color: '#4285f4',
-            marginBottom: '1rem'
-          }}>
-            EXPERIENCE CARDS
-          </h1>
-          <p style={{ 
-            fontSize: '1.1rem', 
-            color: '#666',
-            marginBottom: '2rem'
-          }}>
-            Generate experience cards based on your selected career direction
-          </p>
-        </div>
-
-        {/* Selected Industry Display */}
-        {selectedIndustry && (
           <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '2rem',
-            marginBottom: '3rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            border: '2px solid #4285f4'
+            width: '2rem',
+            height: '2rem',
+            backgroundColor: '#333',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: '1rem',
+            fontWeight: 'bold'
           }}>
-            <h2 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: 'bold', 
-              color: '#4285f4',
-              marginBottom: '1rem'
+            i
+          </div>
+
+          <h1 style={{
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            color: '#4285f4',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase'
+          }}>
+            RELEVANT CARDS
+          </h1>
+
+          <div style={{
+            width: '2rem',
+            height: '2rem',
+            border: '2px solid #4285f4',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer'
+          }}>
+            <div style={{
+              width: '1rem',
+              height: '1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px'
             }}>
-              Selected Career Direction
-            </h2>
-            <h3 style={{ 
-              fontSize: '1.3rem', 
-              fontWeight: '600', 
-              color: '#333',
-              marginBottom: '0.5rem'
-            }}>
-              {selectedIndustry.cardPreview.fieldName}
-            </h3>
-            <p style={{ 
-              color: '#666', 
-              marginBottom: '1rem'
-            }}>
-              {selectedIndustry.cardPreview.fieldSummary}
-            </p>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {selectedIndustry.cardPreview.fieldTags.map((tag, index) => (
-                <span 
-                  key={index}
-                  style={{
-                    backgroundColor: '#e3f2fd',
-                    color: '#1976d2',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '20px',
-                    fontSize: '0.875rem',
-                    fontWeight: '500'
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
+              <div style={{ width: '100%', height: '2px', backgroundColor: '#4285f4' }}></div>
+              <div style={{ width: '100%', height: '2px', backgroundColor: '#4285f4' }}></div>
+              <div style={{ width: '100%', height: '2px', backgroundColor: '#4285f4' }}></div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* User Goal Display */}
-        {userGoal && (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '2rem',
-            marginBottom: '3rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-          }}>
-            <h2 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: 'bold', 
-              color: '#333',
-              marginBottom: '1rem'
-            }}>
-              Your Career Goal
-            </h2>
-            <p style={{ 
-              color: '#666', 
-              fontSize: '1.1rem',
-              lineHeight: '1.6'
-            }}>
-              {userGoal}
-            </p>
-          </div>
-        )}
+        {/* Card Directions */}
+        <div style={{ marginBottom: '2rem' }}>
+          {directions.map((direction, index) => (
+            <CardCategory
+              key={direction.id}
+              direction={direction}
+              onToggle={toggleDirection}
+              onCardClick={handleCardClick}
+              onCreateNewCard={handleCreateNewCard}
+              isFirstDirection={index === 0}
+            />
+          ))}
+        </div>
 
-        {/* Experience Cards Generation Section */}
+        {/* Floating Upload Button */}
+        <FloatingUploadButton onFileSelect={handleFileUpload} />
+
+        {/* Navigation Buttons */}
         <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '3rem',
-          textAlign: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          display: 'flex',
+          gap: '1rem',
+          zIndex: 100
         }}>
-          <h2 style={{ 
-            fontSize: '2rem', 
-            fontWeight: 'bold', 
-            color: '#333',
-            marginBottom: '1rem'
-          }}>
-            Experience Cards Generation
-          </h2>
-          <p style={{ 
-            color: '#666', 
-            fontSize: '1.1rem',
-            marginBottom: '2rem',
-            lineHeight: '1.6'
-          }}>
-            This is the initial interface for experience card generation.
-            <br />
-            Here you will be able to upload and analyze your experience documents
-            <br />
-            to generate personalized experience cards.
-          </p>
-          
-          {/* Placeholder for future functionality */}
-          <div style={{
-            backgroundColor: '#f8fafc',
-            border: '2px dashed #cbd5e0',
-            borderRadius: '12px',
-            padding: '3rem',
-            marginBottom: '2rem'
-          }}>
-            <p style={{ 
-              color: '#a0aec0', 
-              fontSize: '1.2rem',
-              fontWeight: '500'
-            }}>
-              Experience Card Generation Interface
-              <br />
-              <span style={{ fontSize: '1rem' }}>
-                (To be implemented in next phase)
-              </span>
-            </p>
-          </div>
+          <button
+            onClick={handleBack}
+            style={{
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '25px',
+              padding: '0.75rem 2rem',
+              fontSize: '1rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
+          >
+            Back
+          </button>
 
-          {/* Navigation Buttons */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '1rem', 
-            justifyContent: 'center',
-            marginTop: '2rem'
-          }}>
-            <button
-              onClick={() => router.push('/')}
-              style={{
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.75rem 2rem',
-                fontSize: '1rem',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
-            >
-              Back to Goal Setting
-            </button>
-            
-            <button
-              style={{
-                backgroundColor: '#e9ecef',
-                color: '#6c757d',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.75rem 2rem',
-                fontSize: '1rem',
-                fontWeight: '500',
-                cursor: 'not-allowed'
-              }}
-              disabled
-            >
-              Continue (Coming Soon)
-            </button>
-          </div>
+          <button
+            onClick={handleNext}
+            style={{
+              backgroundColor: '#4285f4',
+              color: 'white',
+              border: 'none',
+              borderRadius: '25px',
+              padding: '0.75rem 2rem',
+              fontSize: '1rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(66, 133, 244, 0.3)',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3367d6'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4285f4'}
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
