@@ -38,11 +38,17 @@ export async function POST(request: NextRequest) {
           const text = await file.text();
           console.log(`📁 [API] File ${i + 1} content extracted:`, {
             fileName: file.name,
+            fileType: file.type,
             contentLength: text.length,
-            contentPreview: text.substring(0, 200) + (text.length > 200 ? '...' : '')
+            contentPreview: text.substring(0, 500) + (text.length > 500 ? '...' : ''),
+            hasContent: text.trim().length > 0
           });
 
-          fileContent += `\nFile name: ${file.name}\nContent: ${text}\n`;
+          if (text.trim().length === 0) {
+            console.warn(`⚠️ [API] File ${file.name} appears to be empty or unreadable`);
+          }
+
+          fileContent += `\n=== File: ${file.name} (${file.type}) ===\n${text}\n=== End of ${file.name} ===\n`;
         } catch (fileError) {
           console.error(`❌ [API] Failed to read file ${file.name}:`, fileError);
           fileContent += `\nFile name: ${file.name}\nContent: [File reading failed: ${fileError}]\n`;

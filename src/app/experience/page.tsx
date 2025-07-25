@@ -46,12 +46,12 @@ export default function ExperiencePage() {
   const router = useRouter();
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryRecommendation | null>(null);
   const [userGoal, setUserGoal] = useState<string>('');
-  const [directions, setDirections] = useState(mockDirections);
+  const [directions, setDirections] = useState<CardDirection[]>([]);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
   const [savedCards, setSavedCards] = useState<Map<string, ExperienceDetailData>>(new Map());
-  const [isGeneratingCards, setIsGeneratingCards] = useState(false);
+  const [isGeneratingCards, setIsGeneratingCards] = useState(true); // 初始为true
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   // Suppress unused variable warnings for future use
@@ -590,49 +590,53 @@ export default function ExperiencePage() {
           </div>
         </div>
 
-        {/* Loading State */}
-        {isGeneratingCards && (
+        {/* Loading State or Card Directions */}
+        {isGeneratingCards ? (
           <div style={{
             backgroundColor: '#e3f2fd',
             border: '2px solid #2196f3',
             borderRadius: '12px',
-            padding: '2rem',
+            padding: '3rem',
             textAlign: 'center',
-            marginBottom: '2rem'
+            marginBottom: '2rem',
+            minHeight: '300px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center'
           }}>
             <div style={{
               display: 'inline-block',
-              width: '2rem',
-              height: '2rem',
-              border: '3px solid #e3f2fd',
-              borderTop: '3px solid #2196f3',
+              width: '3rem',
+              height: '3rem',
+              border: '4px solid #e3f2fd',
+              borderTop: '4px solid #2196f3',
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
-              marginBottom: '1rem'
+              marginBottom: '1.5rem'
             }} />
-            <h3 style={{ color: '#1976d2', margin: '0 0 0.5rem 0' }}>
+            <h2 style={{ color: '#1976d2', margin: '0 0 1rem 0', fontSize: '1.5rem' }}>
               🤖 Generating AI Experience Cards...
-            </h3>
-            <p style={{ color: '#666', margin: 0 }}>
-              Analyzing your content and creating personalized experience cards
+            </h2>
+            <p style={{ color: '#666', margin: 0, fontSize: '1.1rem', maxWidth: '500px' }}>
+              Analyzing your career goal and uploaded content to create personalized experience cards across three strategic directions
             </p>
           </div>
+        ) : (
+          <div style={{ marginBottom: '2rem' }}>
+            {directions.map((direction, index) => (
+              <CardCategory
+                key={direction.id}
+                direction={direction}
+                onToggle={toggleDirection}
+                onCardClick={handleCardClick}
+                onCreateNewCard={handleCreateNewCard}
+                onDeleteCard={handleDeleteCard}
+                isFirstDirection={index === 0}
+              />
+            ))}
+          </div>
         )}
-
-        {/* Card Directions */}
-        <div style={{ marginBottom: '2rem' }}>
-          {directions.map((direction, index) => (
-            <CardCategory
-              key={direction.id}
-              direction={direction}
-              onToggle={toggleDirection}
-              onCardClick={handleCardClick}
-              onCreateNewCard={handleCreateNewCard}
-              onDeleteCard={handleDeleteCard}
-              isFirstDirection={index === 0}
-            />
-          ))}
-        </div>
 
         {/* Floating Upload Button */}
         <FloatingUploadButton onFileSelect={handleFileUpload} />
