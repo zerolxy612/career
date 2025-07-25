@@ -7,6 +7,7 @@ interface CardCategoryProps {
   onToggle: (directionId: string) => void;
   onCardClick?: (cardId: string) => void;
   onCreateNewCard?: () => void;
+  onDeleteCard?: (cardId: string) => void;
   isFirstDirection?: boolean;
 }
 
@@ -15,6 +16,7 @@ export const CardCategory: React.FC<CardCategoryProps> = ({
   onToggle,
   onCardClick,
   onCreateNewCard,
+  onDeleteCard,
   isFirstDirection = false
 }) => {
   return (
@@ -97,10 +99,11 @@ export const CardCategory: React.FC<CardCategoryProps> = ({
         {direction.isExpanded && (
           <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
             {isFirstDirection ? (
-              <FirstDirectionContent 
+              <FirstDirectionContent
                 direction={direction}
                 onCardClick={onCardClick}
                 onCreateNewCard={onCreateNewCard}
+                onDeleteCard={onDeleteCard}
               />
             ) : (
               <OtherDirectionContent direction={direction} />
@@ -117,7 +120,8 @@ const FirstDirectionContent: React.FC<{
   direction: CardDirection;
   onCardClick?: (cardId: string) => void;
   onCreateNewCard?: () => void;
-}> = ({ direction, onCardClick, onCreateNewCard }) => {
+  onDeleteCard?: (cardId: string) => void;
+}> = ({ direction, onCardClick, onCreateNewCard, onDeleteCard }) => {
   return (
     <div>
       {/* MY STORY Section */}
@@ -155,6 +159,7 @@ const FirstDirectionContent: React.FC<{
                   key={card.id}
                   card={card}
                   onClick={() => onCardClick?.(card.id)}
+                  onDelete={() => onDeleteCard?.(card.id)}
                 />
               ))}
           </div>
@@ -235,6 +240,7 @@ const FirstDirectionContent: React.FC<{
                 description="Led interviews & competitor analysis to inform product decisions."
                 completionPercentage={20}
                 onClick={() => onCardClick?.('mock-1')}
+                onDelete={() => console.log('Delete mock card 1')}
               />
               <ExperienceCard
                 type="ai-suggested"
@@ -242,6 +248,7 @@ const FirstDirectionContent: React.FC<{
                 description="Led interviews & competitor analysis to inform product decisions."
                 completionPercentage={20}
                 onClick={() => onCardClick?.('mock-2')}
+                onDelete={() => console.log('Delete mock card 2')}
               />
             </>
           )}

@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { IndustryRecommendation } from '@/types/api';
-import { CardDirection } from '@/types/card';
+import { CardDirection, CompletionLevel } from '@/types/card';
 import { CardCategory } from '@/components/CardCategory';
 import { FloatingUploadButton } from '@/components/FileUpload';
+import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
 
 // Mock data for demonstration
 const mockDirections: CardDirection[] = [
@@ -47,6 +48,16 @@ export default function ExperiencePage() {
   const [userGoal, setUserGoal] = useState<string>('');
   const [directions, setDirections] = useState(mockDirections);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
+  const [savedCards, setSavedCards] = useState<Map<string, ExperienceDetailData>>(new Map());
+
+  // Calculate completion percentage for experience data
+  const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
+    const fields = Object.values(data);
+    const filledFields = fields.filter(field => field.trim().length > 0);
+    return Math.round((filledFields.length / fields.length) * 100);
+  };
 
   useEffect(() => {
     // Load selected industry from localStorage
@@ -78,13 +89,90 @@ export default function ExperiencePage() {
   const handleCardClick = (cardId: string) => {
     console.log('Card clicked:', cardId);
     setHasInteracted(true);
-    // TODO: Implement card detail view
+
+    // Find the card data (for now, we'll use empty data since cards are empty in mock)
+    // In a real implementation, you would find the actual card data
+    setCurrentCardData(undefined); // Will create new card
+    setIsDetailModalOpen(true);
   };
 
   const handleCreateNewCard = () => {
     console.log('Create new card clicked');
     setHasInteracted(true);
-    // TODO: Implement create new card functionality
+    setCurrentCardData(undefined); // Create new card
+    setIsDetailModalOpen(true);
+  };
+
+  const handleDetailModalClose = () => {
+    setIsDetailModalOpen(false);
+    setCurrentCardData(undefined);
+  };
+
+  const handleDetailModalSave = (data: ExperienceDetailData) => {
+    console.log('Saving experience data:', data);
+    setHasInteracted(true);
+
+    // Generate a unique ID for the card
+    const cardId = `card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+
+    // Save the card data
+    setSavedCards(prev => new Map(prev.set(cardId, data)));
+
+    // Calculate completion percentage
+    const completionPercentage = calculateCompletionPercentage(data);
+
+    // Create a new card object that matches ExperienceCard interface
+    const newCard = {
+      id: cardId,
+      category: 'Focus Match' as const,
+      cardPreview: {
+        experienceName: data.experienceName || 'Untitled Experience',
+        timeAndLocation: data.locationAndTime || '',
+        oneSentenceSummary: data.oneLineHighlight || 'No summary available'
+      },
+      cardDetail: {
+        experienceName: data.experienceName || 'Untitled Experience',
+        timeAndLocation: data.locationAndTime || '',
+        backgroundContext: data.scenarioIntroduction || '',
+        myRoleAndTasks: data.myRole || '',
+        taskDetails: data.eventProcess || '',
+        reflectionAndResults: data.reflection || '',
+        highlightSentence: data.oneLineHighlight || '',
+        editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence']
+      },
+      completionLevel: (completionPercentage >= 70 ? 'complete' : completionPercentage >= 30 ? 'partial' : 'incomplete') as CompletionLevel,
+      source: {
+        type: 'user_input' as const
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Add the card to the first direction (AI DIRECTION 1)
+    setDirections(prev => prev.map(dir =>
+      dir.id === 'direction-1'
+        ? { ...dir, cards: [...dir.cards, newCard] }
+        : dir
+    ));
+
+    alert(`Experience card saved successfully! Completion: ${completionPercentage}%`);
+    setIsDetailModalOpen(false);
+    setCurrentCardData(undefined);
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    // Remove from saved cards
+    setSavedCards(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(cardId);
+      return newMap;
+    });
+
+    // Remove from directions
+    setDirections(prev => prev.map(dir => ({
+      ...dir,
+      cards: dir.cards.filter(card => card.id !== cardId)
+    })));
   };
 
   const handleFileUpload = (file: File) => {
@@ -199,6 +287,7 @@ export default function ExperiencePage() {
               onToggle={toggleDirection}
               onCardClick={handleCardClick}
               onCreateNewCard={handleCreateNewCard}
+              onDeleteCard={handleDeleteCard}
               isFirstDirection={index === 0}
             />
           ))}
@@ -256,6 +345,14 @@ export default function ExperiencePage() {
             Next
           </button>
         </div>
+
+        {/* Experience Card Detail Modal */}
+        <ExperienceCardDetail
+          isOpen={isDetailModalOpen}
+          onClose={handleDetailModalClose}
+          onSave={handleDetailModalSave}
+          initialData={currentCardData}
+        />
       </div>
     </div>
   );

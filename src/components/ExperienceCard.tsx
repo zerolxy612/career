@@ -8,6 +8,7 @@ interface ExperienceCardProps {
   description?: string;
   completionPercentage?: number;
   onClick?: () => void;
+  onDelete?: () => void;
   className?: string;
 }
 
@@ -18,6 +19,7 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
   description,
   completionPercentage,
   onClick,
+  onDelete,
   className = ''
 }) => {
   // Handle create new card type
@@ -75,13 +77,13 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
   const cardType = card?.source?.type === 'ai_generated' ? 'ai-suggested' : type;
 
   return (
-    <div 
+    <div
       className={`experience-card ${cardType} ${className}`}
       style={{
         border: '1px solid #e5e7eb',
         borderRadius: '8px',
         padding: '1rem',
-        backgroundColor: '#fafafa',
+        backgroundColor: '#f0f5ff',
         cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.2s ease',
         position: 'relative'
@@ -89,43 +91,88 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
       onClick={onClick}
       onMouseOver={(e) => {
         if (onClick) {
-          e.currentTarget.style.backgroundColor = '#f5f5f5';
+          e.currentTarget.style.backgroundColor = '#e6f2ff';
           e.currentTarget.style.borderColor = '#d1d5db';
         }
       }}
       onMouseOut={(e) => {
-        e.currentTarget.style.backgroundColor = '#fafafa';
+        e.currentTarget.style.backgroundColor = '#f0f5ff';
         e.currentTarget.style.borderColor = '#e5e7eb';
       }}
     >
-      {/* Completion Badge */}
+      {/* Completion Progress Bar */}
       <div style={{
-        backgroundColor: getCompletionColor(completion),
-        color: 'white',
-        fontSize: '0.7rem',
-        padding: '0.2rem 0.5rem',
-        borderRadius: '4px',
-        display: 'inline-block',
-        marginBottom: '0.5rem',
-        fontWeight: '500'
+        position: 'absolute',
+        top: '0.75rem',
+        left: '0.75rem',
+        backgroundColor: '#e5e7eb',
+        borderRadius: '12px',
+        height: '20px',
+        width: '60px',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}>
-        {completion}%
-      </div>
-
-      {/* Card Type Badge (for AI suggested cards) */}
-      {cardType === 'ai-suggested' && (
         <div style={{
           position: 'absolute',
-          top: '0.5rem',
-          right: '0.5rem',
-          backgroundColor: '#ff9800',
-          color: 'white',
-          fontSize: '0.6rem',
-          padding: '0.2rem 0.4rem',
-          borderRadius: '3px',
-          fontWeight: '500'
+          left: 0,
+          top: 0,
+          height: '100%',
+          width: `${completion}%`,
+          backgroundColor: getCompletionColor(completion),
+          borderRadius: '12px',
+          transition: 'width 0.3s ease'
+        }} />
+        <span style={{
+          position: 'relative',
+          fontSize: '0.7rem',
+          fontWeight: '600',
+          color: completion > 50 ? 'white' : '#374151',
+          zIndex: 1
         }}>
-          AI
+          {completion}%
+        </span>
+      </div>
+
+      {/* Delete Button */}
+      {onDelete && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '0.75rem',
+            right: '0.75rem',
+            width: '20px',
+            height: '20px',
+            backgroundColor: '#4285f4',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = '#1976d2';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = '#4285f4';
+          }}
+        >
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2"
+          >
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
+          </svg>
         </div>
       )}
 
@@ -134,7 +181,7 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
         fontSize: '1rem',
         fontWeight: 'bold',
         color: '#4285f4',
-        margin: '0 0 0.5rem 0',
+        margin: '2rem 0 0.5rem 0',
         lineHeight: '1.2'
       }}>
         {cardTitle}
@@ -180,12 +227,12 @@ function getCompletionPercentage(completionLevel: string): number {
 
 // Helper function to get completion color based on percentage
 function getCompletionColor(percentage: number): string {
-  if (percentage >= 80) {
-    return '#4caf50'; // Green
-  } else if (percentage >= 50) {
-    return '#ff9800'; // Orange
+  if (percentage >= 70) {
+    return '#10b981'; // Green (70%+)
+  } else if (percentage >= 30) {
+    return '#f59e0b'; // Yellow (30-70%)
   } else {
-    return '#f44336'; // Red
+    return '#ef4444'; // Red (0-30%)
   }
 }
 
