@@ -137,6 +137,23 @@ export default function Home() {
       // Store selected industry and navigate to experience page
       localStorage.setItem('selectedIndustry', JSON.stringify(selectedIndustry));
       localStorage.setItem('userGoal', goalText);
+
+      // Store uploaded files information (we can't store File objects, but we can store metadata)
+      const filesMetadata = uploadedFiles.map(f => ({
+        name: f.name,
+        type: f.type,
+        size: f.file.size
+      }));
+      localStorage.setItem('uploadedFilesMetadata', JSON.stringify(filesMetadata));
+
+      // Store the actual File objects in sessionStorage for the experience page to use
+      // Note: This is a workaround since File objects can't be serialized to localStorage
+      if (uploadedFiles.length > 0) {
+        // We'll need to handle file transfer differently
+        console.log('📁 [NAVIGATION] Files uploaded, but cannot transfer File objects via localStorage');
+        console.log('📁 [NAVIGATION] Files metadata stored:', filesMetadata);
+      }
+
       router.push('/experience');
     }
   };

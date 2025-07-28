@@ -138,6 +138,29 @@ export default function ExperiencePage() {
 
     const category = categoryMap[aiCard.卡片分组] || 'Focus Match';
 
+    // Calculate completion level based on actual content
+    const calculateCompletionLevel = (): CompletionLevel => {
+      const fields = [
+        aiCard.小卡展示.经历名称,
+        aiCard.小卡展示.时间与地点,
+        aiCard.小卡展示.一句话概述,
+        aiCard.详情卡展示.经历名称,
+        aiCard.详情卡展示.时间与地点,
+        aiCard.详情卡展示.背景与情境说明,
+        aiCard.详情卡展示.我的角色与任务,
+        aiCard.详情卡展示.任务细节描述,
+        aiCard.详情卡展示.反思与结果总结,
+        aiCard.详情卡展示.高光总结句
+      ];
+
+      const filledFields = fields.filter(field => field && field.trim().length > 0);
+      const fillRatio = filledFields.length / fields.length;
+
+      if (fillRatio === 0) return 'incomplete';
+      if (fillRatio < 1) return 'partial';
+      return 'complete';
+    };
+
     return {
       id: cardId,
       category: category,
@@ -156,7 +179,7 @@ export default function ExperiencePage() {
         highlightSentence: aiCard.详情卡展示.高光总结句,
         editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence']
       },
-      completionLevel: 'complete' as const,
+      completionLevel: calculateCompletionLevel(),
       source: {
         type: aiCard.详情卡展示.生成来源.类型 === 'uploaded_resume' ? 'uploaded_resume' : 'ai_generated'
       },

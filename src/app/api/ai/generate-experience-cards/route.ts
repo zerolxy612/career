@@ -1,8 +1,142 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWithGemini } from '@/lib/ai/gemini';
-import { EXPERIENCE_EXTRACTION_PROMPT, EXPERIENCE_CARD_GENERATION_PROMPT } from '@/lib/ai/prompts';
+import { EXPERIENCE_EXTRACTION_PROMPT } from '@/lib/ai/prompts';
 import { consoleLog } from '@/lib/logger';
 import { parseFiles, formatParsedContentForAI } from '@/lib/fileParser';
+
+// Function to generate empty experience cards for user input
+function generateEmptyExperienceCards() {
+  return {
+    "经验卡片推荐": [
+      {
+        "卡片分组": "Focus Match",
+        "小卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "一句话概述": ""
+        },
+        "详情卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "背景与情境说明": "",
+          "我的角色与任务": "",
+          "任务细节描述": "",
+          "反思与结果总结": "",
+          "高光总结句": "",
+          "生成来源": {
+            "类型": "user_input",
+            "置信度": "user_provided"
+          }
+        }
+      },
+      {
+        "卡片分组": "Focus Match",
+        "小卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "一句话概述": ""
+        },
+        "详情卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "背景与情境说明": "",
+          "我的角色与任务": "",
+          "任务细节描述": "",
+          "反思与结果总结": "",
+          "高光总结句": "",
+          "生成来源": {
+            "类型": "user_input",
+            "置信度": "user_provided"
+          }
+        }
+      },
+      {
+        "卡片分组": "Growth Potential",
+        "小卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "一句话概述": ""
+        },
+        "详情卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "背景与情境说明": "",
+          "我的角色与任务": "",
+          "任务细节描述": "",
+          "反思与结果总结": "",
+          "高光总结句": "",
+          "生成来源": {
+            "类型": "user_input",
+            "置信度": "user_provided"
+          }
+        }
+      },
+      {
+        "卡片分组": "Growth Potential",
+        "小卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "一句话概述": ""
+        },
+        "详情卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "背景与情境说明": "",
+          "我的角色与任务": "",
+          "任务细节描述": "",
+          "反思与结果总结": "",
+          "高光总结句": "",
+          "生成来源": {
+            "类型": "user_input",
+            "置信度": "user_provided"
+          }
+        }
+      },
+      {
+        "卡片分组": "Foundation Skills",
+        "小卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "一句话概述": ""
+        },
+        "详情卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "背景与情境说明": "",
+          "我的角色与任务": "",
+          "任务细节描述": "",
+          "反思与结果总结": "",
+          "高光总结句": "",
+          "生成来源": {
+            "类型": "user_input",
+            "置信度": "user_provided"
+          }
+        }
+      },
+      {
+        "卡片分组": "Foundation Skills",
+        "小卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "一句话概述": ""
+        },
+        "详情卡展示": {
+          "经历名称": "",
+          "时间与地点": "",
+          "背景与情境说明": "",
+          "我的角色与任务": "",
+          "任务细节描述": "",
+          "反思与结果总结": "",
+          "高光总结句": "",
+          "生成来源": {
+            "类型": "user_input",
+            "置信度": "user_provided"
+          }
+        }
+      }
+    ]
+  };
+}
 
 export async function POST(request: NextRequest) {
   console.log('🔥 [API] /api/ai/generate-experience-cards - Request received');
@@ -67,21 +201,25 @@ export async function POST(request: NextRequest) {
 
       console.groupEnd();
     } else {
-      console.log('📁 [API] No files uploaded, will generate AI suggestions only');
+      console.log('📁 [API] No files uploaded, will return empty cards for user to fill');
     }
 
-    // Choose appropriate prompt based on whether files were uploaded
-    const prompt = hasFiles 
-      ? EXPERIENCE_EXTRACTION_PROMPT
-          .replace('{userGoal}', userGoal)
-          .replace('{selectedIndustry}', selectedIndustry)
-          .replace('{fileContent}', fileContent)
-      : EXPERIENCE_CARD_GENERATION_PROMPT
-          .replace('{userGoal}', userGoal)
-          .replace('{selectedIndustry}', selectedIndustry);
+    // If no files uploaded, return empty cards instead of AI suggestions
+    if (!hasFiles) {
+      console.log('🎯 [API] Returning empty experience cards for user input');
+      const emptyCards = generateEmptyExperienceCards();
+
+      return NextResponse.json(emptyCards);
+    }
+
+    // Only use AI when files are uploaded to extract real experiences
+    const prompt = EXPERIENCE_EXTRACTION_PROMPT
+        .replace('{userGoal}', userGoal)
+        .replace('{selectedIndustry}', selectedIndustry)
+        .replace('{fileContent}', fileContent);
 
     // Log the complete AI request to console
-    consoleLog.aiRequest('生成经验卡片API', prompt, hasFiles ? '经验提取' : '经验卡片生成', {
+    consoleLog.aiRequest('生成经验卡片API', prompt, '经验提取', {
       用户目标: userGoal,
       选择行业: selectedIndustry,
       有文件内容: fileContent.length > 0,
@@ -114,72 +252,10 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('❌ [API] AI generation failed:', error);
 
-      // Fallback to mock data for testing
-      console.log('🔄 [API] Using fallback mock data due to AI failure');
-      parsedResponse = {
-        "经验卡片推荐": [
-          {
-            "卡片分组": "Focus Match",
-            "小卡展示": {
-              "经历名称": "Product Research & Competitor Analysis Lead",
-              "时间与地点": "Beijing | July 2024 - September 2024",
-              "一句话概述": "Led comprehensive market research and competitor analysis for new product development"
-            },
-            "详情卡展示": {
-              "经历名称": "Product Research & Competitor Analysis Lead",
-              "时间与地点": "Beijing | July 2024 - September 2024",
-              "背景与情境说明": "During a fast-paced summer innovation sprint, I led a user research stream to support the design of a new creator-facing feature.",
-              "我的角色与任务": "I organized and conducted interviews, synthesized competitor analysis, and communicated findings to the core product team.",
-              "任务细节描述": "• Conducted 15+ user interviews with target demographics\n• Analyzed 8 competitor products and documented feature gaps\n• Created comprehensive research reports with actionable insights\n• Presented findings to stakeholders and influenced product roadmap",
-              "反思与结果总结": "This experience strengthened my research methodology skills and taught me how to translate user insights into product requirements. The research directly influenced 3 major product decisions.",
-              "高光总结句": "This experience helped me strengthen my stakeholder communication skills.",
-              "生成来源": {
-                "类型": hasFiles ? "uploaded_resume" : "ai_generated"
-              }
-            }
-          },
-          {
-            "卡片分组": "Growth Potential",
-            "小卡展示": {
-              "经历名称": "Cross-functional Team Collaboration",
-              "时间与地点": "Various Projects | 2023 - 2024",
-              "一句话概述": "Collaborated with design, engineering, and marketing teams on multiple product initiatives"
-            },
-            "详情卡展示": {
-              "经历名称": "Cross-functional Team Collaboration",
-              "时间与地点": "Various Projects | 2023 - 2024",
-              "背景与情境说明": "Worked across multiple product development cycles requiring close coordination with diverse teams.",
-              "我的角色与任务": "Served as a bridge between technical and non-technical teams, facilitating communication and ensuring project alignment.",
-              "任务细节描述": "• Participated in daily standups and sprint planning sessions\n• Translated business requirements into technical specifications\n• Coordinated deliverables across teams with different timelines\n• Resolved conflicts and maintained project momentum",
-              "反思与结果总结": "Developed strong project management and communication skills. Learned to navigate different team cultures and working styles effectively.",
-              "高光总结句": "This experience enhanced my ability to work effectively in cross-functional environments.",
-              "生成来源": {
-                "类型": "ai_generated"
-              }
-            }
-          },
-          {
-            "卡片分组": "Foundation Skills",
-            "小卡展示": {
-              "经历名称": "Data Analysis & Reporting",
-              "时间与地点": "Academic/Professional Projects | 2023",
-              "一句话概述": "Applied analytical skills to extract insights from complex datasets"
-            },
-            "详情卡展示": {
-              "经历名称": "Data Analysis & Reporting",
-              "时间与地点": "Academic/Professional Projects | 2023",
-              "背景与情境说明": "Various projects requiring data collection, analysis, and presentation of findings to stakeholders.",
-              "我的角色与任务": "Responsible for data collection methodology, analysis execution, and creating compelling visualizations.",
-              "任务细节描述": "• Designed and implemented data collection strategies\n• Used statistical tools to analyze trends and patterns\n• Created clear visualizations and dashboards\n• Presented findings to both technical and non-technical audiences",
-              "反思与结果总结": "Built strong foundation in data literacy and learned to communicate complex information clearly. These skills are essential for evidence-based decision making.",
-              "高光总结句": "This experience built my foundation in data-driven decision making.",
-              "生成来源": {
-                "类型": "ai_generated"
-              }
-            }
-          }
-        ]
-      };
+      // Fallback to empty cards when AI fails
+      console.log('🔄 [API] Using empty cards fallback due to AI failure');
+      const emptyCards = generateEmptyExperienceCards();
+      return NextResponse.json(emptyCards);
     }
 
     console.log('🎉 [API] Successfully prepared response');

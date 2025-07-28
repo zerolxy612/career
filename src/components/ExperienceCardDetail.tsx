@@ -25,13 +25,13 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
 }) => {
   const [formData, setFormData] = useState<ExperienceDetailData>(
     initialData || {
-      experienceName: 'Product Research & Competitor Analysis Lead',
-      locationAndTime: 'Beijing | July 2024 - September 2024',
-      scenarioIntroduction: 'During a fast-paced summer innovation sprint, I led a user research stream to support the design of a new creator-facing feature.',
-      myRole: 'I organized and conducted interviews, synthesized competitor analysis, and communicated findings to the core product team.',
-      eventProcess: '• Conducted 5 user interviews focusing on content creator pain points\n• Analyzed 10 competitor products to build a comparison matrix\n• Delivered insights to the product team, which influenced 3 feature priorities',
-      reflection: '• Gained hands-on experience in qualitative research\n• Developed a more systematic understanding of user needs\n• Strengthened my ability to bridge user insight and product recommendations',
-      oneLineHighlight: 'Our insights led to the launch of a feature now used by over 60% of active users'
+      experienceName: '',
+      locationAndTime: '',
+      scenarioIntroduction: '',
+      myRole: '',
+      eventProcess: '',
+      reflection: '',
+      oneLineHighlight: ''
     }
   );
 
