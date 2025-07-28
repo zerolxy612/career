@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ExperienceCardDetailProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ export interface ExperienceDetailData {
   eventProcess: string;
   reflection: string;
   oneLineHighlight: string;
+  _cardId?: string; // Internal field to track which card is being edited
 }
 
 export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
@@ -37,10 +38,31 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
 
   const [editingField, setEditingField] = useState<string | null>(null);
 
+  // Update formData when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      console.log('🔄 [ExperienceCardDetail] Updating formData with initialData:', initialData);
+      setFormData(initialData);
+    } else {
+      console.log('🆕 [ExperienceCardDetail] Creating new card - resetting formData');
+      setFormData({
+        experienceName: '',
+        locationAndTime: '',
+        scenarioIntroduction: '',
+        myRole: '',
+        eventProcess: '',
+        reflection: '',
+        oneLineHighlight: ''
+      });
+    }
+  }, [initialData]);
+
   // Calculate completion percentage
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
-    const fields = Object.values(data);
-    const filledFields = fields.filter(field => field.trim().length > 0);
+    // Exclude _cardId from calculation
+    const { _cardId, ...fieldsToCheck } = data;
+    const fields = Object.values(fieldsToCheck);
+    const filledFields = fields.filter(field => field && field.trim().length > 0);
     return Math.round((filledFields.length / fields.length) * 100);
   };
 
@@ -71,6 +93,8 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
   };
 
   const handleSave = () => {
+    console.log('💾 [ExperienceCardDetail] Saving formData:', formData);
+    console.log('💾 [ExperienceCardDetail] Card ID in formData:', formData._cardId);
     onSave(formData);
     onClose();
   };
