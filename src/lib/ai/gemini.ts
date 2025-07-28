@@ -65,14 +65,8 @@ export async function generateWithGemini(prompt: string): Promise<string> {
       ]
     };
 
-    console.log('🤖 [GEMINI] Request body prepared:', {
-      contentsCount: requestBody.contents.length,
-      partsCount: requestBody.contents[0].parts.length,
-      textLength: requestBody.contents[0].parts[0].text.length
-    });
-
     const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-    console.log('🤖 [GEMINI] Making request to:', apiUrl);
+    console.log('🤖 [GEMINI] Making request to Gemini API');
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -86,12 +80,7 @@ export async function generateWithGemini(prompt: string): Promise<string> {
 
     clearTimeout(timeoutId);
 
-    console.log('🤖 [GEMINI] Response received:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok,
-      headers: Object.fromEntries(response.headers.entries())
-    });
+    console.log('🤖 [GEMINI] Response received:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -104,27 +93,15 @@ export async function generateWithGemini(prompt: string): Promise<string> {
     }
 
     const data = await response.json();
-    console.log('🤖 [GEMINI] Response data structure:', {
-      hasCandidates: !!data.candidates,
-      candidatesCount: data.candidates?.length || 0,
-      hasContent: !!data.candidates?.[0]?.content,
-      hasParts: !!data.candidates?.[0]?.content?.parts,
-      partsCount: data.candidates?.[0]?.content?.parts?.length || 0
-    });
-
-    // Extract text from response
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    console.log('🤖 [GEMINI] Extracted text:', {
-      textLength: text.length,
-      textPreview: text.substring(0, 500) + (text.length > 500 ? '...' : '')
-    });
+
+    console.log('✅ [GEMINI] Response processed successfully, text length:', text.length);
 
     if (!text) {
-      console.error('❌ [GEMINI] No text content in response:', data);
+      console.error('❌ [GEMINI] No text content in response');
       throw new Error('No text content in Gemini response');
     }
 
-    console.log('✅ [GEMINI] Successfully generated content');
     return text;
 
     // Fallback mock response if needed

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWithGemini } from '@/lib/ai/gemini';
 import { EXPERIENCE_EXTRACTION_PROMPT, EXPERIENCE_CARD_GENERATION_PROMPT } from '@/lib/ai/prompts';
+import { consoleLog } from '@/lib/logger';
+import { parseFiles, formatParsedContentForAI } from '@/lib/fileParser';
 
 export async function POST(request: NextRequest) {
   console.log('🔥 [API] /api/ai/generate-experience-cards - Request received');
@@ -11,11 +13,8 @@ export async function POST(request: NextRequest) {
     const selectedIndustry = formData.get('selectedIndustry') as string;
     const files = formData.getAll('files') as File[];
 
-    console.log('📝 [API] Request data:', {
-      userGoal: userGoal?.substring(0, 100) + '...',
-      selectedIndustry,
-      filesCount: files.length
-    });
+    // Log the complete user input to console
+    consoleLog.userInput('生成经验卡片API', `目标: ${userGoal}, 行业: ${selectedIndustry}`, files);
 
     if (!userGoal || !selectedIndustry) {
       console.error('❌ [API] Missing required parameters');
@@ -30,39 +29,43 @@ export async function POST(request: NextRequest) {
 
     // Process uploaded files if any
     if (files && files.length > 0) {
-      console.log('📁 [API] Processing uploaded files...');
+      console.group('📁 文件解析 - 生成经验卡片API');
+      console.log(`开始解析 ${files.length} 个文件`);
       hasFiles = true;
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        console.log(`📁 [API] Processing file ${i + 1}/${files.length}:`, {
-          name: file.name,
-          type: file.type,
-          size: file.size
+      try {
+        const parsedFiles = await parseFiles(files);
+        fileContent = formatParsedContentForAI(parsedFiles);
+
+        console.log('✅ 所有文件解析完成');
+        console.log('📊 解析结果摘要:', {
+          文件总数: parsedFiles.length,
+          解析成功: parsedFiles.filter(f => f.parseSuccess).length,
+          解析失败: parsedFiles.filter(f => !f.parseSuccess).length,
+          总文本长度: parsedFiles.reduce((sum, f) => sum + f.extractedTextLength, 0)
         });
 
-        try {
-          const text = await file.text();
-          console.log(`📁 [API] File ${i + 1} content extracted:`, {
-            fileName: file.name,
-            fileType: file.type,
-            contentLength: text.length,
-            contentPreview: text.substring(0, 500) + (text.length > 500 ? '...' : ''),
-            hasContent: text.trim().length > 0
-          });
-
-          if (text.trim().length === 0) {
-            console.warn(`⚠️ [API] File ${file.name} appears to be empty or unreadable`);
+        // 显示每个文件的解析结果
+        parsedFiles.forEach((parsed, index) => {
+          console.group(`📄 文件 ${index + 1}: ${parsed.fileName}`);
+          console.log('解析状态:', parsed.parseSuccess ? '✅ 成功' : '❌ 失败');
+          console.log('提取文本长度:', parsed.extractedTextLength);
+          if (parsed.parseError) {
+            console.log('错误信息:', parsed.parseError);
           }
+          if (parsed.extractedText && parsed.extractedText.length > 0) {
+            console.log('📄 提取的文本内容:');
+            console.log(parsed.extractedText.substring(0, 500) + (parsed.extractedText.length > 500 ? '\n... (内容已截断，完整内容已发送给AI)' : ''));
+          }
+          console.groupEnd();
+        });
 
-          fileContent += `\n=== File: ${file.name} (${file.type}) ===\n${text}\n=== End of ${file.name} ===\n`;
-        } catch (fileError) {
-          console.error(`❌ [API] Failed to read file ${file.name}:`, fileError);
-          fileContent += `\nFile name: ${file.name}\nContent: [File reading failed: ${fileError}]\n`;
-        }
+      } catch (parseError) {
+        console.error('❌ 文件解析过程失败:', parseError);
+        fileContent = `File parsing failed: ${parseError}`;
       }
 
-      console.log('📁 [API] All files processed. Total content length:', fileContent.length);
+      console.groupEnd();
     } else {
       console.log('📁 [API] No files uploaded, will generate AI suggestions only');
     }
@@ -77,27 +80,23 @@ export async function POST(request: NextRequest) {
           .replace('{userGoal}', userGoal)
           .replace('{selectedIndustry}', selectedIndustry);
 
-    console.log('🤖 [API] Prepared prompt:', {
-      promptType: hasFiles ? 'EXPERIENCE_EXTRACTION' : 'EXPERIENCE_CARD_GENERATION',
-      promptLength: prompt.length,
-      hasFileContent: fileContent.length > 0
+    // Log the complete AI request to console
+    consoleLog.aiRequest('生成经验卡片API', prompt, hasFiles ? '经验提取' : '经验卡片生成', {
+      用户目标: userGoal,
+      选择行业: selectedIndustry,
+      有文件内容: fileContent.length > 0,
+      文件内容长度: fileContent.length
     });
 
     // Generate response with Gemini
     let parsedResponse;
     try {
-      console.log('🤖 [API] Calling Gemini AI...');
       const aiStartTime = Date.now();
-
       const response = await generateWithGemini(prompt);
-
       const aiEndTime = Date.now();
-      console.log(`🤖 [API] Gemini AI response received in ${aiEndTime - aiStartTime}ms`);
-      console.log('🤖 [API] Raw AI response length:', response.length);
-      console.log('🤖 [API] Raw AI response preview:', response.substring(0, 500) + (response.length > 500 ? '...' : ''));
+      const responseTime = aiEndTime - aiStartTime;
 
       // Try to parse JSON response
-      console.log('🔄 [API] Parsing AI response...');
       const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
       const jsonString = jsonMatch ? jsonMatch[1] : response;
 
@@ -108,13 +107,12 @@ export async function POST(request: NextRequest) {
       });
 
       parsedResponse = JSON.parse(jsonString);
-      console.log('✅ [API] AI response parsed successfully');
-      console.log('✅ [API] Parsed response structure:', {
-        hasExperienceCards: !!parsedResponse.经验卡片推荐,
-        cardsCount: parsedResponse.经验卡片推荐?.length || 0
-      });
+
+      // Log the complete AI response to console
+      consoleLog.aiResponse('生成经验卡片API', response, parsedResponse, responseTime);
+
     } catch (error) {
-      console.error('❌ [API] AI generation failed, using mock data:', error);
+      console.error('❌ [API] AI generation failed:', error);
 
       // Fallback to mock data for testing
       console.log('🔄 [API] Using fallback mock data due to AI failure');

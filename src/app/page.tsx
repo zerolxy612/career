@@ -6,6 +6,7 @@ import { File, Upload, X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import IndustryCardList from '@/components/cards/IndustryCardList';
 import { IndustryRecommendation } from '@/types/api';
+import { consoleLog } from '@/lib/logger';
 
 interface UploadedFile {
   name: string;
@@ -54,9 +55,8 @@ export default function Home() {
       return;
     }
 
-    console.log('🚀 [CONFIRM] Starting goal analysis process');
-    console.log('🚀 [CONFIRM] User input:', goalText);
-    console.log('🚀 [CONFIRM] Number of uploaded files:', uploadedFiles.length);
+    // Log user input to console
+    consoleLog.userInput('首页确认', goalText, uploadedFiles.map(f => f.file));
 
     setIsLoading(true);
     setUploadError('');
@@ -65,14 +65,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append('userInput', goalText);
 
-      console.log('📤 [CONFIRM] Preparing FormData with user input');
-
-      uploadedFiles.forEach((file, index) => {
-        console.log(`📤 [CONFIRM] Adding file ${index + 1} to FormData:`, {
-          name: file.name,
-          type: file.type,
-          size: file.file.size
-        });
+      uploadedFiles.forEach((file) => {
         formData.append('files', file.file);
       });
 
