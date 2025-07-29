@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CardDirection, ExperienceCard } from '@/types/card';
+import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
 import {
   DndContext,
   DragEndEvent,
@@ -11,6 +12,9 @@ import {
   useDraggable,
   useDroppable,
   closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from '@dnd-kit/core';
 import './combination.css';
 
@@ -27,6 +31,17 @@ export default function CombinationPage() {
   const [directions, setDirections] = useState<CardDirection[]>([]);
   const [selectedCards, setSelectedCards] = useState<ExperienceCard[]>([]);
   const [draggedCard, setDraggedCard] = useState<ExperienceCard | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
+
+  // 配置拖拽传感器，设置距离阈值来区分点击和拖拽
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 需要移动8px才开始拖拽
+      },
+    })
+  );
   const [combinationOptions] = useState<CombinationOption[]>([
     { id: 'custom', name: 'Custom', description: '', isSelected: true },
     { id: 'option1', name: 'Option 1', description: '', isSelected: false },
@@ -50,11 +65,19 @@ export default function CombinationPage() {
   };
 
   const handleCardSelect = (card: ExperienceCard) => {
+    console.log('🔄 handleCardSelect called (should only be for remove button):', {
+      cardId: card.id,
+      cardName: card.cardPreview.experienceName,
+      timestamp: new Date().toISOString()
+    });
+
     setSelectedCards(prev => {
       const isAlreadySelected = prev.some(c => c.id === card.id);
       if (isAlreadySelected) {
+        console.log('➖ Removing card from selection');
         return prev.filter(c => c.id !== card.id);
       } else {
+        console.log('➕ Adding card to selection (unexpected from handleCardSelect)');
         return [...prev, card];
       }
     });
@@ -67,22 +90,73 @@ export default function CombinationPage() {
 
   const handleDragStart = (event: DragStartEvent) => {
     const card = allCards.find(c => c.id === event.active.id);
+    console.log('🚀 Drag started:', {
+      cardId: event.active.id,
+      cardName: card?.cardPreview.experienceName,
+      timestamp: new Date().toISOString()
+    });
     setDraggedCard(card || null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
+    console.log('🎯 Drag ended:', {
+      activeId: active.id,
+      overId: over?.id,
+      isOverCustomArea: over?.id === 'custom-area',
+      timestamp: new Date().toISOString()
+    });
+
     if (over?.id === 'custom-area') {
       const card = allCards.find(c => c.id === active.id);
       if (card && !selectedCards.some(c => c.id === card.id)) {
+        console.log('✅ Adding card to selection:', card.cardPreview.experienceName);
         const newSelectedCards = [...selectedCards, card];
         setSelectedCards(newSelectedCards);
         localStorage.setItem('selectedCards', JSON.stringify(newSelectedCards));
+      } else {
+        console.log('❌ Card already selected or not found');
       }
     }
 
     setDraggedCard(null);
+  };
+
+  const handleCardClick = (card: ExperienceCard, eventType: string = 'unknown') => {
+    console.log('🔍 handleCardClick called:', {
+      cardId: card.id,
+      cardName: card.cardPreview.experienceName,
+      eventType,
+      timestamp: new Date().toISOString()
+    });
+
+    // Convert card detail to ExperienceDetailData format
+    const cardData: ExperienceDetailData = {
+      experienceName: card.cardDetail.experienceName,
+      locationAndTime: card.cardDetail.timeAndLocation,
+      scenarioIntroduction: card.cardDetail.backgroundContext,
+      myRole: card.cardDetail.myRoleAndTasks,
+      eventProcess: card.cardDetail.taskDetails,
+      reflection: card.cardDetail.reflectionAndResults,
+      oneLineHighlight: card.cardDetail.highlightSentence
+    };
+    setCurrentCardData(cardData);
+    setIsDetailModalOpen(true);
+
+    console.log('✅ Modal should be opening now');
+  };
+
+  const handleDetailModalClose = () => {
+    setIsDetailModalOpen(false);
+    setCurrentCardData(undefined);
+  };
+
+  const handleDetailModalSave = (data: ExperienceDetailData) => {
+    console.log('Saving experience data:', data);
+    // Here you could update the card data if needed
+    setIsDetailModalOpen(false);
+    setCurrentCardData(undefined);
   };
 
   // Draggable Card Component
@@ -102,6 +176,28 @@ export default function CombinationPage() {
       transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
     } : undefined;
 
+    const handleClick = (e: React.MouseEvent) => {
+      console.log('🖱️ Card clicked:', {
+        cardId: card.id,
+        cardName: card.cardPreview.experienceName,
+        isSelected,
+        isDragging
+      });
+
+      // 如果是已选中的卡片，不处理点击
+      if (isSelected) {
+        console.log('❌ Card is selected, ignoring click');
+        return;
+      }
+
+      // 阻止事件冒泡
+      e.preventDefault();
+      e.stopPropagation();
+
+      console.log('✅ Opening card detail modal');
+      handleCardClick(card, 'direct-click');
+    };
+
     return (
       <div
         ref={setNodeRef}
@@ -109,6 +205,7 @@ export default function CombinationPage() {
         {...listeners}
         {...attributes}
         className={`pool-card ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging-source' : ''}`}
+        onClick={handleClick}
       >
         <div className="card-category-indicator">
           <div className={`category-icon ${card.category.toLowerCase().replace(' ', '-')}`}>
@@ -162,6 +259,7 @@ export default function CombinationPage() {
 
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -281,6 +379,14 @@ export default function CombinationPage() {
           </div>
         ) : null}
       </DragOverlay>
+
+      {/* Experience Card Detail Modal */}
+      <ExperienceCardDetail
+        isOpen={isDetailModalOpen}
+        onClose={handleDetailModalClose}
+        onSave={handleDetailModalSave}
+        initialData={currentCardData}
+      />
     </DndContext>
   );
 }
