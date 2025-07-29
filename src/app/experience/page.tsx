@@ -65,11 +65,44 @@ export default function ExperiencePage() {
     return Math.round((filledFields.length / fields.length) * 100);
   };
 
+  // 🔧 FIX: Determine correct source type based on AI response and context
+  const determineSourceType = (aiSourceType: string | undefined, fromHomepage: boolean): 'uploaded_resume' | 'user_input' | 'ai_generated' => {
+    console.log('🔍 [SOURCE] Determining source type:', { aiSourceType, fromHomepage });
+
+    // If from homepage with files, it should be uploaded_resume
+    if (fromHomepage) {
+      return 'uploaded_resume';
+    }
+
+    // Check AI response source type
+    if (aiSourceType) {
+      switch (aiSourceType.toLowerCase()) {
+        case 'uploaded_resume':
+        case 'resume':
+        case 'file':
+        case 'document':
+          return 'uploaded_resume';
+        case 'user_input':
+        case 'manual':
+          return 'user_input';
+        case 'ai_generated':
+        case 'ai':
+        case 'generated':
+        default:
+          return 'ai_generated';
+      }
+    }
+
+    // Default fallback
+    return 'ai_generated';
+  };
+
   useEffect(() => {
     // Load selected industry from localStorage
     const storedIndustry = localStorage.getItem('selectedIndustry');
     const storedGoal = localStorage.getItem('userGoal');
-    const storedFiles = localStorage.getItem('uploadedFiles');
+    const hasHomepageFiles = localStorage.getItem('hasHomepageFiles') === 'true';
+    const homepageGeneratedCards = localStorage.getItem('homepageGeneratedCards');
 
     if (storedIndustry) {
       setSelectedIndustry(JSON.parse(storedIndustry));
@@ -79,27 +112,32 @@ export default function ExperiencePage() {
       setUserGoal(storedGoal);
     }
 
-    // Load uploaded files if any
-    if (storedFiles) {
-      try {
-        const filesData = JSON.parse(storedFiles);
-        // Note: We can't restore File objects from localStorage,
-        // but we can check if files were uploaded
-        console.log('Files were uploaded in previous step:', filesData.length);
-      } catch (error) {
-        console.error('Error parsing stored files:', error);
-      }
-    }
-
     // If no selected industry, redirect back to goal setting
     if (!storedIndustry) {
       router.push('/');
       return;
     }
 
-    // Generate AI cards when component loads
-    if (storedIndustry && storedGoal) {
-      generateAICards(storedGoal, JSON.parse(storedIndustry), storedFiles ? JSON.parse(storedFiles) : []);
+    // 🔧 FIX: Handle homepage generated cards or generate new ones
+    if (hasHomepageFiles && homepageGeneratedCards && storedIndustry && storedGoal) {
+      console.log('📁 [EXPERIENCE] Loading cards generated from homepage files...');
+      try {
+        const cardsData = JSON.parse(homepageGeneratedCards);
+        processGeneratedCards(cardsData, true); // true indicates from homepage
+
+        // Clear the stored data after use
+        localStorage.removeItem('homepageGeneratedCards');
+        localStorage.removeItem('hasHomepageFiles');
+      } catch (error) {
+        console.error('❌ [EXPERIENCE] Error loading homepage generated cards:', error);
+        // Fallback to generating new cards
+        generateAICards(storedGoal, JSON.parse(storedIndustry), []);
+      }
+    } else {
+      // Generate AI cards when component loads (no files from homepage)
+      if (storedIndustry && storedGoal) {
+        generateAICards(storedGoal, JSON.parse(storedIndustry), []);
+      }
     }
   }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -125,8 +163,73 @@ export default function ExperiencePage() {
     };
   }
 
+  // 🔧 FIX: Process generated cards from homepage or experience page
+  const processGeneratedCards = (data: any, fromHomepage: boolean = false) => {
+    console.log(`🎯 [PROCESS] Processing generated cards (from ${fromHomepage ? 'homepage' : 'experience page'}):`, data);
+
+    if (!data.经验卡片推荐 || !Array.isArray(data.经验卡片推荐)) {
+      console.error('❌ [PROCESS] Invalid cards data structure');
+      return;
+    }
+
+    // Convert AI cards to our format and organize by category
+    const aiCards = data.经验卡片推荐.map((card: any) => convertAICardToExperienceCard(card, fromHomepage));
+
+    // Group cards by category
+    const cardsByCategory: { [key: string]: ExperienceCard[] } = {
+      'Focus Match': [],
+      'Growth Potential': [],
+      'Foundation Skills': []
+    };
+
+    aiCards.forEach((card: ExperienceCard) => {
+      const category = card.category;
+      if (cardsByCategory[category]) {
+        cardsByCategory[category].push(card);
+      }
+    });
+
+    // Update directions with AI generated cards
+    const updatedDirections = [
+      {
+        id: 'direction-1',
+        title: 'Focus Match',
+        subtitle: 'Experiences highly aligned with your career goal',
+        description: 'These experiences directly support your target industry and role',
+        isExpanded: true,
+        cards: cardsByCategory['Focus Match'],
+        extractedCount: cardsByCategory['Focus Match'].filter(c => c.source.type === 'uploaded_resume').length,
+        aiRecommendedCount: cardsByCategory['Focus Match'].filter(c => c.source.type === 'ai_generated').length
+      },
+      {
+        id: 'direction-2',
+        title: 'Growth Potential',
+        subtitle: 'Experiences that show your development potential',
+        description: 'These experiences demonstrate your ability to learn and grow',
+        isExpanded: false,
+        cards: cardsByCategory['Growth Potential'],
+        extractedCount: cardsByCategory['Growth Potential'].filter(c => c.source.type === 'uploaded_resume').length,
+        aiRecommendedCount: cardsByCategory['Growth Potential'].filter(c => c.source.type === 'ai_generated').length
+      },
+      {
+        id: 'direction-3',
+        title: 'Foundation Skills',
+        subtitle: 'Core skills and foundational experiences',
+        description: 'These experiences build the foundation for your career development',
+        isExpanded: false,
+        cards: cardsByCategory['Foundation Skills'],
+        extractedCount: cardsByCategory['Foundation Skills'].filter(c => c.source.type === 'uploaded_resume').length,
+        aiRecommendedCount: cardsByCategory['Foundation Skills'].filter(c => c.source.type === 'ai_generated').length
+      }
+    ];
+
+    setDirections(updatedDirections);
+    setIsGeneratingCards(false);
+    console.log('🎉 [PROCESS] Directions updated with processed cards');
+  };
+
   // Convert AI response to ExperienceCard format
-  const convertAICardToExperienceCard = (aiCard: AICardResponse): ExperienceCard => {
+  const convertAICardToExperienceCard = (aiCard: AICardResponse, fromHomepage: boolean = false): ExperienceCard => {
     const cardId = `ai-card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
     // Map AI card category to our category system
@@ -181,7 +284,8 @@ export default function ExperiencePage() {
       },
       completionLevel: calculateCompletionLevel(),
       source: {
-        type: aiCard.详情卡展示.生成来源.类型 === 'uploaded_resume' ? 'uploaded_resume' : 'ai_generated'
+        // 🔧 FIX: Improved source type detection logic
+        type: determineSourceType(aiCard.详情卡展示.生成来源?.类型, fromHomepage)
       },
       createdAt: new Date(),
       updatedAt: new Date()
@@ -218,59 +322,8 @@ export default function ExperiencePage() {
       const data = await response.json();
       console.log('✅ AI cards generated successfully:', data);
 
-      // Convert AI cards to our format and organize by category
-      const aiCards = data.经验卡片推荐.map(convertAICardToExperienceCard);
-
-      // Group cards by category
-      const cardsByCategory: { [key: string]: ReturnType<typeof convertAICardToExperienceCard>[] } = {
-        'Focus Match': [],
-        'Growth Potential': [],
-        'Foundation Skills': []
-      };
-
-      aiCards.forEach((card: ReturnType<typeof convertAICardToExperienceCard>) => {
-        const category = card.category;
-        if (cardsByCategory[category]) {
-          cardsByCategory[category].push(card);
-        }
-      });
-
-      // Update directions with AI generated cards
-      const updatedDirections = [
-        {
-          id: 'direction-1',
-          title: 'Focus Match',
-          subtitle: 'Experiences highly aligned with your career goal',
-          description: 'These experiences directly support your target industry and role',
-          isExpanded: true,
-          cards: cardsByCategory['Focus Match'],
-          extractedCount: cardsByCategory['Focus Match'].filter(c => c.source.type === 'uploaded_resume').length,
-          aiRecommendedCount: cardsByCategory['Focus Match'].filter(c => c.source.type === 'ai_generated').length
-        },
-        {
-          id: 'direction-2',
-          title: 'Growth Potential',
-          subtitle: 'Experiences that show your development potential',
-          description: 'These experiences demonstrate your ability to learn and grow',
-          isExpanded: false,
-          cards: cardsByCategory['Growth Potential'],
-          extractedCount: cardsByCategory['Growth Potential'].filter(c => c.source.type === 'uploaded_resume').length,
-          aiRecommendedCount: cardsByCategory['Growth Potential'].filter(c => c.source.type === 'ai_generated').length
-        },
-        {
-          id: 'direction-3',
-          title: 'Foundation Skills',
-          subtitle: 'Core skills and foundational experiences',
-          description: 'These experiences build the foundation for your career development',
-          isExpanded: false,
-          cards: cardsByCategory['Foundation Skills'],
-          extractedCount: cardsByCategory['Foundation Skills'].filter(c => c.source.type === 'uploaded_resume').length,
-          aiRecommendedCount: cardsByCategory['Foundation Skills'].filter(c => c.source.type === 'ai_generated').length
-        }
-      ];
-
-      setDirections(updatedDirections);
-      console.log('🎉 Directions updated with AI cards');
+      // Use the new processGeneratedCards function
+      processGeneratedCards(data, false); // false indicates not from homepage
 
     } catch (error) {
       console.error('❌ Error generating AI cards:', error);
@@ -491,8 +544,8 @@ export default function ExperiencePage() {
       const data = await response.json();
       console.log('✅ New AI cards generated from uploaded file:', data);
 
-      // Convert AI cards to our format
-      const newAICards = data.经验卡片推荐.map(convertAICardToExperienceCard);
+      // 🔧 FIX: Convert AI cards with proper source type (uploaded_resume for file uploads)
+      const newAICards = data.经验卡片推荐.map((card: any) => convertAICardToExperienceCard(card, true)); // true indicates from file upload
 
       // Add new cards to existing directions
       setDirections(prev => prev.map(dir => {
@@ -541,9 +594,8 @@ export default function ExperiencePage() {
     localStorage.setItem('experienceDirections', JSON.stringify(directions));
     localStorage.setItem('hasInteracted', JSON.stringify(hasInteracted));
 
-    // TODO: Navigate to next step (card combination/analysis page)
-    console.log('Proceeding to next step...');
-    alert('Next step will be implemented in the next phase. Your progress has been saved.');
+    // Navigate to card combination page
+    router.push('/combination');
   };
 
   return (

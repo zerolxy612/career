@@ -4,139 +4,7 @@ import { EXPERIENCE_EXTRACTION_PROMPT } from '@/lib/ai/prompts';
 import { consoleLog } from '@/lib/logger';
 import { parseFiles, formatParsedContentForAI } from '@/lib/fileParser';
 
-// Function to generate empty experience cards for user input
-function generateEmptyExperienceCards() {
-  return {
-    "经验卡片推荐": [
-      {
-        "卡片分组": "Focus Match",
-        "小卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "一句话概述": ""
-        },
-        "详情卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "背景与情境说明": "",
-          "我的角色与任务": "",
-          "任务细节描述": "",
-          "反思与结果总结": "",
-          "高光总结句": "",
-          "生成来源": {
-            "类型": "user_input",
-            "置信度": "user_provided"
-          }
-        }
-      },
-      {
-        "卡片分组": "Focus Match",
-        "小卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "一句话概述": ""
-        },
-        "详情卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "背景与情境说明": "",
-          "我的角色与任务": "",
-          "任务细节描述": "",
-          "反思与结果总结": "",
-          "高光总结句": "",
-          "生成来源": {
-            "类型": "user_input",
-            "置信度": "user_provided"
-          }
-        }
-      },
-      {
-        "卡片分组": "Growth Potential",
-        "小卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "一句话概述": ""
-        },
-        "详情卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "背景与情境说明": "",
-          "我的角色与任务": "",
-          "任务细节描述": "",
-          "反思与结果总结": "",
-          "高光总结句": "",
-          "生成来源": {
-            "类型": "user_input",
-            "置信度": "user_provided"
-          }
-        }
-      },
-      {
-        "卡片分组": "Growth Potential",
-        "小卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "一句话概述": ""
-        },
-        "详情卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "背景与情境说明": "",
-          "我的角色与任务": "",
-          "任务细节描述": "",
-          "反思与结果总结": "",
-          "高光总结句": "",
-          "生成来源": {
-            "类型": "user_input",
-            "置信度": "user_provided"
-          }
-        }
-      },
-      {
-        "卡片分组": "Foundation Skills",
-        "小卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "一句话概述": ""
-        },
-        "详情卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "背景与情境说明": "",
-          "我的角色与任务": "",
-          "任务细节描述": "",
-          "反思与结果总结": "",
-          "高光总结句": "",
-          "生成来源": {
-            "类型": "user_input",
-            "置信度": "user_provided"
-          }
-        }
-      },
-      {
-        "卡片分组": "Foundation Skills",
-        "小卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "一句话概述": ""
-        },
-        "详情卡展示": {
-          "经历名称": "",
-          "时间与地点": "",
-          "背景与情境说明": "",
-          "我的角色与任务": "",
-          "任务细节描述": "",
-          "反思与结果总结": "",
-          "高光总结句": "",
-          "生成来源": {
-            "类型": "user_input",
-            "置信度": "user_provided"
-          }
-        }
-      }
-    ]
-  };
-}
+
 
 export async function POST(request: NextRequest) {
   console.log('🔥 [API] /api/ai/generate-experience-cards - Request received');
@@ -204,12 +72,10 @@ export async function POST(request: NextRequest) {
       console.log('📁 [API] No files uploaded, will return empty cards for user to fill');
     }
 
-    // If no files uploaded, return empty cards instead of AI suggestions
+    // If no files uploaded, generate AI suggestions based on goal and industry only
     if (!hasFiles) {
-      console.log('🎯 [API] Returning empty experience cards for user input');
-      const emptyCards = generateEmptyExperienceCards();
-
-      return NextResponse.json(emptyCards);
+      console.log('🎯 [API] No files uploaded, generating AI suggestions based on goal and industry only');
+      // Continue with AI generation using just the goal and industry
     }
 
     // Only use AI when files are uploaded to extract real experiences
@@ -251,11 +117,7 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
       console.error('❌ [API] AI generation failed:', error);
-
-      // Fallback to empty cards when AI fails
-      console.log('🔄 [API] Using empty cards fallback due to AI failure');
-      const emptyCards = generateEmptyExperienceCards();
-      return NextResponse.json(emptyCards);
+      throw error; // Re-throw the error instead of using fallback data
     }
 
     console.log('🎉 [API] Successfully prepared response');
@@ -270,33 +132,9 @@ export async function POST(request: NextRequest) {
     console.error('❌ [API] Critical error in generate-experience-cards API:', error);
     console.error('❌ [API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
 
-    // Return fallback response for critical errors
-    const fallbackResponse = {
-      "经验卡片推荐": [
-        {
-          "卡片分组": "Focus Match",
-          "小卡展示": {
-            "经历名称": "Sample Experience",
-            "时间与地点": "Location | Time Period",
-            "一句话概述": "A sample experience to demonstrate the system functionality"
-          },
-          "详情卡展示": {
-            "经历名称": "Sample Experience",
-            "时间与地点": "Location | Time Period",
-            "背景与情境说明": "This is a sample experience card generated due to system error.",
-            "我的角色与任务": "Sample role and responsibilities.",
-            "任务细节描述": "Sample task details and methodologies used.",
-            "反思与结果总结": "Sample reflection and outcomes achieved.",
-            "高光总结句": "This is a sample highlight sentence.",
-            "生成来源": {
-              "类型": "ai_generated"
-            }
-          }
-        }
-      ]
-    };
-
-    console.log('🔄 [API] Returning fallback response due to critical error');
-    return NextResponse.json(fallbackResponse);
+    return NextResponse.json(
+      { error: 'Failed to generate experience cards. Please check your input and try again.' },
+      { status: 500 }
+    );
   }
 }

@@ -49,6 +49,8 @@ export default function Home() {
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryRecommendation | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+
+
   const handleConfirm = async () => {
     if (!goalText.trim()) {
       setUploadError('Please enter your target industry or field');
@@ -70,6 +72,8 @@ export default function Home() {
       });
 
       console.log('📤 [CONFIRM] Sending request to /api/ai/analyze-goal');
+      console.log('📤 [CONFIRM] Goal text:', goalText);
+      console.log('📤 [CONFIRM] Files count:', uploadedFiles.length);
       const startTime = Date.now();
 
       const response = await fetch('/api/ai/analyze-goal', {
@@ -94,22 +98,33 @@ export default function Home() {
       const data = await response.json();
       console.log('📥 [CONFIRM] Raw API Response data:', data);
 
+      // 🔧 FIX: Better error handling for API response
+      if (!data || typeof data !== 'object') {
+        console.error('❌ [CONFIRM] Invalid API response format:', data);
+        throw new Error('Invalid response format from API');
+      }
+
       // Transform API response to match our TypeScript types
       const rawFields = data.RecommendedFields || data.recommendedFields || [];
       console.log('🔄 [CONFIRM] Raw fields from API:', rawFields);
       console.log('🔄 [CONFIRM] Number of raw fields:', rawFields.length);
+
+      if (!Array.isArray(rawFields) || rawFields.length === 0) {
+        console.error('❌ [CONFIRM] No valid fields in API response');
+        throw new Error('No industry recommendations received from API');
+      }
 
       const transformedFields = rawFields.map((field: RawFieldData, index: number) => {
         console.log(`🔄 [CONFIRM] Transforming field ${index + 1}:`, field);
 
         const transformed = {
           cardPreview: {
-            fieldName: field.CardPreview?.FieldName || field.cardPreview?.fieldName || '',
-            fieldSummary: field.CardPreview?.FieldSummary || field.cardPreview?.fieldSummary || '',
+            fieldName: field.CardPreview?.FieldName || field.cardPreview?.fieldName || `Field ${index + 1}`,
+            fieldSummary: field.CardPreview?.FieldSummary || field.cardPreview?.fieldSummary || 'No summary available',
             fieldTags: field.CardPreview?.FieldTags || field.cardPreview?.fieldTags || []
           },
           cardDetail: {
-            fieldOverview: field.CardDetail?.FieldOverview || field.cardDetail?.fieldOverview || '',
+            fieldOverview: field.CardDetail?.FieldOverview || field.cardDetail?.fieldOverview || 'No overview available',
             suitableForYouIf: field.CardDetail?.SuitableForYouIf || field.cardDetail?.suitableForYouIf || [],
             typicalTasksAndChallenges: field.CardDetail?.TypicalTasksAndChallenges || field.cardDetail?.typicalTasksAndChallenges || [],
             fieldTags: field.CardDetail?.FieldTags || field.cardDetail?.fieldTags || []
@@ -122,17 +137,25 @@ export default function Home() {
 
       console.log('✅ [CONFIRM] All fields transformed successfully');
       console.log('✅ [CONFIRM] Final transformed fields:', transformedFields);
+      console.log('🎯 [CONFIRM] Setting industries state with', transformedFields.length, 'fields');
+
       setIndustries(transformedFields);
+
+      // 🔧 FIX: Verify state was set correctly
+      setTimeout(() => {
+        console.log('🔍 [CONFIRM] Industries state after update:', transformedFields.length);
+      }, 100);
+
     } catch (error) {
       console.error('❌ [CONFIRM] Error analyzing goal:', error);
-      setUploadError('Analysis failed, please try again');
+      setUploadError(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
       console.log('🏁 [CONFIRM] Goal analysis process completed');
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (selectedIndustry) {
       // Store selected industry and navigate to experience page
       localStorage.setItem('selectedIndustry', JSON.stringify(selectedIndustry));
@@ -146,12 +169,43 @@ export default function Home() {
       }));
       localStorage.setItem('uploadedFilesMetadata', JSON.stringify(filesMetadata));
 
-      // Store the actual File objects in sessionStorage for the experience page to use
-      // Note: This is a workaround since File objects can't be serialized to localStorage
+      // 🔧 FIX: Process uploaded files immediately and store results
       if (uploadedFiles.length > 0) {
-        // We'll need to handle file transfer differently
-        console.log('📁 [NAVIGATION] Files uploaded, but cannot transfer File objects via localStorage');
-        console.log('📁 [NAVIGATION] Files metadata stored:', filesMetadata);
+        console.log('📁 [NAVIGATION] Processing uploaded files before navigation...');
+
+        try {
+          // Process files and generate experience cards immediately
+          const formData = new FormData();
+          formData.append('userGoal', goalText);
+          formData.append('selectedIndustry', selectedIndustry.cardPreview.fieldName);
+
+          uploadedFiles.forEach((file) => {
+            formData.append('files', file.file);
+          });
+
+          console.log('📤 [NAVIGATION] Sending files to generate experience cards...');
+          const response = await fetch('/api/ai/generate-experience-cards', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('✅ [NAVIGATION] Experience cards generated from homepage files:', data);
+
+            // Store the generated cards for the experience page
+            localStorage.setItem('homepageGeneratedCards', JSON.stringify(data));
+            localStorage.setItem('hasHomepageFiles', 'true');
+          } else {
+            console.error('❌ [NAVIGATION] Failed to process homepage files');
+            localStorage.setItem('hasHomepageFiles', 'false');
+          }
+        } catch (error) {
+          console.error('❌ [NAVIGATION] Error processing homepage files:', error);
+          localStorage.setItem('hasHomepageFiles', 'false');
+        }
+      } else {
+        localStorage.setItem('hasHomepageFiles', 'false');
       }
 
       router.push('/experience');
