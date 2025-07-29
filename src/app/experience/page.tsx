@@ -8,39 +8,38 @@ import { CardCategory } from '@/components/CardCategory';
 import { FloatingUploadButton } from '@/components/FileUpload';
 import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
 
-// Mock data for demonstration
-const mockDirections: CardDirection[] = [
-  {
-    id: 'direction-1',
-    title: 'AI DIRECTION 1',
-    subtitle: 'Strongly aligned with your current goal, Let\'s fill the Cards together',
-    description: 'Strongly aligned with your current goal',
-    isExpanded: true,
-    cards: [],
-    extractedCount: 0,
-    aiRecommendedCount: 0
-  },
-  {
-    id: 'direction-2',
-    title: 'AI DIRECTION 2',
-    subtitle: 'Potential to support your development path, Let\'s fill the Cards together',
-    description: 'Potential to support your development path',
-    isExpanded: false,
-    cards: [],
-    extractedCount: 3,
-    aiRecommendedCount: 2
-  },
-  {
-    id: 'direction-3',
-    title: 'AI DIRECTION 3',
-    subtitle: 'Potential to support your development path, Let\'s fill the Cards together',
-    description: 'Potential to support your development path',
-    isExpanded: false,
-    cards: [],
-    extractedCount: 3,
-    aiRecommendedCount: 2
-  }
-];
+// Define types for AI response structure
+interface AIGenerationSource {
+  类型: string;
+  置信度?: string;
+}
+
+interface AICardPreview {
+  经历名称: string;
+  时间与地点: string;
+  一句话概述: string;
+}
+
+interface AICardDetail {
+  经历名称: string;
+  时间与地点: string;
+  背景与情境说明: string;
+  我的角色与任务: string;
+  任务细节描述: string;
+  反思与结果总结: string;
+  高光总结句: string;
+  生成来源: AIGenerationSource;
+}
+
+interface AICardResponse {
+  卡片分组: string;
+  小卡展示: AICardPreview;
+  详情卡展示: AICardDetail;
+}
+
+interface AIGeneratedCardsResponse {
+  经验卡片推荐: AICardResponse[];
+}
 
 export default function ExperiencePage() {
   const router = useRouter();
@@ -141,30 +140,8 @@ export default function ExperiencePage() {
     }
   }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Define types for AI response
-  interface AICardResponse {
-    卡片分组: string;
-    小卡展示: {
-      经历名称: string;
-      时间与地点: string;
-      一句话概述: string;
-    };
-    详情卡展示: {
-      经历名称: string;
-      时间与地点: string;
-      背景与情境说明: string;
-      我的角色与任务: string;
-      任务细节描述: string;
-      反思与结果总结: string;
-      高光总结句: string;
-      生成来源: {
-        类型: string;
-      };
-    };
-  }
-
   // 🔧 FIX: Process generated cards from homepage or experience page
-  const processGeneratedCards = (data: any, fromHomepage: boolean = false) => {
+  const processGeneratedCards = (data: AIGeneratedCardsResponse, fromHomepage: boolean = false) => {
     console.log(`🎯 [PROCESS] Processing generated cards (from ${fromHomepage ? 'homepage' : 'experience page'}):`, data);
 
     if (!data.经验卡片推荐 || !Array.isArray(data.经验卡片推荐)) {
@@ -173,7 +150,7 @@ export default function ExperiencePage() {
     }
 
     // Convert AI cards to our format and organize by category
-    const aiCards = data.经验卡片推荐.map((card: any) => convertAICardToExperienceCard(card, fromHomepage));
+    const aiCards = data.经验卡片推荐.map((card: AICardResponse) => convertAICardToExperienceCard(card, fromHomepage));
 
     // Group cards by category
     const cardsByCategory: { [key: string]: ExperienceCard[] } = {
@@ -545,7 +522,7 @@ export default function ExperiencePage() {
       console.log('✅ New AI cards generated from uploaded file:', data);
 
       // 🔧 FIX: Convert AI cards with proper source type (uploaded_resume for file uploads)
-      const newAICards = data.经验卡片推荐.map((card: any) => convertAICardToExperienceCard(card, true)); // true indicates from file upload
+      const newAICards = data.经验卡片推荐.map((card: AICardResponse) => convertAICardToExperienceCard(card, true)); // true indicates from file upload
 
       // Add new cards to existing directions
       setDirections(prev => prev.map(dir => {

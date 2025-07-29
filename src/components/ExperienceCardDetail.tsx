@@ -60,6 +60,7 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
   // Calculate completion percentage
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
     // Exclude _cardId from calculation
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _cardId, ...fieldsToCheck } = data;
     const fields = Object.values(fieldsToCheck);
     const filledFields = fields.filter(field => field && field.trim().length > 0);

@@ -2,7 +2,7 @@ interface LogEntry {
   timestamp: string;
   type: 'USER_INPUT' | 'AI_REQUEST' | 'AI_RESPONSE' | 'ERROR' | 'INFO';
   source: string;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 class Logger {
@@ -13,7 +13,7 @@ class Logger {
     return new Date().toISOString();
   }
 
-  private addLog(type: LogEntry['type'], source: string, data: any) {
+  private addLog(type: LogEntry['type'], source: string, data: Record<string, unknown>) {
     const entry: LogEntry = {
       timestamp: this.formatTimestamp(),
       type,
@@ -48,7 +48,7 @@ class Logger {
     userInput?: string;
     selectedIndustry?: string;
     files?: { name: string; size: number; type: string }[];
-    [key: string]: any;
+    [key: string]: unknown;
   }) {
     this.addLog('USER_INPUT', source, {
       ...data,
@@ -60,8 +60,8 @@ class Logger {
   logAIRequest(source: string, data: {
     prompt: string;
     promptType?: string;
-    requestBody?: any;
-    [key: string]: any;
+    requestBody?: Record<string, unknown>;
+    [key: string]: unknown;
   }) {
     this.addLog('AI_REQUEST', source, {
       ...data,
@@ -73,9 +73,9 @@ class Logger {
   // Log AI response (what we get from AI)
   logAIResponse(source: string, data: {
     rawResponse: string;
-    parsedResponse?: any;
+    parsedResponse?: Record<string, unknown>;
     responseTime?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   }) {
     this.addLog('AI_RESPONSE', source, {
       ...data,
@@ -85,16 +85,17 @@ class Logger {
   }
 
   // Log errors
-  logError(source: string, error: any) {
+  logError(source: string, error: Error | unknown) {
+    const errorObj = error instanceof Error ? error : new Error(String(error));
     this.addLog('ERROR', source, {
-      message: error.message || error,
-      stack: error.stack,
+      message: errorObj.message,
+      stack: errorObj.stack,
       error: error
     });
   }
 
   // Log general info
-  logInfo(source: string, message: string, data?: any) {
+  logInfo(source: string, message: string, data?: Record<string, unknown>) {
     this.addLog('INFO', source, { message, ...data });
   }
 
@@ -163,7 +164,7 @@ export const consoleLog = {
   },
 
   // Log AI request with full prompt
-  aiRequest: (source: string, prompt: string, type: string, additionalInfo: any = {}) => {
+  aiRequest: (source: string, prompt: string, type: string, additionalInfo: Record<string, unknown> = {}) => {
     console.group('🤖➡️ AI请求 - ' + source);
     console.log('📋 请求类型:', type);
     console.log('📄 完整Prompt:');
@@ -178,7 +179,7 @@ export const consoleLog = {
   },
 
   // Log AI response with full data
-  aiResponse: (source: string, rawResponse: string, parsedData: any, responseTime: number) => {
+  aiResponse: (source: string, rawResponse: string, parsedData: Record<string, unknown>, responseTime: number) => {
     console.group('🤖⬅️ AI响应 - ' + source);
     console.log('⏱️ 响应时间:', responseTime + 'ms');
     console.log('📄 原始响应:');

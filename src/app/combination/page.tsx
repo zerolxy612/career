@@ -284,7 +284,7 @@ export default function CombinationPage() {
               <div className="custom-content">
                 <div className="custom-instructions">
                   <h3>Drag cards from the pool below to customize your combination.</h3>
-                  <p>Ready to craft a set that screams you? Let's do it!</p>
+                  <p>Ready to craft a set that screams you? Let&apos;s do it!</p>
                   <p className="tip">
                     <span className="tip-icon">👉</span>
                     Not sure where to start? Check out the auto-generated options for inspiration!
