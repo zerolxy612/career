@@ -231,27 +231,7 @@ const FirstDirectionContent: React.FC<{
               />
             ))}
 
-          {/* Mock cards if no AI cards exist */}
-          {direction.cards.filter(card => card.source.type === 'ai_generated').length === 0 && (
-            <>
-              <ExperienceCard
-                type="ai-suggested"
-                title="Project Research Lead"
-                description="Led interviews & competitor analysis to inform product decisions."
-                completionPercentage={20}
-                onClick={() => onCardClick?.('mock-1')}
-                onDelete={() => console.log('Delete mock card 1')}
-              />
-              <ExperienceCard
-                type="ai-suggested"
-                title="Project Research Lead"
-                description="Led interviews & competitor analysis to inform product decisions."
-                completionPercentage={20}
-                onClick={() => onCardClick?.('mock-2')}
-                onDelete={() => console.log('Delete mock card 2')}
-              />
-            </>
-          )}
+
 
           {/* Add New Card Button */}
           <ExperienceCard

@@ -87,8 +87,9 @@ export default function CombinationPage() {
           <div className="custom-area">
             <div className="custom-header">
               <span className="custom-label">CUSTOM</span>
-              <div className="info-icon">ⓘ</div>
             </div>
+
+            <div className="info-icon">ⓘ</div>
 
             <div className="custom-content">
               <div className="custom-instructions">
@@ -99,11 +100,11 @@ export default function CombinationPage() {
                   Not sure where to start? Check out the auto-generated options for inspiration!
                 </p>
               </div>
-
-              <button className="clear-button" onClick={handleClear}>
-                Clear
-              </button>
             </div>
+
+            <button className="clear-button" onClick={handleClear}>
+              Clear
+            </button>
 
             {/* Selected Cards Display Area */}
             <div className="selected-cards-area">
