@@ -306,6 +306,43 @@
   border-color: #4285f4;
   background: linear-gradient(135deg, #fce4ec 0%, #e8f5e8 100%);
   box-shadow: 0 2px 8px rgba(66, 133, 244, 0.2);
+  opacity: 0.5;
+  filter: grayscale(100%);
+  cursor: not-allowed;
+}
+
+/* 拖拽源卡片变为透明，避免重复显示 */
+.pool-card.dragging-source {
+  opacity: 0.3;
+  transform: scale(0.95);
+}
+
+.custom-area.drag-over {
+  border-color: #4285f4;
+  background: rgba(66, 133, 244, 0.05);
+  box-shadow: 0 0 20px rgba(66, 133, 244, 0.2);
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* Drag overlay styles - 拖拽时显示的浮动卡片 */
+.pool-card.drag-overlay {
+  opacity: 0.95;
+  transform: rotate(5deg) scale(1.05);
+  z-index: 1000;
+  box-shadow: 0 12px 32px rgba(66, 133, 244, 0.4);
+  border: 2px solid #4285f4;
+  background: #ffffff;
+}
+
+/* Smooth transitions for all cards */
+.pool-card {
+  transition: all 0.2s ease;
+}
+
+.pool-card:not(.selected):not(.dragging):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(66, 133, 244, 0.15);
 }
 
 .card-category-indicator {
@@ -349,8 +386,8 @@
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.2;
-  background: #4285f4;
-  color: white;
+  background: #b9cfff;
+  color: #1f2937;
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
   text-align: left;
@@ -362,8 +399,8 @@
 .card-time {
   margin: 0;
   font-size: 0.7rem;
-  background: #4285f4;
-  color: white;
+  background: #b9cfff;
+  color: #1f2937;
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
   text-align: left;
@@ -376,8 +413,8 @@
   margin: 0;
   font-size: 0.7rem;
   line-height: 1.2;
-  background: #4285f4;
-  color: white;
+  background: #b9cfff;
+  color: #1f2937;
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
   text-align: left;
@@ -389,33 +426,7 @@
   white-space: nowrap;
 }
 
-.card-source-indicator {
-  flex-shrink: 0;
-}
 
-.source-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: white;
-  font-size: 0.9rem;
-}
-
-.source-icon.ai_generated {
-  background: #9c27b0;
-}
-
-.source-icon.uploaded_resume {
-  background: #ff9800;
-}
-
-.source-icon.user_input {
-  background: #607d8b;
-}
 
 /* Navigation Buttons */
 .navigation-buttons {

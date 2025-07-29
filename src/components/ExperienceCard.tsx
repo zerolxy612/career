@@ -74,7 +74,9 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
   const cardTitle = card?.cardPreview?.experienceName || title || 'Untitled Experience';
   const cardDescription = card?.cardPreview?.oneSentenceSummary || description || 'No description available';
   const completion = completionPercentage ?? (card ? getCompletionPercentage(card.completionLevel) : 0);
-  const cardType = card?.source?.type === 'ai_generated' ? 'ai-suggested' : type;
+
+  // 🔧 FIX: Correct card type determination logic
+  const cardType = card?.source?.type === 'user_input' ? 'real' : 'ai-suggested';
 
   return (
     <div

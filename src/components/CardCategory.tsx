@@ -144,8 +144,8 @@ const FirstDirectionContent: React.FC<{
           (Your own experience cards)
         </p>
         
-        {/* Real experience cards */}
-        {direction.cards.filter(card => card.source.type !== 'ai_generated').length > 0 ? (
+        {/* Real experience cards - only user_input type */}
+        {direction.cards.filter(card => card.source.type === 'user_input').length > 0 ? (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -153,7 +153,7 @@ const FirstDirectionContent: React.FC<{
             marginBottom: '1rem'
           }}>
             {direction.cards
-              .filter(card => card.source.type !== 'ai_generated')
+              .filter(card => card.source.type === 'user_input')
               .map(card => (
                 <ExperienceCard
                   key={card.id}
@@ -218,9 +218,9 @@ const FirstDirectionContent: React.FC<{
           gap: '1rem',
           alignItems: 'stretch'
         }}>
-          {/* AI suggested cards */}
+          {/* AI suggested cards - includes both ai_generated and uploaded_resume */}
           {direction.cards
-            .filter(card => card.source.type === 'ai_generated')
+            .filter(card => card.source.type === 'ai_generated' || card.source.type === 'uploaded_resume')
             .slice(0, 2) // Show only first 2 AI cards
             .map(card => (
               <ExperienceCard
