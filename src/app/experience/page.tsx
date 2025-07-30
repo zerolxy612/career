@@ -57,6 +57,13 @@ export default function ExperiencePage() {
   void savedCards;
   void uploadedFiles;
 
+  // Helper function to update directions and save to localStorage
+  const updateDirections = (newDirections: CardDirection[]) => {
+    setDirections(newDirections);
+    localStorage.setItem('experienceDirections', JSON.stringify(newDirections));
+    console.log('💾 [DIRECTIONS] Updated and saved to localStorage');
+  };
+
   // Calculate completion percentage for experience data
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
     const fields = Object.values(data);
@@ -200,7 +207,7 @@ export default function ExperiencePage() {
       }
     ];
 
-    setDirections(updatedDirections);
+    updateDirections(updatedDirections);
     setIsGeneratingCards(false);
     console.log('🎉 [PROCESS] Directions updated with processed cards');
   };
@@ -311,11 +318,12 @@ export default function ExperiencePage() {
   };
 
   const toggleDirection = (directionId: string) => {
-    setDirections(prev => prev.map(dir =>
+    const updatedDirections = directions.map(dir =>
       dir.id === directionId
         ? { ...dir, isExpanded: !dir.isExpanded }
         : dir
-    ));
+    );
+    updateDirections(updatedDirections);
   };
 
   const handleCardClick = (cardId: string) => {
@@ -416,12 +424,13 @@ export default function ExperiencePage() {
       };
 
       // Update the card in directions
-      setDirections(prev => prev.map(dir => ({
+      const updatedDirections = directions.map(dir => ({
         ...dir,
         cards: dir.cards.map(card =>
           card.id === existingCardId ? updatedCard : card
         )
-      })));
+      }));
+      updateDirections(updatedDirections);
 
       // Update saved cards
       setSavedCards(prev => new Map(prev.set(existingCardId, data)));
@@ -458,11 +467,12 @@ export default function ExperiencePage() {
       };
 
       // Add the card to the first direction (Focus Match)
-      setDirections(prev => prev.map(dir =>
+      const updatedDirections = directions.map(dir =>
         dir.id === 'direction-1'
           ? { ...dir, cards: [...dir.cards, newCard] }
           : dir
-      ));
+      );
+      updateDirections(updatedDirections);
 
       // Save the card data
       setSavedCards(prev => new Map(prev.set(cardId, data)));
@@ -483,10 +493,11 @@ export default function ExperiencePage() {
     });
 
     // Remove from directions
-    setDirections(prev => prev.map(dir => ({
+    const updatedDirections = directions.map(dir => ({
       ...dir,
       cards: dir.cards.filter(card => card.id !== cardId)
-    })));
+    }));
+    updateDirections(updatedDirections);
   };
 
   const handleFileUpload = async (file: File) => {
@@ -525,7 +536,7 @@ export default function ExperiencePage() {
       const newAICards = data.经验卡片推荐.map((card: AICardResponse) => convertAICardToExperienceCard(card, true)); // true indicates from file upload
 
       // Add new cards to existing directions
-      setDirections(prev => prev.map(dir => {
+      const updatedDirections = directions.map(dir => {
         const newCards = newAICards.filter((card: ExperienceCard) => {
           if (dir.id === 'direction-1' && card.category === 'Focus Match') return true;
           if (dir.id === 'direction-2' && card.category === 'Growth Potential') return true;
@@ -542,7 +553,8 @@ export default function ExperiencePage() {
           };
         }
         return dir;
-      }));
+      });
+      updateDirections(updatedDirections);
 
       alert(`File "${file.name}" processed successfully! Generated ${newAICards.length} new experience cards.`);
 
