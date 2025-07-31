@@ -69,13 +69,11 @@ export async function POST(request: NextRequest) {
 
       console.groupEnd();
     } else {
-      console.log('📁 [API] No files uploaded, will return empty cards for user to fill');
-    }
-
-    // If no files uploaded, generate AI suggestions based on goal and industry only
-    if (!hasFiles) {
-      console.log('🎯 [API] No files uploaded, generating AI suggestions based on goal and industry only');
-      // Continue with AI generation using just the goal and industry
+      console.log(`📁 [API] No files uploaded (hasFiles: ${hasFiles}), returning empty response`);
+      // 🔧 FIX: When no files are uploaded, return empty cards array instead of generating placeholder content
+      return NextResponse.json({
+        经验卡片推荐: []
+      });
     }
 
     // Only use AI when files are uploaded to extract real experiences

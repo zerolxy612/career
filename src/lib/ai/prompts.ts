@@ -172,3 +172,125 @@ export const EXPERIENCE_CARD_GENERATION_PROMPT = `
 4. 提供具体、可操作的经历建议
 5. 高光总结句使用英文
 `;
+
+export const COMBINATION_RECOMMENDATION_PROMPT = `
+根据用户目标、选择的行业和可用的经验卡片，为指定的推荐类型生成智能组合推荐。
+
+用户目标：{userGoal}
+选择行业：{selectedIndustry}
+可用卡片：{availableCards}
+推荐类型：{optionType}
+
+请分析用户的卡片池，为{optionType}生成最优的卡片组合推荐。
+
+推荐类型说明：
+- option1: NORMAL (Balanced Option) - 平衡稳健的组合方案
+- option2: AGGRESSIVE (Growth-Focused) - 激进成长导向的组合方案
+- option3: CONSERVATIVE (Safe Transition) - 保守安全的转型方案
+
+请严格按照以下JSON格式输出：
+
+\`\`\`json
+{
+  "推荐路径选项": {
+    "option名称": "NORMAL (Balanced Option)",
+    "匹配逻辑摘要": "This path ensures stability while opening up moderate growth potential.",
+    "Why this combination": {
+      "目标岗位": "Content Analyst",
+      "识别能力": [
+        "✅ Project Execution",
+        "✅ Data Sensitivity",
+        "✅ Content Experience"
+      ],
+      "组合解释": "Together, they form a balanced skill set supporting a lateral transition into data-enhanced creative roles."
+    },
+    "卡片组合": [
+      {
+        "卡片名称": "Project Management",
+        "角色定位": "Cross-team coordination & timeline control"
+      },
+      {
+        "卡片名称": "Data Analysis",
+        "角色定位": "Foundational thinking for analysis"
+      },
+      {
+        "卡片名称": "Content Creation",
+        "角色定位": "Strengthens storytelling and communication"
+      }
+    ],
+    "补充建议方向": [
+      "🍀 User Research",
+      "🍀 Intro to Python",
+      "🍀 Competitor Benchmarking"
+    ],
+    "风险与建议": {
+      "潜在挑战": [
+        "Limited exposure to technical tools (e.g., SQL, Tableau) may reduce competitiveness in data-heavy roles."
+      ],
+      "行动建议": [
+        "Enroll in quick-start courses on analytics basics.",
+        "Frame existing project outcomes using measurable, resume-friendly metrics."
+      ]
+    }
+  }
+}
+\`\`\`
+
+要求：
+1. 卡片组合必须从提供的可用卡片中选择，卡片名称要精确匹配
+2. 根据推荐类型调整组合策略和风险评估
+3. 识别能力要具体且与目标岗位相关
+4. 补充建议方向要实用且可操作
+5. 风险与建议要针对性强，提供具体的改进方案
+6. 所有文本内容要专业且有价值
+`;
+
+// 新的自动推荐提示词 - 专注于个人故事叙述
+export const AUTO_COMBINATION_RECOMMENDATION_PROMPT = `
+根据用户设定的职业目标和选择的行业方向，从可用的经验卡片中选择最合适的卡片组合来讲述一个连贯、有说服力的个人职业故事。
+
+用户目标：{userGoal}
+选择行业：{selectedIndustry}
+可用卡片：{availableCards}
+推荐类型：{optionType}
+
+请分析用户的经验卡片池，选择能够最好地支撑其职业目标的卡片组合，构建一个完整的个人故事叙述。
+
+推荐策略说明：
+- option1: BALANCED STORY (平衡叙述) - 选择能展现全面能力和稳健发展轨迹的卡片组合
+- option2: GROWTH STORY (成长叙述) - 选择能突出学习能力、挑战精神和快速发展的卡片组合
+- option3: EXPERTISE STORY (专业叙述) - 选择能深度展现专业技能和领域经验的卡片组合
+
+请严格按照以下JSON格式输出：
+
+\`\`\`json
+{
+  "推荐组合": {
+    "故事主题": "Your Professional Journey Theme",
+    "叙述逻辑": "How these experiences connect to tell a coherent story leading to your career goal",
+    "选择的卡片": [
+      {
+        "卡片名称": "Experience Card Name (must match exactly)",
+        "在故事中的角色": "How this experience contributes to your overall narrative"
+      }
+    ],
+    "故事亮点": [
+      "Key strength or achievement highlighted by this combination",
+      "Another compelling aspect of your journey"
+    ]
+  }
+}
+\`\`\`
+
+核心要求：
+1. 卡片名称必须与提供的可用卡片精确匹配
+2. 选择的卡片组合应该能够讲述一个连贯的职业发展故事
+3. 每张卡片在整体叙述中都应有明确的作用和价值
+4. 组合应该直接支撑用户的职业目标
+5. 根据不同的推荐类型调整故事的重点和风格
+6. 故事叙述应该具有说服力和吸引力
+7. 选择3-5张最相关的卡片，避免信息过载
+`;
+
+// 保留原有的详细分析提示词，供后续功能使用
+export const DETAILED_COMBINATION_ANALYSIS_PROMPT = COMBINATION_RECOMMENDATION_PROMPT;

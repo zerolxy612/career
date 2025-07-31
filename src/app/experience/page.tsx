@@ -156,8 +156,30 @@ export default function ExperiencePage() {
       return;
     }
 
+    // 🔧 FIX: Filter out invalid cards and validate data structure
+    const validCards = data.经验卡片推荐.filter((card: AICardResponse) => {
+      if (!card || typeof card !== 'object') {
+        console.warn('⚠️ [PROCESS] Skipping invalid card (not an object):', card);
+        return false;
+      }
+
+      if (!card.小卡展示 || !card.详情卡展示) {
+        console.warn('⚠️ [PROCESS] Skipping card with missing required fields:', card);
+        return false;
+      }
+
+      return true;
+    });
+
+    if (validCards.length === 0) {
+      console.log('ℹ️ [PROCESS] No valid cards found, skipping card generation');
+      return;
+    }
+
+    console.log(`✅ [PROCESS] Found ${validCards.length} valid cards out of ${data.经验卡片推荐.length} total`);
+
     // Convert AI cards to our format and organize by category
-    const aiCards = data.经验卡片推荐.map((card: AICardResponse) => convertAICardToExperienceCard(card, fromHomepage));
+    const aiCards = validCards.map((card: AICardResponse) => convertAICardToExperienceCard(card, fromHomepage));
 
     // Group cards by category
     const cardsByCategory: { [key: string]: ExperienceCard[] } = {
@@ -225,19 +247,32 @@ export default function ExperiencePage() {
 
     const category = categoryMap[aiCard.卡片分组] || 'Focus Match';
 
+    // 🔧 FIX: Safe field access with fallback values
+    const safeGet = (obj: unknown, path: string, fallback: string = '') => {
+      try {
+        if (obj && typeof obj === 'object' && obj !== null) {
+          const value = (obj as Record<string, unknown>)[path];
+          return value ? String(value) : fallback;
+        }
+        return fallback;
+      } catch {
+        return fallback;
+      }
+    };
+
     // Calculate completion level based on actual content
     const calculateCompletionLevel = (): CompletionLevel => {
       const fields = [
-        aiCard.小卡展示.经历名称,
-        aiCard.小卡展示.时间与地点,
-        aiCard.小卡展示.一句话概述,
-        aiCard.详情卡展示.经历名称,
-        aiCard.详情卡展示.时间与地点,
-        aiCard.详情卡展示.背景与情境说明,
-        aiCard.详情卡展示.我的角色与任务,
-        aiCard.详情卡展示.任务细节描述,
-        aiCard.详情卡展示.反思与结果总结,
-        aiCard.详情卡展示.高光总结句
+        safeGet(aiCard.小卡展示, '经历名称'),
+        safeGet(aiCard.小卡展示, '时间与地点'),
+        safeGet(aiCard.小卡展示, '一句话概述'),
+        safeGet(aiCard.详情卡展示, '经历名称'),
+        safeGet(aiCard.详情卡展示, '时间与地点'),
+        safeGet(aiCard.详情卡展示, '背景与情境说明'),
+        safeGet(aiCard.详情卡展示, '我的角色与任务'),
+        safeGet(aiCard.详情卡展示, '任务细节描述'),
+        safeGet(aiCard.详情卡展示, '反思与结果总结'),
+        safeGet(aiCard.详情卡展示, '高光总结句')
       ];
 
       const filledFields = fields.filter(field => field && field.trim().length > 0);
@@ -252,24 +287,24 @@ export default function ExperiencePage() {
       id: cardId,
       category: category,
       cardPreview: {
-        experienceName: aiCard.小卡展示.经历名称,
-        timeAndLocation: aiCard.小卡展示.时间与地点,
-        oneSentenceSummary: aiCard.小卡展示.一句话概述
+        experienceName: safeGet(aiCard.小卡展示, '经历名称', 'Untitled Experience'),
+        timeAndLocation: safeGet(aiCard.小卡展示, '时间与地点', 'Time and location not specified'),
+        oneSentenceSummary: safeGet(aiCard.小卡展示, '一句话概述', 'No summary available')
       },
       cardDetail: {
-        experienceName: aiCard.详情卡展示.经历名称,
-        timeAndLocation: aiCard.详情卡展示.时间与地点,
-        backgroundContext: aiCard.详情卡展示.背景与情境说明,
-        myRoleAndTasks: aiCard.详情卡展示.我的角色与任务,
-        taskDetails: aiCard.详情卡展示.任务细节描述,
-        reflectionAndResults: aiCard.详情卡展示.反思与结果总结,
-        highlightSentence: aiCard.详情卡展示.高光总结句,
+        experienceName: safeGet(aiCard.详情卡展示, '经历名称', 'Untitled Experience'),
+        timeAndLocation: safeGet(aiCard.详情卡展示, '时间与地点', 'Time and location not specified'),
+        backgroundContext: safeGet(aiCard.详情卡展示, '背景与情境说明', ''),
+        myRoleAndTasks: safeGet(aiCard.详情卡展示, '我的角色与任务', ''),
+        taskDetails: safeGet(aiCard.详情卡展示, '任务细节描述', ''),
+        reflectionAndResults: safeGet(aiCard.详情卡展示, '反思与结果总结', ''),
+        highlightSentence: safeGet(aiCard.详情卡展示, '高光总结句', ''),
         editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence']
       },
       completionLevel: calculateCompletionLevel(),
       source: {
         // 🔧 FIX: Improved source type detection logic
-        type: determineSourceType(aiCard.详情卡展示.生成来源?.类型, fromHomepage)
+        type: determineSourceType(safeGet(aiCard.详情卡展示?.生成来源, '类型'), fromHomepage)
       },
       createdAt: new Date(),
       updatedAt: new Date()
@@ -282,6 +317,49 @@ export default function ExperiencePage() {
     setIsGeneratingCards(true);
 
     try {
+      // 🔧 FIX: If no files provided, don't call API and just show empty directions
+      if (files.length === 0) {
+        console.log('📝 [GENERATE] No files provided, showing empty directions for manual card creation');
+
+        // Create empty directions structure
+        const emptyDirections = [
+          {
+            id: 'direction-1',
+            title: 'Focus Match',
+            subtitle: 'Experiences highly aligned with your career goal',
+            description: 'Add experiences that directly support your target industry and role',
+            isExpanded: true,
+            cards: [],
+            extractedCount: 0,
+            aiRecommendedCount: 0
+          },
+          {
+            id: 'direction-2',
+            title: 'Growth Potential',
+            subtitle: 'Experiences that show your development potential',
+            description: 'Add experiences that demonstrate your ability to learn and grow',
+            isExpanded: false,
+            cards: [],
+            extractedCount: 0,
+            aiRecommendedCount: 0
+          },
+          {
+            id: 'direction-3',
+            title: 'Foundation Skills',
+            subtitle: 'Core skills and foundational experiences',
+            description: 'Add experiences that build the foundation for your career development',
+            isExpanded: false,
+            cards: [],
+            extractedCount: 0,
+            aiRecommendedCount: 0
+          }
+        ];
+
+        updateDirections(emptyDirections);
+        setIsGeneratingCards(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('userGoal', goal);
       formData.append('selectedIndustry', industry.cardPreview.fieldName);

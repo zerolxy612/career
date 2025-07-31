@@ -18,11 +18,34 @@ import {
 } from '@dnd-kit/core';
 import './combination.css';
 
+// AI推荐数据结构
+interface AIRecommendationData {
+  option名称: string;
+  匹配逻辑摘要: string;
+  "Why this combination": {
+    目标岗位: string;
+    识别能力: string[];
+    组合解释: string;
+  };
+  卡片组合: Array<{
+    卡片名称: string;
+    角色定位: string;
+  }>;
+  补充建议方向: string[];
+  风险与建议: {
+    潜在挑战: string[];
+    行动建议: string[];
+  };
+}
+
 interface CombinationOption {
   id: string;
   name: string;
   description: string;
   isSelected: boolean;
+  aiRecommendation?: AIRecommendationData; // AI推荐数据
+  recommendedCards?: ExperienceCard[]; // 推荐的卡片列表
+  isLoading?: boolean; // 加载状态
 }
 
 export default function CombinationPage() {
@@ -34,6 +57,13 @@ export default function CombinationPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
 
+  // 新增状态管理
+  const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false);
+  const [recommendationError, setRecommendationError] = useState<string | null>(null);
+
+  // Suppress unused variable warnings - these will be used in UI
+  void isLoadingRecommendation;
+
   // 配置拖拽传感器，设置距离阈值来区分点击和拖拽
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -42,11 +72,11 @@ export default function CombinationPage() {
       },
     })
   );
-  const [combinationOptions] = useState<CombinationOption[]>([
-    { id: 'custom', name: 'Custom', description: '', isSelected: true },
-    { id: 'option1', name: 'Option 1', description: '', isSelected: false },
-    { id: 'option2', name: 'Option 2', description: '', isSelected: false },
-    { id: 'option3', name: 'Option 3', description: '', isSelected: false },
+  const [combinationOptions, setCombinationOptions] = useState<CombinationOption[]>([
+    { id: 'custom', name: 'Custom', description: 'Build your own combination', isSelected: true },
+    { id: 'option1', name: 'Option 1', description: 'Balanced approach (auto-apply)', isSelected: false, isLoading: false },
+    { id: 'option2', name: 'Option 2', description: 'Growth-focused (auto-apply)', isSelected: false, isLoading: false },
+    { id: 'option3', name: 'Option 3', description: 'Safe transition (auto-apply)', isSelected: false, isLoading: false },
   ]);
 
   useEffect(() => {
@@ -60,8 +90,250 @@ export default function CombinationPage() {
     }
   }, [router]);
 
-  const handleOptionSelect = (optionId: string) => {
-    setSelectedOption(optionId);
+  // 辅助函数：匹配推荐的卡片名称到实际的卡片对象
+  const matchRecommendedCards = (recommendedCardCombination: Array<{卡片名称: string; 在故事中的角色?: string; 角色定位?: string}>, availableCards: ExperienceCard[]): ExperienceCard[] => {
+    console.log('🔍 [MATCH] Starting card matching process:', {
+      recommendedCount: recommendedCardCombination.length,
+      availableCount: availableCards.length
+    });
+
+    const matchedCards: ExperienceCard[] = [];
+
+    recommendedCardCombination.forEach((recommendedCard, index) => {
+      console.log(`🔍 [MATCH] Processing recommended card ${index + 1}:`, {
+        recommendedName: recommendedCard.卡片名称,
+        role: recommendedCard.在故事中的角色 || recommendedCard.角色定位 || 'No role specified'
+      });
+
+      // 尝试精确匹配
+      let matchedCard = availableCards.find(card =>
+        card.cardPreview.experienceName === recommendedCard.卡片名称
+      );
+
+      // 如果精确匹配失败，尝试模糊匹配
+      if (!matchedCard) {
+        console.log(`⚠️ [MATCH] Exact match failed for "${recommendedCard.卡片名称}", trying fuzzy match...`);
+
+        matchedCard = availableCards.find(card => {
+          const cardName = card.cardPreview.experienceName.toLowerCase();
+          const recommendedName = recommendedCard.卡片名称.toLowerCase();
+
+          // 检查是否包含关键词
+          return cardName.includes(recommendedName) || recommendedName.includes(cardName);
+        });
+      }
+
+      if (matchedCard) {
+        console.log(`✅ [MATCH] Successfully matched "${recommendedCard.卡片名称}" to card:`, {
+          cardId: matchedCard.id,
+          actualName: matchedCard.cardPreview.experienceName,
+          category: matchedCard.category
+        });
+        matchedCards.push(matchedCard);
+      } else {
+        console.warn(`❌ [MATCH] No match found for recommended card: "${recommendedCard.卡片名称}"`);
+        console.warn(`❌ [MATCH] Available card names:`, availableCards.map(c => c.cardPreview.experienceName));
+      }
+    });
+
+    console.log('🎯 [MATCH] Card matching completed:', {
+      totalRecommended: recommendedCardCombination.length,
+      successfulMatches: matchedCards.length,
+      matchRate: `${Math.round((matchedCards.length / recommendedCardCombination.length) * 100)}%`
+    });
+
+    return matchedCards;
+  };
+
+  const handleOptionSelect = async (optionId: string) => {
+    console.log('🎯 [COMBINATION] Option selected:', {
+      optionId,
+      timestamp: new Date().toISOString(),
+      currentSelectedOption: selectedOption
+    });
+
+    setRecommendationError(null);
+
+    // 如果选择的是Custom，不需要调用AI
+    if (optionId === 'custom') {
+      console.log('📝 [COMBINATION] Custom option selected, no AI call needed');
+      setSelectedOption(optionId);
+      return;
+    }
+
+    // 检查是否已经有推荐数据，如果有则直接应用
+    const currentOption = combinationOptions.find(opt => opt.id === optionId);
+    if (currentOption?.aiRecommendation && currentOption?.recommendedCards) {
+      console.log('✅ [COMBINATION] Using cached recommendation for:', optionId);
+      applyRecommendationDirectly(currentOption.recommendedCards, optionId);
+      return;
+    }
+
+    // 获取用户数据
+    const userGoal = localStorage.getItem('userGoal');
+    const selectedIndustryStr = localStorage.getItem('selectedIndustry');
+
+    if (!userGoal || !selectedIndustryStr) {
+      console.error('❌ [COMBINATION] Missing user data in localStorage');
+      setRecommendationError('Missing user goal or selected industry data');
+      return;
+    }
+
+    let selectedIndustryData;
+    try {
+      selectedIndustryData = JSON.parse(selectedIndustryStr);
+    } catch (error) {
+      console.error('❌ [COMBINATION] Failed to parse selected industry data:', error);
+      setRecommendationError('Invalid industry data format');
+      return;
+    }
+
+    console.log('📋 [COMBINATION] Preparing AI request:', {
+      userGoal: userGoal.substring(0, 100) + '...',
+      selectedIndustry: selectedIndustryData.cardPreview?.fieldName,
+      availableCardsCount: allCards.length,
+      optionType: optionId
+    });
+
+    // 设置加载状态
+    setIsLoadingRecommendation(true);
+    setCombinationOptions(prev => prev.map(opt =>
+      opt.id === optionId
+        ? { ...opt, isLoading: true }
+        : opt
+    ));
+
+    try {
+      console.log('📤 [COMBINATION] Sending request to AI API...');
+      const requestStartTime = Date.now();
+
+      const response = await fetch('/api/ai/generate-combination-recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userGoal,
+          selectedIndustry: selectedIndustryData.cardPreview?.fieldName,
+          availableCards: allCards,
+          optionType: optionId
+        })
+      });
+
+      const requestEndTime = Date.now();
+      console.log('📥 [COMBINATION] API response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        responseTime: requestEndTime - requestStartTime + 'ms'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [COMBINATION] API request failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const recommendationData = await response.json();
+      console.log('✅ [COMBINATION] Recommendation data received:', {
+        hasRecommendation: !!recommendationData.推荐组合,
+        storyTheme: recommendationData.推荐组合?.故事主题,
+        selectedCardsCount: recommendationData.推荐组合?.选择的卡片?.length || 0
+      });
+
+      // 匹配推荐的卡片到实际的卡片对象
+      const recommendedCards = matchRecommendedCards(recommendationData.推荐组合?.选择的卡片 || [], allCards);
+
+      console.log('🔗 [COMBINATION] Card matching result:', {
+        recommendedCardNames: recommendationData.推荐组合?.选择的卡片?.map((c: any) => c.卡片名称) || [],
+        matchedCardsCount: recommendedCards.length,
+        matchedCardIds: recommendedCards.map((c: ExperienceCard) => c.id)
+      });
+
+      // 更新选项数据
+      setCombinationOptions(prev => prev.map(opt =>
+        opt.id === optionId
+          ? {
+              ...opt,
+              isLoading: false,
+              aiRecommendation: recommendationData.推荐组合,
+              recommendedCards: recommendedCards
+            }
+          : opt
+      ));
+
+      console.log('🎉 [COMBINATION] Recommendation generated, auto-applying to custom area:', optionId);
+
+      // 自动应用推荐到Custom区域
+      applyRecommendationDirectly(recommendedCards, optionId);
+
+    } catch (error) {
+      console.error('❌ [COMBINATION] Failed to generate recommendation:', error);
+      console.error('❌ [COMBINATION] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
+      setRecommendationError(error instanceof Error ? error.message : 'Failed to generate recommendation');
+
+      // 清除加载状态
+      setCombinationOptions(prev => prev.map(opt =>
+        opt.id === optionId
+          ? { ...opt, isLoading: false }
+          : opt
+      ));
+    } finally {
+      setIsLoadingRecommendation(false);
+    }
+  };
+
+  // 直接应用推荐组合（自动化流程）
+  const applyRecommendationDirectly = (recommendedCards: ExperienceCard[], optionId: string) => {
+    console.log('🚀 [AUTO-APPLY] Auto-applying recommendation for option:', optionId);
+
+    if (!recommendedCards || recommendedCards.length === 0) {
+      console.error('❌ [AUTO-APPLY] No recommended cards to apply');
+      return;
+    }
+
+    console.log('📋 [AUTO-APPLY] Recommended cards to apply:', {
+      count: recommendedCards.length,
+      cardNames: recommendedCards.map(c => c.cardPreview.experienceName),
+      cardIds: recommendedCards.map(c => c.id)
+    });
+
+    // 应用推荐的卡片组合
+    const validCards = recommendedCards.filter(card =>
+      allCards.some(availableCard => availableCard.id === card.id)
+    );
+
+    console.log('✅ [AUTO-APPLY] Valid cards after filtering:', {
+      originalCount: recommendedCards.length,
+      validCount: validCards.length,
+      validCardNames: validCards.map(c => c.cardPreview.experienceName)
+    });
+
+    // 清空当前选择并应用新的推荐
+    setSelectedCards(validCards);
+    localStorage.setItem('selectedCards', JSON.stringify(validCards));
+
+    // 自动切换到Custom视图显示应用的组合
+    setSelectedOption('custom');
+
+    console.log('🎉 [AUTO-APPLY] Recommendation auto-applied successfully:', {
+      appliedCardsCount: validCards.length,
+      switchedToCustom: true,
+      optionId: optionId
+    });
+
+    // 显示简短的成功提示
+    if (validCards.length > 0) {
+      // 可以考虑使用toast通知，这里暂时使用console提示
+      console.log(`✨ [USER-FEEDBACK] ${validCards.length} recommended cards automatically applied to your custom combination!`);
+    }
   };
 
   const handleCardSelect = (card: ExperienceCard) => {
@@ -319,15 +591,49 @@ export default function CombinationPage() {
           {/* Options Sidebar */}
           <div className="options-sidebar">
             {combinationOptions.map(option => (
-              <div
-                key={option.id}
-                className={`option-item ${selectedOption === option.id ? 'selected' : ''}`}
-                onClick={() => handleOptionSelect(option.id)}
-              >
-                <div className="option-radio">
-                  <div className={`radio-dot ${selectedOption === option.id ? 'active' : ''}`}></div>
+              <div key={option.id} className="option-container">
+                <div
+                  className={`option-item ${selectedOption === option.id ? 'selected' : ''}`}
+                  onClick={() => handleOptionSelect(option.id)}
+                >
+                  <div className="option-radio">
+                    <div className={`radio-dot ${selectedOption === option.id ? 'active' : ''}`}></div>
+                  </div>
+                  <div className="option-content">
+                    <span className="option-name">{option.name}</span>
+                    {option.isLoading && (
+                      <div className="option-loading">
+                        <div className="loading-spinner"></div>
+                        <span>Generating...</span>
+                      </div>
+                    )}
+                    {option.description && !option.isLoading && (
+                      <span className="option-description">{option.description}</span>
+                    )}
+                  </div>
                 </div>
-                <span className="option-name">{option.name}</span>
+
+                {/* 简化的状态显示 */}
+                {selectedOption === option.id && option.aiRecommendation && !option.isLoading && (
+                  <div className="recommendation-applied">
+                    <div className="success-message">
+                      ✅ Recommendation applied to Custom area
+                    </div>
+                  </div>
+                )}
+
+                {/* 错误显示 */}
+                {selectedOption === option.id && recommendationError && !option.aiRecommendation && (
+                  <div className="recommendation-error">
+                    ❌ {recommendationError}
+                    <button
+                      className="retry-btn"
+                      onClick={() => handleOptionSelect(option.id)}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
