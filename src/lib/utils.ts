@@ -135,3 +135,41 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
 export function generateId(): string {
   return Math.random().toString(36).substr(2, 9);
 }
+
+// Session data management utilities
+export function clearSessionData(): void {
+  if (typeof window === 'undefined') return;
+
+  const sessionKeys = [
+    'experienceDirections',
+    'hasInteracted',
+    'selectedCards',
+    'selectedCombination',
+    'homepageGeneratedCards',
+    'hasHomepageFiles',
+    'uploadedFilesMetadata'
+  ];
+
+  console.log('🧹 [UTILS] Clearing session data:', sessionKeys);
+
+  sessionKeys.forEach(key => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch (error) {
+      console.error(`Error removing localStorage key ${key}:`, error);
+    }
+  });
+}
+
+export function clearAllLocalStorageData(): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.clear();
+    console.log('🧹 [UTILS] All localStorage data cleared');
+  } catch (error) {
+    console.error('Error clearing localStorage:', error);
+  }
+}
+
+

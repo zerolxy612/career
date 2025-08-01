@@ -6,6 +6,7 @@ import { File, Upload, X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import IndustryCardList from '@/components/cards/IndustryCardList';
 import { IndustryRecommendation } from '@/types/api';
+import { clearSessionData } from '../lib/utils';
 import { consoleLog } from '@/lib/logger';
 
 interface UploadedFile {
@@ -157,6 +158,10 @@ export default function Home() {
 
   const handleNext = async () => {
     if (selectedIndustry) {
+      // 🔧 FIX: Clear all old session data before starting new flow
+      console.log('🧹 [HOMEPAGE] Clearing old session data before starting new flow...');
+      clearSessionData();
+
       // Store selected industry and navigate to experience page
       localStorage.setItem('selectedIndustry', JSON.stringify(selectedIndustry));
       localStorage.setItem('userGoal', goalText);

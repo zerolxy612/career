@@ -7,6 +7,7 @@ import { CardDirection, CompletionLevel, ExperienceCard, CardCategory as CardCat
 import { CardCategory } from '@/components/CardCategory';
 import { FloatingUploadButton } from '@/components/FileUpload';
 import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
+import { clearSessionData } from '@/lib/utils';
 
 // Define types for AI response structure
 interface AIGenerationSource {
@@ -104,6 +105,15 @@ export default function ExperiencePage() {
   };
 
   useEffect(() => {
+    // 🔧 FIX: Clear old experience data to prevent data accumulation
+    console.log('🧹 [EXPERIENCE] Clearing old experience data...');
+    clearSessionData();
+
+    // Reset component state to ensure clean start
+    setDirections([]);
+    setHasInteracted(false);
+    setSavedCards(new Map());
+
     // Load selected industry from localStorage
     const storedIndustry = localStorage.getItem('selectedIndustry');
     const storedGoal = localStorage.getItem('userGoal');

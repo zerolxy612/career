@@ -38,6 +38,12 @@ interface AIRecommendationData {
   };
 }
 
+// 推荐组合中的卡片结构
+interface RecommendedCard {
+  卡片名称: string;
+  在故事中的角色: string;
+}
+
 interface CombinationOption {
   id: string;
   name: string;
@@ -83,9 +89,26 @@ export default function CombinationPage() {
     // Load experience directions from localStorage
     const storedDirections = localStorage.getItem('experienceDirections');
     if (storedDirections) {
-      setDirections(JSON.parse(storedDirections));
+      try {
+        const parsedDirections = JSON.parse(storedDirections);
+        console.log('📋 [COMBINATION] Loaded directions with cards:', {
+          directionsCount: parsedDirections.length,
+          totalCards: parsedDirections.reduce((sum: number, dir: any) => sum + (dir.cards?.length || 0), 0),
+          cardsByDirection: parsedDirections.map((dir: any) => ({
+            id: dir.id,
+            title: dir.title,
+            cardCount: dir.cards?.length || 0
+          }))
+        });
+        setDirections(parsedDirections);
+      } catch (error) {
+        console.error('❌ [COMBINATION] Error parsing stored directions:', error);
+        // If data is corrupted, redirect back to experience page
+        router.push('/experience');
+      }
     } else {
       // If no data, redirect back to experience page
+      console.log('📋 [COMBINATION] No stored directions found, redirecting to experience page');
       router.push('/experience');
     }
   }, [router]);
@@ -248,7 +271,7 @@ export default function CombinationPage() {
       const recommendedCards = matchRecommendedCards(recommendationData.推荐组合?.选择的卡片 || [], allCards);
 
       console.log('🔗 [COMBINATION] Card matching result:', {
-        recommendedCardNames: recommendationData.推荐组合?.选择的卡片?.map((c: any) => c.卡片名称) || [],
+        recommendedCardNames: recommendationData.推荐组合?.选择的卡片?.map((c: RecommendedCard) => c.卡片名称) || [],
         matchedCardsCount: recommendedCards.length,
         matchedCardIds: recommendedCards.map((c: ExperienceCard) => c.id)
       });
