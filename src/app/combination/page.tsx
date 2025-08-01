@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CardDirection, ExperienceCard } from '@/types/card';
 import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
+import { CombinationDetailsModal } from '@/components/CombinationDetailsModal';
 import {
   DndContext,
   DragEndEvent,
@@ -18,23 +19,36 @@ import {
 } from '@dnd-kit/core';
 import './combination.css';
 
-// AI推荐数据结构
+// AI推荐数据结构 - 来自组合推荐API的响应
 interface AIRecommendationData {
-  option名称: string;
-  匹配逻辑摘要: string;
-  "Why this combination": {
-    目标岗位: string;
-    识别能力: string[];
-    组合解释: string;
-  };
-  卡片组合: Array<{
+  故事主题: string;
+  叙述逻辑: string;
+  选择的卡片: Array<{
     卡片名称: string;
-    角色定位: string;
+    在故事中的角色: string;
   }>;
-  补充建议方向: string[];
-  风险与建议: {
-    潜在挑战: string[];
-    行动建议: string[];
+  故事亮点: string[];
+}
+
+// 详细分析数据结构 - 来自详细分析API的响应
+interface DetailedAnalysisData {
+  推荐路径选项: {
+    option名称: string;
+    匹配逻辑摘要: string;
+    "Why this combination": {
+      目标岗位: string;
+      识别能力: string[];
+      组合解释: string;
+    };
+    卡片组合: Array<{
+      卡片名称: string;
+      角色定位: string;
+    }>;
+    补充建议方向: string[];
+    风险与建议: {
+      潜在挑战: string[];
+      行动建议: string[];
+    };
   };
 }
 
@@ -62,6 +76,14 @@ export default function CombinationPage() {
   const [draggedCard, setDraggedCard] = useState<ExperienceCard | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
+
+  // Combination details modal state
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedOptionForDetails, setSelectedOptionForDetails] = useState<string>('');
+
+  // User data from localStorage
+  const [userGoal, setUserGoal] = useState<string>('');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('');
 
   // 新增状态管理
   const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false);
@@ -110,6 +132,23 @@ export default function CombinationPage() {
       // If no data, redirect back to experience page
       console.log('📋 [COMBINATION] No stored directions found, redirecting to experience page');
       router.push('/experience');
+    }
+
+    // Load user goal and selected industry
+    const storedGoal = localStorage.getItem('userGoal');
+    const storedIndustry = localStorage.getItem('selectedIndustry');
+
+    if (storedGoal) {
+      setUserGoal(storedGoal);
+    }
+
+    if (storedIndustry) {
+      try {
+        const industryData = JSON.parse(storedIndustry);
+        setSelectedIndustry(industryData.title || industryData.name || storedIndustry);
+      } catch {
+        setSelectedIndustry(storedIndustry);
+      }
     }
   }, [router]);
 
@@ -454,6 +493,29 @@ export default function CombinationPage() {
     setCurrentCardData(undefined);
   };
 
+  // Handle info icon click for combination details
+  const handleInfoClick = (optionId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log('🔍 [INFO] Info icon clicked for option:', optionId);
+
+    // Only show details for options that have AI recommendations
+    const option = combinationOptions.find(opt => opt.id === optionId);
+    if (!option || !option.aiRecommendation) {
+      console.log('❌ [INFO] No AI recommendation available for option:', optionId);
+      return;
+    }
+
+    setSelectedOptionForDetails(optionId);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleDetailsModalClose = () => {
+    setIsDetailsModalOpen(false);
+    setSelectedOptionForDetails('');
+  };
+
   // Draggable Card Component
   const DraggableCard = ({ card, isSelected }: { card: ExperienceCard; isSelected: boolean }) => {
     const {
@@ -543,10 +605,9 @@ export default function CombinationPage() {
       option: selectedOption,
       cards: selectedCards
     }));
-    
-    // TODO: Navigate to analysis/results page
-    console.log('Proceeding to analysis page...');
-    alert('Analysis page will be implemented in the next phase. Your combination has been saved.');
+
+    // Navigate to results page
+    router.push('/result');
   };
 
   // Get all cards from all directions
@@ -634,6 +695,17 @@ export default function CombinationPage() {
                       <span className="option-description">{option.description}</span>
                     )}
                   </div>
+
+                  {/* Info icon for options with AI recommendations */}
+                  {option.id !== 'custom' && option.aiRecommendation && !option.isLoading && (
+                    <div
+                      className="info-icon"
+                      onClick={(e) => handleInfoClick(option.id, e)}
+                      title="View detailed analysis"
+                    >
+                      ⓘ
+                    </div>
+                  )}
                 </div>
 
                 {/* 简化的状态显示 */}
@@ -716,6 +788,21 @@ export default function CombinationPage() {
         onSave={handleDetailModalSave}
         initialData={currentCardData}
       />
+
+      {/* Combination Details Modal */}
+      {selectedOptionForDetails && (
+        <CombinationDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={handleDetailsModalClose}
+          optionType={selectedOptionForDetails}
+          userGoal={userGoal || ''}
+          selectedIndustry={selectedIndustry || ''}
+          recommendedCards={
+            combinationOptions.find(opt => opt.id === selectedOptionForDetails)?.aiRecommendation?.选择的卡片 || []
+          }
+          availableCards={allCards}
+        />
+      )}
     </DndContext>
   );
 }
