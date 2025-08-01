@@ -47,7 +47,14 @@ export async function POST(request: NextRequest) {
     }));
 
     // 格式化可用卡片信息
-    const formattedAvailableCards = availableCards?.map((card, index) => ({
+    const formattedAvailableCards = availableCards?.map((card: {
+      cardPreview?: {
+        experienceName?: string;
+        timeAndLocation?: string;
+        oneSentenceSummary?: string;
+      };
+      category?: string;
+    }, index: number) => ({
       序号: index + 1,
       卡片名称: card.cardPreview?.experienceName || `Card ${index + 1}`,
       时间地点: card.cardPreview?.timeAndLocation || 'Not specified',

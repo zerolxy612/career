@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import './CombinationDetailsModal.css';
 
@@ -31,8 +31,25 @@ interface CombinationDetailsModalProps {
   optionType: string;
   userGoal: string;
   selectedIndustry: string;
-  recommendedCards: any[];
-  availableCards: any[];
+  recommendedCards: Array<{
+    卡片名称: string;
+    在故事中的角色?: string;
+    角色定位?: string;
+    cardPreview?: {
+      experienceName: string;
+      timeAndLocation: string;
+      oneSentenceSummary: string;
+    };
+  }>;
+  availableCards: Array<{
+    id: string;
+    cardPreview: {
+      experienceName: string;
+      timeAndLocation: string;
+      oneSentenceSummary: string;
+    };
+    category: string;
+  }>;
 }
 
 export const CombinationDetailsModal = ({
@@ -48,13 +65,7 @@ export const CombinationDetailsModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && recommendedCards.length > 0) {
-      fetchCombinationDetails();
-    }
-  }, [isOpen, optionType, recommendedCards]);
-
-  const fetchCombinationDetails = async () => {
+  const fetchCombinationDetails = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -91,7 +102,13 @@ export const CombinationDetailsModal = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [userGoal, selectedIndustry, optionType, recommendedCards, availableCards]);
+
+  useEffect(() => {
+    if (isOpen && recommendedCards.length > 0) {
+      fetchCombinationDetails();
+    }
+  }, [isOpen, fetchCombinationDetails, recommendedCards]);
 
   if (!isOpen) return null;
 

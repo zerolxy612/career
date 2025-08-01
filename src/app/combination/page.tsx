@@ -30,27 +30,7 @@ interface AIRecommendationData {
   故事亮点: string[];
 }
 
-// 详细分析数据结构 - 来自详细分析API的响应
-interface DetailedAnalysisData {
-  推荐路径选项: {
-    option名称: string;
-    匹配逻辑摘要: string;
-    "Why this combination": {
-      目标岗位: string;
-      识别能力: string[];
-      组合解释: string;
-    };
-    卡片组合: Array<{
-      卡片名称: string;
-      角色定位: string;
-    }>;
-    补充建议方向: string[];
-    风险与建议: {
-      潜在挑战: string[];
-      行动建议: string[];
-    };
-  };
-}
+
 
 // 推荐组合中的卡片结构
 interface RecommendedCard {
@@ -115,8 +95,8 @@ export default function CombinationPage() {
         const parsedDirections = JSON.parse(storedDirections);
         console.log('📋 [COMBINATION] Loaded directions with cards:', {
           directionsCount: parsedDirections.length,
-          totalCards: parsedDirections.reduce((sum: number, dir: any) => sum + (dir.cards?.length || 0), 0),
-          cardsByDirection: parsedDirections.map((dir: any) => ({
+          totalCards: parsedDirections.reduce((sum: number, dir: CardDirection) => sum + (dir.cards?.length || 0), 0),
+          cardsByDirection: parsedDirections.map((dir: CardDirection) => ({
             id: dir.id,
             title: dir.title,
             cardCount: dir.cards?.length || 0
@@ -706,6 +686,7 @@ export default function CombinationPage() {
                       ⓘ
                     </div>
                   )}
+
                 </div>
 
                 {/* 简化的状态显示 */}

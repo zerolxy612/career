@@ -5,15 +5,12 @@ import { useRouter } from 'next/navigation';
 import { ExperienceCard } from '@/types/card';
 import './result.css';
 
-interface CombinationData {
-  option: string;
-  cards: ExperienceCard[];
-}
+
 
 export default function ResultPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'profile' | 'jobs'>('profile');
-  const [combinationData, setCombinationData] = useState<CombinationData | null>(null);
+  // Removed combinationData state as it's not currently used
 
   useEffect(() => {
     // Load combination data from localStorage
@@ -28,7 +25,7 @@ export default function ResultPage() {
           cardsCount: parsedData.cards?.length || 0,
           cardNames: parsedData.cards?.map((c: ExperienceCard) => c.cardPreview?.experienceName) || []
         });
-        setCombinationData(parsedData);
+        // Data loaded successfully - no need to store in state currently
       } catch (error) {
         console.error('❌ [RESULT] Error parsing combination data:', error);
         // Redirect back if data is invalid
@@ -41,15 +38,7 @@ export default function ResultPage() {
     }
   }, [router]);
 
-  const handleBack = () => {
-    router.push('/combination');
-  };
-
-  const handleExportPDF = () => {
-    // TODO: Implement PDF export functionality
-    console.log('Exporting as PDF...');
-    alert('PDF export functionality will be implemented in the next phase.');
-  };
+  // Removed unused handlers - functionality will be added later if needed
 
   return (
     <div className="result-page">
@@ -80,9 +69,9 @@ export default function ResultPage() {
           {/* Main Content Area */}
           <div className="main-content">
             {activeTab === 'profile' ? (
-              <CareerProfileResult combinationData={combinationData} />
+              <CareerProfileResult />
             ) : (
-              <JobRecommendation combinationData={combinationData} />
+              <JobRecommendation />
             )}
           </div>
         </div>
@@ -92,7 +81,7 @@ export default function ResultPage() {
 }
 
 // Career Profile Result Component
-const CareerProfileResult = ({ combinationData }: { combinationData: CombinationData | null }) => {
+const CareerProfileResult = () => {
   return (
     <div className="career-profile-section">
       <div className="profile-card">
@@ -123,7 +112,7 @@ const CareerProfileResult = ({ combinationData }: { combinationData: Combination
 };
 
 // Job Recommendation Component
-const JobRecommendation = ({ combinationData }: { combinationData: CombinationData | null }) => {
+const JobRecommendation = () => {
   return (
     <div className="job-recommendation-section">
       <div className="recommendation-card">
