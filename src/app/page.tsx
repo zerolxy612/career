@@ -6,8 +6,9 @@ import { File, Upload, X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import IndustryCardList from '@/components/cards/IndustryCardList';
 import { IndustryRecommendation } from '@/types/api';
-import { clearSessionData } from '../lib/utils';
+
 import { consoleLog } from '@/lib/logger';
+import { CardDataManager } from '@/lib/CardDataManager';
 
 interface UploadedFile {
   name: string;
@@ -158,25 +159,17 @@ export default function Home() {
 
   const handleNext = async () => {
     if (selectedIndustry) {
-      // 🔧 FIX: Clear all old session data before starting new flow
-      console.log('🧹 [HOMEPAGE] Clearing old session data before starting new flow...');
-      clearSessionData();
+      // 🔧 PROFESSIONAL FIX: 使用统一的数据管理器开始新会话
+      console.log('🆕 [HOMEPAGE] Starting new professional session with CardDataManager...');
+      const sessionId = CardDataManager.startNewSession(goalText, selectedIndustry.cardPreview.fieldName);
 
       // Store selected industry and navigate to experience page
       localStorage.setItem('selectedIndustry', JSON.stringify(selectedIndustry));
       localStorage.setItem('userGoal', goalText);
 
-      // Store uploaded files information (we can't store File objects, but we can store metadata)
-      const filesMetadata = uploadedFiles.map(f => ({
-        name: f.name,
-        type: f.type,
-        size: f.file.size
-      }));
-      localStorage.setItem('uploadedFilesMetadata', JSON.stringify(filesMetadata));
-
-      // 🔧 FIX: Process uploaded files immediately and store results
+      // 🔧 PROFESSIONAL FIX: 统一处理文件上传和卡片生成
       if (uploadedFiles.length > 0) {
-        console.log('📁 [NAVIGATION] Processing uploaded files before navigation...');
+        console.log('📁 [HOMEPAGE] Processing uploaded files with CardDataManager...');
 
         try {
           // Process files and generate experience cards immediately
@@ -188,7 +181,7 @@ export default function Home() {
             formData.append('files', file.file);
           });
 
-          console.log('📤 [NAVIGATION] Sending files to generate experience cards...');
+          console.log('📤 [HOMEPAGE] Sending files to generate experience cards...');
           const response = await fetch('/api/ai/generate-experience-cards', {
             method: 'POST',
             body: formData,
@@ -196,24 +189,32 @@ export default function Home() {
 
           if (response.ok) {
             const data = await response.json();
-            console.log('✅ [NAVIGATION] Experience cards generated from homepage files:', data);
+            console.log('✅ [HOMEPAGE] Experience cards generated from homepage files:', data);
 
-            // Store the generated cards for the experience page
+            // 🔧 PROFESSIONAL: 存储原始AI响应数据，让Experience页面统一处理
+            // 这样避免了重复处理和数据转换的复杂性
             localStorage.setItem('homepageGeneratedCards', JSON.stringify(data));
             localStorage.setItem('hasHomepageFiles', 'true');
+
+            console.log('💾 [HOMEPAGE] Stored raw AI response for Experience page processing:', {
+              cardsCount: data.经验卡片推荐?.length || 0,
+              sessionId
+            });
           } else {
-            console.error('❌ [NAVIGATION] Failed to process homepage files');
-            localStorage.setItem('hasHomepageFiles', 'false');
+            console.error('❌ [HOMEPAGE] Failed to process homepage files');
           }
         } catch (error) {
-          console.error('❌ [NAVIGATION] Error processing homepage files:', error);
-          localStorage.setItem('hasHomepageFiles', 'false');
+          console.error('❌ [HOMEPAGE] Error processing homepage files:', error);
         }
-      } else {
-        localStorage.setItem('hasHomepageFiles', 'false');
       }
 
-      router.push('/experience');
+      // 🔧 PROFESSIONAL: 直接跳转，让Experience页面从CardDataManager读取数据
+      console.log('🚀 [HOMEPAGE] Navigating to experience page with professional data flow...');
+      const hasFiles = uploadedFiles.length > 0;
+      const navigationUrl = hasFiles ? '/experience?fromHomepage=true' : '/experience';
+
+      // 立即跳转，数据已经通过CardDataManager统一管理
+      router.push(navigationUrl);
     }
   };
 

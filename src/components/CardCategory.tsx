@@ -219,17 +219,30 @@ const FirstDirectionContent: React.FC<{
           alignItems: 'stretch'
         }}>
           {/* AI suggested cards - includes both ai_generated and uploaded_resume */}
-          {direction.cards
-            .filter(card => card.source.type === 'ai_generated' || card.source.type === 'uploaded_resume')
-            .slice(0, 2) // Show only first 2 AI cards
-            .map(card => (
-              <ExperienceCard
-                key={card.id}
-                card={card}
-                type="ai-suggested"
-                onClick={() => onCardClick?.(card.id)}
-              />
-            ))}
+          {(() => {
+            const aiCards = direction.cards.filter(card =>
+              card.source.type === 'ai_generated' || card.source.type === 'uploaded_resume'
+            );
+
+            console.log('🔍 [CARD_CATEGORY] AI suggested cards filter result:', {
+              directionTitle: direction.title,
+              totalCards: direction.cards.length,
+              allSourceTypes: direction.cards.map(c => ({ name: c.cardPreview.experienceName, type: c.source.type })),
+              filteredAICards: aiCards.length,
+              aiCardTypes: aiCards.map(c => ({ name: c.cardPreview.experienceName, type: c.source.type }))
+            });
+
+            return aiCards
+              .slice(0, 2) // Show only first 2 AI cards
+              .map(card => (
+                <ExperienceCard
+                  key={card.id}
+                  card={card}
+                  type="ai-suggested"
+                  onClick={() => onCardClick?.(card.id)}
+                />
+              ));
+          })()}
 
 
 

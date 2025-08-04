@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CardDirection, ExperienceCard } from '@/types/card';
 import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
 import { CombinationDetailsModal } from '@/components/CombinationDetailsModal';
+import { CardDataManager } from '@/lib/CardDataManager';
 import {
   DndContext,
   DragEndEvent,
@@ -88,30 +89,45 @@ export default function CombinationPage() {
   ]);
 
   useEffect(() => {
-    // Load experience directions from localStorage
-    const storedDirections = localStorage.getItem('experienceDirections');
-    if (storedDirections) {
-      try {
-        const parsedDirections = JSON.parse(storedDirections);
-        console.log('📋 [COMBINATION] Loaded directions with cards:', {
-          directionsCount: parsedDirections.length,
-          totalCards: parsedDirections.reduce((sum: number, dir: CardDirection) => sum + (dir.cards?.length || 0), 0),
-          cardsByDirection: parsedDirections.map((dir: CardDirection) => ({
-            id: dir.id,
-            title: dir.title,
-            cardCount: dir.cards?.length || 0
-          }))
-        });
-        setDirections(parsedDirections);
-      } catch (error) {
-        console.error('❌ [COMBINATION] Error parsing stored directions:', error);
-        // If data is corrupted, redirect back to experience page
+    // 🔧 PROFESSIONAL: 使用CardDataManager统一加载数据
+    console.log('📋 [COMBINATION] Loading data from CardDataManager...');
+
+    // 验证会话数据
+    const isValidSession = CardDataManager.validateSession();
+
+    if (isValidSession) {
+      // 从CardDataManager获取方向数据
+      const directionsData = CardDataManager.getDirectionsData();
+      const sessionStats = CardDataManager.getSessionStats();
+
+      console.log('✅ [COMBINATION] Data loaded from CardDataManager:', {
+        directionsCount: directionsData.length,
+        totalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0),
+        sessionStats
+      });
+
+      setDirections(directionsData);
+    } else {
+      // 尝试从旧的localStorage加载（向后兼容）
+      console.log('⚠️ [COMBINATION] No valid CardDataManager session, trying legacy localStorage...');
+      const storedDirections = localStorage.getItem('experienceDirections');
+
+      if (storedDirections) {
+        try {
+          const parsedDirections = JSON.parse(storedDirections);
+          console.log('📋 [COMBINATION] Loaded legacy directions:', {
+            directionsCount: parsedDirections.length,
+            totalCards: parsedDirections.reduce((sum: number, dir: CardDirection) => sum + (dir.cards?.length || 0), 0)
+          });
+          setDirections(parsedDirections);
+        } catch (error) {
+          console.error('❌ [COMBINATION] Error parsing legacy directions:', error);
+          router.push('/experience');
+        }
+      } else {
+        console.log('❌ [COMBINATION] No data found, redirecting to experience page');
         router.push('/experience');
       }
-    } else {
-      // If no data, redirect back to experience page
-      console.log('📋 [COMBINATION] No stored directions found, redirecting to experience page');
-      router.push('/experience');
     }
 
     // Load user goal and selected industry

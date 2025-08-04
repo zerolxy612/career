@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { IndustryRecommendation } from '@/types/api';
 import { CardDirection, CompletionLevel, ExperienceCard, CardCategory as CardCategoryType } from '@/types/card';
 import { CardCategory } from '@/components/CardCategory';
 import { FloatingUploadButton } from '@/components/FileUpload';
 import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
-import { clearSessionData } from '@/lib/utils';
+import { CardDataManager } from '@/lib/CardDataManager';
 
 // Define types for AI response structure
 interface AIGenerationSource {
@@ -44,6 +44,7 @@ interface AIGeneratedCardsResponse {
 
 export default function ExperiencePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryRecommendation | null>(null);
   const [userGoal, setUserGoal] = useState<string>('');
   const [directions, setDirections] = useState<CardDirection[]>([]);
@@ -51,6 +52,9 @@ export default function ExperiencePage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
   const [savedCards, setSavedCards] = useState<Map<string, ExperienceDetailData>>(new Map());
+
+  // 🔧 FIX: Prevent multiple useEffect executions
+  const hasInitialized = useRef(false);
   const [isGeneratingCards, setIsGeneratingCards] = useState(true); // 初始为true
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
@@ -78,47 +82,62 @@ export default function ExperiencePage() {
 
     // If from homepage with files, it should be uploaded_resume
     if (fromHomepage) {
+      console.log('✅ [SOURCE] From homepage with files -> uploaded_resume');
       return 'uploaded_resume';
     }
 
     // Check AI response source type
     if (aiSourceType) {
-      switch (aiSourceType.toLowerCase()) {
+      const lowerType = aiSourceType.toLowerCase();
+      console.log('🔍 [SOURCE] AI source type (lowercase):', lowerType);
+
+      switch (lowerType) {
         case 'uploaded_resume':
         case 'resume':
         case 'file':
         case 'document':
+          console.log('✅ [SOURCE] AI indicates file source -> uploaded_resume');
           return 'uploaded_resume';
         case 'user_input':
         case 'manual':
+          console.log('✅ [SOURCE] AI indicates manual input -> user_input');
           return 'user_input';
         case 'ai_generated':
         case 'ai':
         case 'generated':
         default:
+          console.log('✅ [SOURCE] AI indicates generated content -> ai_generated');
           return 'ai_generated';
       }
     }
 
     // Default fallback
+    console.log('⚠️ [SOURCE] No source type info, defaulting to ai_generated');
     return 'ai_generated';
   };
 
   useEffect(() => {
-    // 🔧 FIX: Clear old experience data to prevent data accumulation
-    console.log('🧹 [EXPERIENCE] Clearing old experience data...');
-    clearSessionData();
+    // 🔧 PROFESSIONAL: 使用CardDataManager进行统一的数据管理
+    console.log('🚀 [EXPERIENCE] Initializing with professional CardDataManager...');
 
-    // Reset component state to ensure clean start
+    // 检查是否有有效的会话数据
+    const isValidSession = CardDataManager.validateSession();
+    const fromHomepage = searchParams.get('fromHomepage') === 'true';
+
+    console.log('📋 [EXPERIENCE] Session validation:', {
+      isValidSession,
+      fromHomepage,
+      sessionStats: CardDataManager.getSessionStats()
+    });
+
+    // 🔧 PROFESSIONAL: 重置组件状态
     setDirections([]);
     setHasInteracted(false);
     setSavedCards(new Map());
 
-    // Load selected industry from localStorage
+    // 加载用户基础信息
     const storedIndustry = localStorage.getItem('selectedIndustry');
     const storedGoal = localStorage.getItem('userGoal');
-    const hasHomepageFiles = localStorage.getItem('hasHomepageFiles') === 'true';
-    const homepageGeneratedCards = localStorage.getItem('homepageGeneratedCards');
 
     if (storedIndustry) {
       setSelectedIndustry(JSON.parse(storedIndustry));
@@ -134,28 +153,58 @@ export default function ExperiencePage() {
       return;
     }
 
-    // 🔧 FIX: Handle homepage generated cards or generate new ones
-    if (hasHomepageFiles && homepageGeneratedCards && storedIndustry && storedGoal) {
-      console.log('📁 [EXPERIENCE] Loading cards generated from homepage files...');
-      try {
-        const cardsData = JSON.parse(homepageGeneratedCards);
-        processGeneratedCards(cardsData, true); // true indicates from homepage
+    // 🔧 PROFESSIONAL: 检查是否有首页数据需要处理
+    const homepageGeneratedCards = localStorage.getItem('homepageGeneratedCards');
+    const hasHomepageData = fromHomepage && homepageGeneratedCards;
 
-        // Clear the stored data after use
-        localStorage.removeItem('homepageGeneratedCards');
-        localStorage.removeItem('hasHomepageFiles');
-      } catch (error) {
-        console.error('❌ [EXPERIENCE] Error loading homepage generated cards:', error);
-        // Fallback to generating new cards
-        generateAICards(storedGoal, JSON.parse(storedIndustry), []);
+    if (hasHomepageData) {
+      // 处理首页传递的数据
+      console.log('📁 [EXPERIENCE] Processing homepage data...');
+
+      if (storedIndustry && storedGoal) {
+        try {
+          const cardsData = JSON.parse(homepageGeneratedCards);
+          processGeneratedCards(cardsData, true); // true indicates from homepage
+
+          // 清理首页数据
+          localStorage.removeItem('homepageGeneratedCards');
+          localStorage.removeItem('hasHomepageFiles');
+
+          console.log('✅ [EXPERIENCE] Homepage data processed and cleaned up');
+        } catch (error) {
+          console.error('❌ [EXPERIENCE] Error processing homepage data:', error);
+          // 降级处理：生成新的AI卡片
+          generateAICards(storedGoal, JSON.parse(storedIndustry), []);
+        }
+      }
+    } else if (isValidSession) {
+      // 从CardDataManager加载现有数据
+      console.log('📊 [EXPERIENCE] Loading existing data from CardDataManager...');
+      const directionsData = CardDataManager.getDirectionsData();
+      const totalCards = directionsData.reduce((sum, dir) => sum + dir.cards.length, 0);
+
+      if (totalCards > 0) {
+        setDirections(directionsData);
+        setIsGeneratingCards(false);
+        console.log('✅ [EXPERIENCE] Existing data loaded from CardDataManager:', {
+          directionsCount: directionsData.length,
+          totalCards
+        });
+      } else {
+        // 没有现有数据，生成新的AI卡片
+        console.log('🤖 [EXPERIENCE] No existing data, generating new AI cards...');
+        if (storedIndustry && storedGoal) {
+          generateAICards(storedGoal, JSON.parse(storedIndustry), []);
+        }
       }
     } else {
-      // Generate AI cards when component loads (no files from homepage)
+      // 生成新的AI卡片
+      console.log('🤖 [EXPERIENCE] Generating new AI cards...');
       if (storedIndustry && storedGoal) {
         generateAICards(storedGoal, JSON.parse(storedIndustry), []);
       }
     }
-  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 🔧 FIX: Process generated cards from homepage or experience page
   const processGeneratedCards = (data: AIGeneratedCardsResponse, fromHomepage: boolean = false) => {
@@ -188,64 +237,53 @@ export default function ExperiencePage() {
 
     console.log(`✅ [PROCESS] Found ${validCards.length} valid cards out of ${data.经验卡片推荐.length} total`);
 
-    // Convert AI cards to our format and organize by category
-    const aiCards = validCards.map((card: AICardResponse) => convertAICardToExperienceCard(card, fromHomepage));
+    // Convert AI cards to our format
+    // 🔧 PROFESSIONAL: 确保从文件生成的卡片被正确标记为uploaded_resume类型
+    const aiCards = validCards.map((card: AICardResponse) =>
+      convertAICardToExperienceCard(card, fromHomepage, true) // true = forceUploadedResume
+    );
 
-    // Group cards by category
-    const cardsByCategory: { [key: string]: ExperienceCard[] } = {
-      'Focus Match': [],
-      'Growth Potential': [],
-      'Foundation Skills': []
-    };
-
-    aiCards.forEach((card: ExperienceCard) => {
-      const category = card.category;
-      if (cardsByCategory[category]) {
-        cardsByCategory[category].push(card);
-      }
+    console.log('🔄 [PROCESS] Converted AI cards:', {
+      totalCards: aiCards.length,
+      sourceTypes: aiCards.map(c => ({ name: c.cardPreview.experienceName, sourceType: c.source.type })),
+      fromHomepage
     });
 
-    // Update directions with AI generated cards
-    const updatedDirections = [
-      {
-        id: 'direction-1',
-        title: 'Focus Match',
-        subtitle: 'Experiences highly aligned with your career goal',
-        description: 'These experiences directly support your target industry and role',
-        isExpanded: true,
-        cards: cardsByCategory['Focus Match'],
-        extractedCount: cardsByCategory['Focus Match'].filter(c => c.source.type === 'uploaded_resume').length,
-        aiRecommendedCount: cardsByCategory['Focus Match'].filter(c => c.source.type === 'ai_generated').length
-      },
-      {
-        id: 'direction-2',
-        title: 'Growth Potential',
-        subtitle: 'Experiences that show your development potential',
-        description: 'These experiences demonstrate your ability to learn and grow',
-        isExpanded: false,
-        cards: cardsByCategory['Growth Potential'],
-        extractedCount: cardsByCategory['Growth Potential'].filter(c => c.source.type === 'uploaded_resume').length,
-        aiRecommendedCount: cardsByCategory['Growth Potential'].filter(c => c.source.type === 'ai_generated').length
-      },
-      {
-        id: 'direction-3',
-        title: 'Foundation Skills',
-        subtitle: 'Core skills and foundational experiences',
-        description: 'These experiences build the foundation for your career development',
-        isExpanded: false,
-        cards: cardsByCategory['Foundation Skills'],
-        extractedCount: cardsByCategory['Foundation Skills'].filter(c => c.source.type === 'uploaded_resume').length,
-        aiRecommendedCount: cardsByCategory['Foundation Skills'].filter(c => c.source.type === 'ai_generated').length
-      }
-    ];
+    // 🔧 PROFESSIONAL: 使用CardDataManager统一管理卡片数据
+    const source = fromHomepage ? 'homepage' : 'experience';
 
-    updateDirections(updatedDirections);
-    setIsGeneratingCards(false);
-    console.log('🎉 [PROCESS] Directions updated with processed cards');
+    console.log('📝 [PROCESS] About to add cards to CardDataManager:', {
+      cardsToAdd: aiCards.length,
+      source,
+      cardDetails: aiCards.map(c => ({
+        name: c.cardPreview.experienceName,
+        sourceType: c.source.type,
+        category: c.category
+      }))
+    });
+
+    const success = CardDataManager.addCards(aiCards, source);
+
+    if (success) {
+      // 从CardDataManager获取更新后的方向数据
+      const updatedDirections = CardDataManager.getDirectionsData();
+      const totalCards = updatedDirections.reduce((sum, dir) => sum + dir.cards.length, 0);
+
+      setDirections(updatedDirections);
+      setIsGeneratingCards(false);
+
+      console.log('🎉 [PROCESS] Cards successfully added to CardDataManager and directions updated:', {
+        directionsCount: updatedDirections.length,
+        totalCards,
+        sessionStats: CardDataManager.getSessionStats()
+      });
+    } else {
+      console.error('❌ [PROCESS] Failed to add cards to CardDataManager');
+    }
   };
 
   // Convert AI response to ExperienceCard format
-  const convertAICardToExperienceCard = (aiCard: AICardResponse, fromHomepage: boolean = false): ExperienceCard => {
+  const convertAICardToExperienceCard = (aiCard: AICardResponse, fromHomepage: boolean = false, forceUploadedResume: boolean = false): ExperienceCard => {
     const cardId = `ai-card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
     // Map AI card category to our category system
@@ -313,8 +351,8 @@ export default function ExperiencePage() {
       },
       completionLevel: calculateCompletionLevel(),
       source: {
-        // 🔧 FIX: Improved source type detection logic
-        type: determineSourceType(safeGet(aiCard.详情卡展示?.生成来源, '类型'), fromHomepage)
+        // 🔧 FIX: Improved source type detection logic with force override
+        type: forceUploadedResume ? 'uploaded_resume' : determineSourceType(safeGet(aiCard.详情卡展示?.生成来源, '类型'), fromHomepage)
       },
       createdAt: new Date(),
       updatedAt: new Date()
@@ -621,7 +659,14 @@ export default function ExperiencePage() {
       console.log('✅ New AI cards generated from uploaded file:', data);
 
       // 🔧 FIX: Convert AI cards with proper source type (uploaded_resume for file uploads)
-      const newAICards = data.经验卡片推荐.map((card: AICardResponse) => convertAICardToExperienceCard(card, true)); // true indicates from file upload
+      // Force uploaded_resume type for experience page file uploads
+      const newAICards = data.经验卡片推荐.map((card: AICardResponse) => convertAICardToExperienceCard(card, false, true)) || [];
+
+      console.log('🔄 [FILE UPLOAD] Converted cards from experience page upload:', {
+        totalCards: newAICards.length,
+        sourceTypes: newAICards.map((c: ExperienceCard) => c.source.type),
+        cardNames: newAICards.map((c: ExperienceCard) => c.cardPreview.experienceName)
+      });
 
       // Add new cards to existing directions
       const updatedDirections = directions.map(dir => {

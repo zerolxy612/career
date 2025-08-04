@@ -137,7 +137,7 @@ export function generateId(): string {
 }
 
 // Session data management utilities
-export function clearSessionData(): void {
+export function clearSessionData(preserveHomepageData: boolean = false): void {
   if (typeof window === 'undefined') return;
 
   const sessionKeys = [
@@ -145,12 +145,15 @@ export function clearSessionData(): void {
     'hasInteracted',
     'selectedCards',
     'selectedCombination',
-    'homepageGeneratedCards',
-    'hasHomepageFiles',
     'uploadedFilesMetadata'
   ];
 
-  console.log('🧹 [UTILS] Clearing session data:', sessionKeys);
+  // Only clear homepage data if not preserving it
+  if (!preserveHomepageData) {
+    sessionKeys.push('homepageGeneratedCards', 'hasHomepageFiles');
+  }
+
+  console.log('🧹 [UTILS] Clearing session data:', sessionKeys, { preserveHomepageData });
 
   sessionKeys.forEach(key => {
     try {
