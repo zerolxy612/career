@@ -98,16 +98,13 @@ export const CardCategory: React.FC<CardCategoryProps> = ({
         {/* Direction Content */}
         {direction.isExpanded && (
           <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
-            {isFirstDirection ? (
-              <FirstDirectionContent
-                direction={direction}
-                onCardClick={onCardClick}
-                onCreateNewCard={onCreateNewCard}
-                onDeleteCard={onDeleteCard}
-              />
-            ) : (
-              <OtherDirectionContent direction={direction} />
-            )}
+            <DirectionContent
+              direction={direction}
+              onCardClick={onCardClick}
+              onCreateNewCard={onCreateNewCard}
+              onDeleteCard={onDeleteCard}
+              isFirstDirection={isFirstDirection}
+            />
           </div>
         )}
       </div>
@@ -115,17 +112,19 @@ export const CardCategory: React.FC<CardCategoryProps> = ({
   );
 };
 
-// Component for the first direction (expanded with detailed content)
-const FirstDirectionContent: React.FC<{
+// Unified component for all directions (supports full editing functionality)
+const DirectionContent: React.FC<{
   direction: CardDirection;
   onCardClick?: (cardId: string) => void;
   onCreateNewCard?: () => void;
   onDeleteCard?: (cardId: string) => void;
-}> = ({ direction, onCardClick, onCreateNewCard, onDeleteCard }) => {
-  console.log('🎯 [FIRST_DIRECTION] Rendering FirstDirectionContent for:', {
+  isFirstDirection?: boolean;
+}> = ({ direction, onCardClick, onCreateNewCard, onDeleteCard, isFirstDirection = false }) => {
+  console.log('🎯 [DIRECTION_CONTENT] Rendering DirectionContent for:', {
     directionTitle: direction.title,
     totalCards: direction.cards.length,
-    isExpanded: direction.isExpanded
+    isExpanded: direction.isExpanded,
+    isFirstDirection
   });
 
   return (
@@ -149,7 +148,7 @@ const FirstDirectionContent: React.FC<{
         }}>
           (Your own experience cards)
         </p>
-        
+
         {/* Real experience cards - only user_input type */}
         {direction.cards.filter(card => card.source.type === 'user_input').length > 0 ? (
           <div style={{
@@ -213,7 +212,7 @@ const FirstDirectionContent: React.FC<{
         }}>
           (Cards AI guessed you might relate to)
         </p>
-        
+
         {/* Cards container */}
         <div style={{
           border: '2px dashed #ccc',
@@ -252,8 +251,6 @@ const FirstDirectionContent: React.FC<{
               ));
           })()}
 
-
-
           {/* Add New Card Button */}
           <ExperienceCard
             type="create-new"
@@ -262,30 +259,6 @@ const FirstDirectionContent: React.FC<{
           />
         </div>
       </div>
-    </div>
-  );
-};
-
-// Component for other directions (collapsed with summary)
-const OtherDirectionContent: React.FC<{
-  direction: CardDirection;
-}> = ({ direction }) => {
-  return (
-    <div style={{ textAlign: 'center', padding: '1rem' }}>
-      <p style={{
-        fontSize: '1rem',
-        color: '#4285f4',
-        margin: '0 0 0.5rem 0'
-      }}>
-        There are currently {direction.extractedCount + direction.aiRecommendedCount} Cards in the direction, Includes {direction.extractedCount}
-      </p>
-      <p style={{
-        fontSize: '1rem',
-        color: '#4285f4',
-        margin: 0
-      }}>
-        extracted cards and {direction.aiRecommendedCount} AI-recommended cards.
-      </p>
     </div>
   );
 };

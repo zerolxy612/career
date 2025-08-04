@@ -141,11 +141,66 @@ export default function ExperiencePage() {
     initializeExperienceData(storedGoal, JSON.parse(storedIndustry));
   }, [router, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 🔧 NEW: 初始化动态方向分类
+  const initializeDynamicDirections = async (userGoal: string, selectedIndustry: string) => {
+    console.log('🎯 [DYNAMIC_DIRECTIONS] Initializing dynamic directions...');
+
+    // 检查是否已经有动态方向
+    const existingDirections = CardDataManager.getDynamicDirections();
+    if (existingDirections && existingDirections.length === 3) {
+      console.log('✅ [DYNAMIC_DIRECTIONS] Using existing dynamic directions:', {
+        directionTitles: existingDirections.map(d => d.方向标题)
+      });
+      return;
+    }
+
+    try {
+      // 调用API生成动态方向
+      console.log('📤 [DYNAMIC_DIRECTIONS] Requesting dynamic directions from API...');
+      const response = await fetch('/api/ai/generate-dynamic-directions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userGoal,
+          selectedIndustry
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('📥 [DYNAMIC_DIRECTIONS] API response received:', data);
+
+      if (data.个性化方向分类 && Array.isArray(data.个性化方向分类) && data.个性化方向分类.length === 3) {
+        // 存储动态方向到CardDataManager
+        const success = CardDataManager.setDynamicDirections(data.个性化方向分类);
+        if (success) {
+          console.log('✅ [DYNAMIC_DIRECTIONS] Dynamic directions generated and stored successfully');
+        } else {
+          console.error('❌ [DYNAMIC_DIRECTIONS] Failed to store dynamic directions');
+        }
+      } else {
+        console.error('❌ [DYNAMIC_DIRECTIONS] Invalid API response structure');
+      }
+
+    } catch (error) {
+      console.error('❌ [DYNAMIC_DIRECTIONS] Error generating dynamic directions:', error);
+      console.log('🔄 [DYNAMIC_DIRECTIONS] Will use default directions as fallback');
+    }
+  };
+
   // 🔧 UNIFIED FIX: 统一的数据初始化函数
   const initializeExperienceData = async (userGoal: string, selectedIndustry: IndustryRecommendation) => {
     console.log('📊 [EXPERIENCE] Initializing experience data...');
 
-    // 1. 检查CardDataManager中是否有现有数据
+    // 1. 首先生成或加载动态方向分类
+    await initializeDynamicDirections(userGoal, selectedIndustry.cardPreview.fieldName);
+
+    // 2. 检查CardDataManager中是否有现有数据
     const existingCards = CardDataManager.getAllCards();
     console.log('📋 [EXPERIENCE] Existing cards in CardDataManager:', existingCards.length);
 
@@ -158,7 +213,7 @@ export default function ExperiencePage() {
       return;
     }
 
-    // 2. 检查是否有首页传递的AI响应需要处理
+    // 3. 检查是否有首页传递的AI响应需要处理
     const homepageAIResponse = localStorage.getItem('homepageAIResponse');
     const homepageFileCount = localStorage.getItem('homepageFileCount');
 
@@ -168,7 +223,7 @@ export default function ExperiencePage() {
         const aiResponse = JSON.parse(homepageAIResponse);
         const fileCount = parseInt(homepageFileCount || '0');
 
-        // 处理首页数据并添加到CardDataManager
+        // 处理首页数据并添加到CardDataManager（使用智能分类）
         await processHomepageAIResponse(aiResponse, fileCount);
 
         // 清理首页数据
@@ -182,7 +237,7 @@ export default function ExperiencePage() {
       }
     }
 
-    // 3. 没有现有数据，生成新的AI建议卡片
+    // 4. 没有现有数据，生成新的AI建议卡片或显示空结构
     console.log('🤖 [EXPERIENCE] No existing data, generating AI suggestion cards...');
     await generateAICards(userGoal, selectedIndustry, []);
   };
@@ -210,8 +265,8 @@ export default function ExperiencePage() {
       sourceTypes: experienceCards.map(c => c.source.type)
     });
 
-    // 通过CardDataManager添加卡片
-    const success = CardDataManager.addCards(experienceCards, 'homepage', fileCount);
+    // 🔧 SMART CLASSIFICATION: 通过CardDataManager智能添加卡片
+    const success = await CardDataManager.addCardsWithSmartClassification(experienceCards, 'homepage', fileCount);
 
     if (success) {
       // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新正确执行
@@ -325,41 +380,9 @@ export default function ExperiencePage() {
       if (files.length === 0) {
         console.log('📝 [AI_GENERATE] No files provided, showing empty directions for manual card creation');
 
-        // 创建空的方向结构
-        const emptyDirections = [
-          {
-            id: 'direction-1',
-            title: 'Focus Match',
-            subtitle: 'Experiences highly aligned with your career goal',
-            description: 'Add experiences that directly support your target industry and role',
-            isExpanded: true,
-            cards: [],
-            extractedCount: 0,
-            aiRecommendedCount: 0
-          },
-          {
-            id: 'direction-2',
-            title: 'Growth Potential',
-            subtitle: 'Experiences that show your development potential',
-            description: 'Add experiences that demonstrate your ability to learn and grow',
-            isExpanded: false,
-            cards: [],
-            extractedCount: 0,
-            aiRecommendedCount: 0
-          },
-          {
-            id: 'direction-3',
-            title: 'Foundation Skills',
-            subtitle: 'Core skills and foundational experiences',
-            description: 'Add experiences that build the foundation for your career development',
-            isExpanded: false,
-            cards: [],
-            extractedCount: 0,
-            aiRecommendedCount: 0
-          }
-        ];
-
-        setDirections(emptyDirections);
+        // 使用CardDataManager获取方向数据（包括动态方向）
+        const directionsData = CardDataManager.getDirectionsData();
+        setDirections(directionsData);
         setIsGeneratingCards(false);
         return;
       }
@@ -392,8 +415,8 @@ export default function ExperiencePage() {
           .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
           .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, false)); // AI建议卡片
 
-        // 通过CardDataManager添加AI建议卡片
-        const success = CardDataManager.addCards(suggestionCards, 'experience', files.length);
+        // 🔧 SMART CLASSIFICATION: 通过CardDataManager智能添加AI建议卡片
+        const success = await CardDataManager.addCardsWithSmartClassification(suggestionCards, 'experience', files.length);
 
         if (success) {
           // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新正确执行
@@ -414,40 +437,9 @@ export default function ExperiencePage() {
 
     } catch (error) {
       console.error('❌ [AI_GENERATE] Error generating AI suggestion cards:', error);
-      // 显示空方向作为降级处理
-      const emptyDirections = [
-        {
-          id: 'direction-1',
-          title: 'Focus Match',
-          subtitle: 'Experiences highly aligned with your career goal',
-          description: 'Add experiences that directly support your target industry and role',
-          isExpanded: true,
-          cards: [],
-          extractedCount: 0,
-          aiRecommendedCount: 0
-        },
-        {
-          id: 'direction-2',
-          title: 'Growth Potential',
-          subtitle: 'Experiences that show your development potential',
-          description: 'Add experiences that demonstrate your ability to learn and grow',
-          isExpanded: false,
-          cards: [],
-          extractedCount: 0,
-          aiRecommendedCount: 0
-        },
-        {
-          id: 'direction-3',
-          title: 'Foundation Skills',
-          subtitle: 'Core skills and foundational experiences',
-          description: 'Add experiences that build the foundation for your career development',
-          isExpanded: false,
-          cards: [],
-          extractedCount: 0,
-          aiRecommendedCount: 0
-        }
-      ];
-      setDirections(emptyDirections);
+      // 显示空方向作为降级处理，使用CardDataManager获取方向数据
+      const directionsData = CardDataManager.getDirectionsData();
+      setDirections(directionsData);
     } finally {
       setIsGeneratingCards(false);
     }
@@ -682,8 +674,8 @@ export default function ExperiencePage() {
         aiResponseCategories: aiResponse.经验卡片推荐.map((c: AICardResponse) => ({ name: c.小卡展示?.经历名称, category: c.卡片分组 }))
       });
 
-      // 🔧 UNIFIED FIX: 通过CardDataManager添加卡片
-      const success = CardDataManager.addCards(newCards, 'experience', 1);
+      // 🔧 SMART CLASSIFICATION: 通过CardDataManager智能添加卡片
+      const success = await CardDataManager.addCardsWithSmartClassification(newCards, 'experience', 1);
 
       if (success) {
         // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新在下一个事件循环中执行
@@ -873,7 +865,7 @@ export default function ExperiencePage() {
                 onCardClick={handleCardClick}
                 onCreateNewCard={handleCreateNewCard}
                 onDeleteCard={handleDeleteCard}
-                isFirstDirection={index === 0}
+                isFirstDirection={index === 0} // 保留这个属性用于样式区分，但所有方向都支持编辑
               />
             ))}
           </div>
