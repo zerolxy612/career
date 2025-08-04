@@ -82,9 +82,11 @@ export const EXPERIENCE_EXTRACTION_PROMPT = `
 4. 根据实际提取到的经历数量生成卡片，不强制要求特定数量
 
 请分析用户的经历，并按照以下分类整理：
-1. Focus Match - 与目标行业高度匹配的经历
-2. Growth Potential - 有成长潜力的经历
-3. Foundation Skills - 基础技能相关的经历
+1. Focus Match - 用户的主要经历和重要体验（默认分类）
+2. Growth Potential - 显示学习能力和成长潜力的经历
+3. Foundation Skills - 展示基础技能和素质的经历
+
+重要：所有从用户文件中提取的真实经历都应该被转换为卡片。默认将所有经历分类到Focus Match，确保用户能够看到所有上传内容的解析结果。
 
 请严格按照以下JSON格式输出：
 

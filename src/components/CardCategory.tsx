@@ -122,6 +122,12 @@ const FirstDirectionContent: React.FC<{
   onCreateNewCard?: () => void;
   onDeleteCard?: (cardId: string) => void;
 }> = ({ direction, onCardClick, onCreateNewCard, onDeleteCard }) => {
+  console.log('🎯 [FIRST_DIRECTION] Rendering FirstDirectionContent for:', {
+    directionTitle: direction.title,
+    totalCards: direction.cards.length,
+    isExpanded: direction.isExpanded
+  });
+
   return (
     <div>
       {/* MY STORY Section */}
@@ -229,7 +235,9 @@ const FirstDirectionContent: React.FC<{
               totalCards: direction.cards.length,
               allSourceTypes: direction.cards.map(c => ({ name: c.cardPreview.experienceName, type: c.source.type })),
               filteredAICards: aiCards.length,
-              aiCardTypes: aiCards.map(c => ({ name: c.cardPreview.experienceName, type: c.source.type }))
+              aiCardTypes: aiCards.map(c => ({ name: c.cardPreview.experienceName, type: c.source.type })),
+              willRenderCards: aiCards.slice(0, 2).length,
+              renderingCards: aiCards.slice(0, 2).map(c => ({ name: c.cardPreview.experienceName, id: c.id }))
             });
 
             return aiCards

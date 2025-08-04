@@ -103,31 +103,20 @@ export default function CombinationPage() {
       console.log('✅ [COMBINATION] Data loaded from CardDataManager:', {
         directionsCount: directionsData.length,
         totalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0),
-        sessionStats
+        sessionStats,
+        cardDetails: directionsData.map(dir => ({
+          title: dir.title,
+          cardCount: dir.cards.length,
+          cardNames: dir.cards.map(c => c.cardPreview.experienceName)
+        }))
       });
 
       setDirections(directionsData);
     } else {
-      // 尝试从旧的localStorage加载（向后兼容）
-      console.log('⚠️ [COMBINATION] No valid CardDataManager session, trying legacy localStorage...');
-      const storedDirections = localStorage.getItem('experienceDirections');
-
-      if (storedDirections) {
-        try {
-          const parsedDirections = JSON.parse(storedDirections);
-          console.log('📋 [COMBINATION] Loaded legacy directions:', {
-            directionsCount: parsedDirections.length,
-            totalCards: parsedDirections.reduce((sum: number, dir: CardDirection) => sum + (dir.cards?.length || 0), 0)
-          });
-          setDirections(parsedDirections);
-        } catch (error) {
-          console.error('❌ [COMBINATION] Error parsing legacy directions:', error);
-          router.push('/experience');
-        }
-      } else {
-        console.log('❌ [COMBINATION] No data found, redirecting to experience page');
-        router.push('/experience');
-      }
+      // 🔧 FIX: 移除向后兼容逻辑，强制使用CardDataManager确保数据一致性
+      console.log('❌ [COMBINATION] No valid CardDataManager session found, redirecting to experience page');
+      console.log('🔧 [COMBINATION] This ensures data consistency between Experience and Combination pages');
+      router.push('/experience');
     }
 
     // Load user goal and selected industry

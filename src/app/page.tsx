@@ -159,20 +159,21 @@ export default function Home() {
 
   const handleNext = async () => {
     if (selectedIndustry) {
-      // 🔧 PROFESSIONAL FIX: 使用统一的数据管理器开始新会话
-      console.log('🆕 [HOMEPAGE] Starting new professional session with CardDataManager...');
+      console.log('🚀 [HOMEPAGE] Starting navigation with unified data flow...');
+
+      // 🔧 UNIFIED FIX: 使用CardDataManager开始新会话，完全清理旧数据
       const sessionId = CardDataManager.startNewSession(goalText, selectedIndustry.cardPreview.fieldName);
 
-      // Store selected industry and navigate to experience page
+      // 存储基础会话信息（CardDataManager已经处理了数据清理）
       localStorage.setItem('selectedIndustry', JSON.stringify(selectedIndustry));
       localStorage.setItem('userGoal', goalText);
 
-      // 🔧 PROFESSIONAL FIX: 统一处理文件上传和卡片生成
+      // 🔧 UNIFIED FIX: 如果有文件，立即处理并通过CardDataManager统一管理
       if (uploadedFiles.length > 0) {
-        console.log('📁 [HOMEPAGE] Processing uploaded files with CardDataManager...');
+        console.log('📁 [HOMEPAGE] Processing files through unified workflow...');
+        setIsLoading(true);
 
         try {
-          // Process files and generate experience cards immediately
           const formData = new FormData();
           formData.append('userGoal', goalText);
           formData.append('selectedIndustry', selectedIndustry.cardPreview.fieldName);
@@ -181,40 +182,36 @@ export default function Home() {
             formData.append('files', file.file);
           });
 
-          console.log('📤 [HOMEPAGE] Sending files to generate experience cards...');
+          console.log('📤 [HOMEPAGE] Generating experience cards from uploaded files...');
           const response = await fetch('/api/ai/generate-experience-cards', {
             method: 'POST',
             body: formData,
           });
 
           if (response.ok) {
-            const data = await response.json();
-            console.log('✅ [HOMEPAGE] Experience cards generated from homepage files:', data);
+            const aiResponse = await response.json();
+            console.log('✅ [HOMEPAGE] AI response received:', aiResponse);
 
-            // 🔧 PROFESSIONAL: 存储原始AI响应数据，让Experience页面统一处理
-            // 这样避免了重复处理和数据转换的复杂性
-            localStorage.setItem('homepageGeneratedCards', JSON.stringify(data));
-            localStorage.setItem('hasHomepageFiles', 'true');
+            // 🔧 UNIFIED FIX: 直接通过CardDataManager处理卡片数据
+            // 这里我们需要先转换AI响应为ExperienceCard格式，然后添加到会话中
+            // 暂时存储原始响应，让Experience页面统一处理转换逻辑
+            localStorage.setItem('homepageAIResponse', JSON.stringify(aiResponse));
+            localStorage.setItem('homepageFileCount', uploadedFiles.length.toString());
 
-            console.log('💾 [HOMEPAGE] Stored raw AI response for Experience page processing:', {
-              cardsCount: data.经验卡片推荐?.length || 0,
-              sessionId
-            });
+            console.log('💾 [HOMEPAGE] Stored AI response for unified processing');
           } else {
-            console.error('❌ [HOMEPAGE] Failed to process homepage files');
+            console.error('❌ [HOMEPAGE] Failed to generate cards from files');
           }
         } catch (error) {
-          console.error('❌ [HOMEPAGE] Error processing homepage files:', error);
+          console.error('❌ [HOMEPAGE] Error processing files:', error);
+        } finally {
+          setIsLoading(false);
         }
       }
 
-      // 🔧 PROFESSIONAL: 直接跳转，让Experience页面从CardDataManager读取数据
-      console.log('🚀 [HOMEPAGE] Navigating to experience page with professional data flow...');
-      const hasFiles = uploadedFiles.length > 0;
-      const navigationUrl = hasFiles ? '/experience?fromHomepage=true' : '/experience';
-
-      // 立即跳转，数据已经通过CardDataManager统一管理
-      router.push(navigationUrl);
+      // 🔧 UNIFIED FIX: 导航到Experience页面，让其从CardDataManager统一读取数据
+      console.log('🚀 [HOMEPAGE] Navigating to experience page...');
+      router.push('/experience');
     }
   };
 

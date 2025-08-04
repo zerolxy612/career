@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { IndustryRecommendation } from '@/types/api';
 import { CardDirection, CompletionLevel, ExperienceCard, CardCategory as CardCategoryType } from '@/types/card';
@@ -53,8 +53,6 @@ export default function ExperiencePage() {
   const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
   const [savedCards, setSavedCards] = useState<Map<string, ExperienceDetailData>>(new Map());
 
-  // 🔧 FIX: Prevent multiple useEffect executions
-  const hasInitialized = useRef(false);
   const [isGeneratingCards, setIsGeneratingCards] = useState(true); // 初始为true
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
@@ -62,12 +60,7 @@ export default function ExperiencePage() {
   void savedCards;
   void uploadedFiles;
 
-  // Helper function to update directions and save to localStorage
-  const updateDirections = (newDirections: CardDirection[]) => {
-    setDirections(newDirections);
-    localStorage.setItem('experienceDirections', JSON.stringify(newDirections));
-    console.log('💾 [DIRECTIONS] Updated and saved to localStorage');
-  };
+  // 🔧 UNIFIED FIX: 移除updateDirections函数，现在使用CardDataManager统一管理
 
   // Calculate completion percentage for experience data
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
@@ -117,23 +110,13 @@ export default function ExperiencePage() {
   };
 
   useEffect(() => {
-    // 🔧 PROFESSIONAL: 使用CardDataManager进行统一的数据管理
-    console.log('🚀 [EXPERIENCE] Initializing with professional CardDataManager...');
+    console.log('🚀 [EXPERIENCE] Initializing with unified CardDataManager...');
 
-    // 检查是否有有效的会话数据
-    const isValidSession = CardDataManager.validateSession();
-    const fromHomepage = searchParams.get('fromHomepage') === 'true';
-
-    console.log('📋 [EXPERIENCE] Session validation:', {
-      isValidSession,
-      fromHomepage,
-      sessionStats: CardDataManager.getSessionStats()
-    });
-
-    // 🔧 PROFESSIONAL: 重置组件状态
+    // 重置组件状态
     setDirections([]);
     setHasInteracted(false);
     setSavedCards(new Map());
+    setIsGeneratingCards(true);
 
     // 加载用户基础信息
     const storedIndustry = localStorage.getItem('selectedIndustry');
@@ -147,140 +130,109 @@ export default function ExperiencePage() {
       setUserGoal(storedGoal);
     }
 
-    // If no selected industry, redirect back to goal setting
-    if (!storedIndustry) {
+    // 如果没有选择行业，重定向到首页
+    if (!storedIndustry || !storedGoal) {
+      console.log('❌ [EXPERIENCE] Missing required data, redirecting to homepage');
       router.push('/');
       return;
     }
 
-    // 🔧 PROFESSIONAL: 检查是否有首页数据需要处理
-    const homepageGeneratedCards = localStorage.getItem('homepageGeneratedCards');
-    const hasHomepageData = fromHomepage && homepageGeneratedCards;
-
-    if (hasHomepageData) {
-      // 处理首页传递的数据
-      console.log('📁 [EXPERIENCE] Processing homepage data...');
-
-      if (storedIndustry && storedGoal) {
-        try {
-          const cardsData = JSON.parse(homepageGeneratedCards);
-          processGeneratedCards(cardsData, true); // true indicates from homepage
-
-          // 清理首页数据
-          localStorage.removeItem('homepageGeneratedCards');
-          localStorage.removeItem('hasHomepageFiles');
-
-          console.log('✅ [EXPERIENCE] Homepage data processed and cleaned up');
-        } catch (error) {
-          console.error('❌ [EXPERIENCE] Error processing homepage data:', error);
-          // 降级处理：生成新的AI卡片
-          generateAICards(storedGoal, JSON.parse(storedIndustry), []);
-        }
-      }
-    } else if (isValidSession) {
-      // 从CardDataManager加载现有数据
-      console.log('📊 [EXPERIENCE] Loading existing data from CardDataManager...');
-      const directionsData = CardDataManager.getDirectionsData();
-      const totalCards = directionsData.reduce((sum, dir) => sum + dir.cards.length, 0);
-
-      if (totalCards > 0) {
-        setDirections(directionsData);
-        setIsGeneratingCards(false);
-        console.log('✅ [EXPERIENCE] Existing data loaded from CardDataManager:', {
-          directionsCount: directionsData.length,
-          totalCards
-        });
-      } else {
-        // 没有现有数据，生成新的AI卡片
-        console.log('🤖 [EXPERIENCE] No existing data, generating new AI cards...');
-        if (storedIndustry && storedGoal) {
-          generateAICards(storedGoal, JSON.parse(storedIndustry), []);
-        }
-      }
-    } else {
-      // 生成新的AI卡片
-      console.log('🤖 [EXPERIENCE] Generating new AI cards...');
-      if (storedIndustry && storedGoal) {
-        generateAICards(storedGoal, JSON.parse(storedIndustry), []);
-      }
-    }
+    // 🔧 UNIFIED FIX: 统一的数据加载逻辑
+    initializeExperienceData(storedGoal, JSON.parse(storedIndustry));
   }, [router, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 🔧 FIX: Process generated cards from homepage or experience page
-  const processGeneratedCards = (data: AIGeneratedCardsResponse, fromHomepage: boolean = false) => {
-    console.log(`🎯 [PROCESS] Processing generated cards (from ${fromHomepage ? 'homepage' : 'experience page'}):`, data);
+  // 🔧 UNIFIED FIX: 统一的数据初始化函数
+  const initializeExperienceData = async (userGoal: string, selectedIndustry: IndustryRecommendation) => {
+    console.log('📊 [EXPERIENCE] Initializing experience data...');
 
-    if (!data.经验卡片推荐 || !Array.isArray(data.经验卡片推荐)) {
-      console.error('❌ [PROCESS] Invalid cards data structure');
+    // 1. 检查CardDataManager中是否有现有数据
+    const existingCards = CardDataManager.getAllCards();
+    console.log('📋 [EXPERIENCE] Existing cards in CardDataManager:', existingCards.length);
+
+    if (existingCards.length > 0) {
+      // 有现有数据，直接加载
+      console.log('✅ [EXPERIENCE] Loading existing cards from CardDataManager');
+      const directionsData = CardDataManager.getDirectionsData();
+      setDirections(directionsData);
+      setIsGeneratingCards(false);
       return;
     }
 
-    // 🔧 FIX: Filter out invalid cards and validate data structure
-    const validCards = data.经验卡片推荐.filter((card: AICardResponse) => {
-      if (!card || typeof card !== 'object') {
-        console.warn('⚠️ [PROCESS] Skipping invalid card (not an object):', card);
-        return false;
-      }
+    // 2. 检查是否有首页传递的AI响应需要处理
+    const homepageAIResponse = localStorage.getItem('homepageAIResponse');
+    const homepageFileCount = localStorage.getItem('homepageFileCount');
 
-      if (!card.小卡展示 || !card.详情卡展示) {
-        console.warn('⚠️ [PROCESS] Skipping card with missing required fields:', card);
-        return false;
-      }
+    if (homepageAIResponse) {
+      console.log('📁 [EXPERIENCE] Processing homepage AI response...');
+      try {
+        const aiResponse = JSON.parse(homepageAIResponse);
+        const fileCount = parseInt(homepageFileCount || '0');
 
-      return true;
+        // 处理首页数据并添加到CardDataManager
+        await processHomepageAIResponse(aiResponse, fileCount);
+
+        // 清理首页数据
+        localStorage.removeItem('homepageAIResponse');
+        localStorage.removeItem('homepageFileCount');
+
+        console.log('✅ [EXPERIENCE] Homepage data processed and cleaned up');
+        return;
+      } catch (error) {
+        console.error('❌ [EXPERIENCE] Error processing homepage AI response:', error);
+      }
+    }
+
+    // 3. 没有现有数据，生成新的AI建议卡片
+    console.log('🤖 [EXPERIENCE] No existing data, generating AI suggestion cards...');
+    await generateAICards(userGoal, selectedIndustry, []);
+  };
+
+  // 🔧 UNIFIED FIX: 处理首页AI响应的专用函数
+  const processHomepageAIResponse = async (aiResponse: AIGeneratedCardsResponse, fileCount: number) => {
+    console.log('📁 [HOMEPAGE_PROCESS] Processing AI response from homepage:', {
+      cardsCount: aiResponse.经验卡片推荐?.length || 0,
+      fileCount
     });
 
-    if (validCards.length === 0) {
-      console.log('ℹ️ [PROCESS] No valid cards found, skipping card generation');
+    if (!aiResponse.经验卡片推荐 || !Array.isArray(aiResponse.经验卡片推荐)) {
+      console.error('❌ [HOMEPAGE_PROCESS] Invalid AI response structure');
       return;
     }
 
-    console.log(`✅ [PROCESS] Found ${validCards.length} valid cards out of ${data.经验卡片推荐.length} total`);
+    // 转换AI响应为ExperienceCard格式
+    const experienceCards = aiResponse.经验卡片推荐
+      .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
+      .map((card: AICardResponse) => convertAICardToExperienceCard(card, true, true)); // fromHomepage=true, forceUploadedResume=true
 
-    // Convert AI cards to our format
-    // 🔧 PROFESSIONAL: 确保从文件生成的卡片被正确标记为uploaded_resume类型
-    const aiCards = validCards.map((card: AICardResponse) =>
-      convertAICardToExperienceCard(card, fromHomepage, true) // true = forceUploadedResume
-    );
-
-    console.log('🔄 [PROCESS] Converted AI cards:', {
-      totalCards: aiCards.length,
-      sourceTypes: aiCards.map(c => ({ name: c.cardPreview.experienceName, sourceType: c.source.type })),
-      fromHomepage
+    console.log('🔄 [HOMEPAGE_PROCESS] Converted cards:', {
+      originalCount: aiResponse.经验卡片推荐.length,
+      convertedCount: experienceCards.length,
+      sourceTypes: experienceCards.map(c => c.source.type)
     });
 
-    // 🔧 PROFESSIONAL: 使用CardDataManager统一管理卡片数据
-    const source = fromHomepage ? 'homepage' : 'experience';
-
-    console.log('📝 [PROCESS] About to add cards to CardDataManager:', {
-      cardsToAdd: aiCards.length,
-      source,
-      cardDetails: aiCards.map(c => ({
-        name: c.cardPreview.experienceName,
-        sourceType: c.source.type,
-        category: c.category
-      }))
-    });
-
-    const success = CardDataManager.addCards(aiCards, source);
+    // 通过CardDataManager添加卡片
+    const success = CardDataManager.addCards(experienceCards, 'homepage', fileCount);
 
     if (success) {
-      // 从CardDataManager获取更新后的方向数据
-      const updatedDirections = CardDataManager.getDirectionsData();
-      const totalCards = updatedDirections.reduce((sum, dir) => sum + dir.cards.length, 0);
+      // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新正确执行
+      setTimeout(() => {
+        const directionsData = CardDataManager.getDirectionsData();
 
-      setDirections(updatedDirections);
-      setIsGeneratingCards(false);
+        console.log('🔄 [HOMEPAGE_PROCESS] About to update directions state:', {
+          newTotalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0)
+        });
 
-      console.log('🎉 [PROCESS] Cards successfully added to CardDataManager and directions updated:', {
-        directionsCount: updatedDirections.length,
-        totalCards,
-        sessionStats: CardDataManager.getSessionStats()
-      });
+        setDirections(directionsData);
+        setIsGeneratingCards(false);
+
+        console.log('✅ [HOMEPAGE_PROCESS] Homepage cards successfully processed and UI updated');
+      }, 100);
     } else {
-      console.error('❌ [PROCESS] Failed to add cards to CardDataManager');
+      console.error('❌ [HOMEPAGE_PROCESS] Failed to add homepage cards to CardDataManager');
     }
   };
+
+  // 🔧 UNIFIED FIX: 移除未使用的processGeneratedCards函数，现在直接在各个工作流中处理
 
   // Convert AI response to ExperienceCard format
   const convertAICardToExperienceCard = (aiCard: AICardResponse, fromHomepage: boolean = false, forceUploadedResume: boolean = false): ExperienceCard => {
@@ -359,17 +311,21 @@ export default function ExperiencePage() {
     };
   };
 
-  // Generate AI cards based on user goal and industry
+  // 🔧 UNIFIED FIX: 生成AI建议卡片（当没有现有数据时）
   const generateAICards = async (goal: string, industry: IndustryRecommendation, files: File[] = []) => {
-    console.log('🤖 Generating AI cards...', { goal, industry: industry.cardPreview.fieldName, filesCount: files.length });
+    console.log('🤖 [AI_GENERATE] Generating AI suggestion cards...', {
+      goal: goal.substring(0, 50) + '...',
+      industry: industry.cardPreview.fieldName,
+      filesCount: files.length
+    });
     setIsGeneratingCards(true);
 
     try {
-      // 🔧 FIX: If no files provided, don't call API and just show empty directions
+      // 🔧 UNIFIED FIX: 如果没有文件，显示空的方向结构供手动创建
       if (files.length === 0) {
-        console.log('📝 [GENERATE] No files provided, showing empty directions for manual card creation');
+        console.log('📝 [AI_GENERATE] No files provided, showing empty directions for manual card creation');
 
-        // Create empty directions structure
+        // 创建空的方向结构
         const emptyDirections = [
           {
             id: 'direction-1',
@@ -403,23 +359,21 @@ export default function ExperiencePage() {
           }
         ];
 
-        updateDirections(emptyDirections);
+        setDirections(emptyDirections);
         setIsGeneratingCards(false);
         return;
       }
 
+      // 🔧 UNIFIED FIX: 如果有文件，通过AI生成建议卡片
       const formData = new FormData();
       formData.append('userGoal', goal);
       formData.append('selectedIndustry', industry.cardPreview.fieldName);
 
-      // Add files if available (though we can't restore File objects from localStorage)
-      // This is a limitation - in a real app, files would be stored on server
-      files.forEach((file, index) => {
-        console.log(`File ${index + 1} info:`, file.name);
-        // We can't recreate File objects, so we'll just generate AI suggestions
+      files.forEach((file) => {
+        formData.append('files', file);
       });
 
-      console.log('📤 Sending request to generate experience cards...');
+      console.log('📤 [AI_GENERATE] Sending request to generate AI suggestion cards...');
       const response = await fetch('/api/ai/generate-experience-cards', {
         method: 'POST',
         body: formData,
@@ -429,15 +383,71 @@ export default function ExperiencePage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('✅ AI cards generated successfully:', data);
+      const aiResponse = await response.json();
+      console.log('✅ [AI_GENERATE] AI suggestion cards generated:', aiResponse);
 
-      // Use the new processGeneratedCards function
-      processGeneratedCards(data, false); // false indicates not from homepage
+      // 🔧 UNIFIED FIX: 处理AI响应并通过CardDataManager管理
+      if (aiResponse.经验卡片推荐 && Array.isArray(aiResponse.经验卡片推荐)) {
+        const suggestionCards = aiResponse.经验卡片推荐
+          .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
+          .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, false)); // AI建议卡片
+
+        // 通过CardDataManager添加AI建议卡片
+        const success = CardDataManager.addCards(suggestionCards, 'experience', files.length);
+
+        if (success) {
+          // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新正确执行
+          setTimeout(() => {
+            const directionsData = CardDataManager.getDirectionsData();
+
+            console.log('🔄 [AI_GENERATE] About to update directions state:', {
+              newTotalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0)
+            });
+
+            setDirections(directionsData);
+            console.log('✅ [AI_GENERATE] AI suggestion cards added and UI updated');
+          }, 100);
+        } else {
+          console.error('❌ [AI_GENERATE] Failed to add AI suggestion cards to CardDataManager');
+        }
+      }
 
     } catch (error) {
-      console.error('❌ Error generating AI cards:', error);
-      // Keep the mock directions as fallback
+      console.error('❌ [AI_GENERATE] Error generating AI suggestion cards:', error);
+      // 显示空方向作为降级处理
+      const emptyDirections = [
+        {
+          id: 'direction-1',
+          title: 'Focus Match',
+          subtitle: 'Experiences highly aligned with your career goal',
+          description: 'Add experiences that directly support your target industry and role',
+          isExpanded: true,
+          cards: [],
+          extractedCount: 0,
+          aiRecommendedCount: 0
+        },
+        {
+          id: 'direction-2',
+          title: 'Growth Potential',
+          subtitle: 'Experiences that show your development potential',
+          description: 'Add experiences that demonstrate your ability to learn and grow',
+          isExpanded: false,
+          cards: [],
+          extractedCount: 0,
+          aiRecommendedCount: 0
+        },
+        {
+          id: 'direction-3',
+          title: 'Foundation Skills',
+          subtitle: 'Core skills and foundational experiences',
+          description: 'Add experiences that build the foundation for your career development',
+          isExpanded: false,
+          cards: [],
+          extractedCount: 0,
+          aiRecommendedCount: 0
+        }
+      ];
+      setDirections(emptyDirections);
     } finally {
       setIsGeneratingCards(false);
     }
@@ -449,7 +459,7 @@ export default function ExperiencePage() {
         ? { ...dir, isExpanded: !dir.isExpanded }
         : dir
     );
-    updateDirections(updatedDirections);
+    setDirections(updatedDirections);
   };
 
   const handleCardClick = (cardId: string) => {
@@ -457,9 +467,9 @@ export default function ExperiencePage() {
     setHasInteracted(true);
 
     // Find the card in all directions
-    let foundCard = null;
+    let foundCard: ExperienceCard | null = null;
     for (const direction of directions) {
-      foundCard = direction.cards.find(card => card.id === cardId);
+      foundCard = direction.cards.find(card => card.id === cardId) || null;
       if (foundCard) break;
     }
 
@@ -472,7 +482,8 @@ export default function ExperiencePage() {
         myRole: foundCard.cardDetail.myRoleAndTasks,
         eventProcess: foundCard.cardDetail.taskDetails,
         reflection: foundCard.cardDetail.reflectionAndResults,
-        oneLineHighlight: foundCard.cardDetail.highlightSentence
+        oneLineHighlight: foundCard.cardDetail.highlightSentence,
+        _cardId: foundCard.id // 添加卡片ID用于编辑识别
       };
       setCurrentCardData(cardData);
     } else {
@@ -494,80 +505,61 @@ export default function ExperiencePage() {
     setCurrentCardData(undefined);
   };
 
+  // 🔧 UNIFIED FIX: 手动创建/编辑卡片 - 工作流3
   const handleDetailModalSave = (data: ExperienceDetailData) => {
-    console.log('Saving experience data:', data);
+    console.log('💾 [MANUAL_CARD] Saving experience data:', data);
     setHasInteracted(true);
 
-    // Calculate completion percentage
+    // 计算完整度百分比
     const completionPercentage = calculateCompletionPercentage(data);
 
-    // Check if we're editing an existing card
-    let existingCardId = null;
-    let existingCard = null;
+    // 检查是否是编辑现有卡片
+    const isEditing = data._cardId !== undefined;
 
-    for (const direction of directions) {
-      existingCard = direction.cards.find(card => {
-        const cardData = {
-          experienceName: card.cardDetail.experienceName,
-          locationAndTime: card.cardDetail.timeAndLocation,
-          scenarioIntroduction: card.cardDetail.backgroundContext,
-          myRole: card.cardDetail.myRoleAndTasks,
-          eventProcess: card.cardDetail.taskDetails,
-          reflection: card.cardDetail.reflectionAndResults,
-          oneLineHighlight: card.cardDetail.highlightSentence
-        };
-        return JSON.stringify(cardData) === JSON.stringify(currentCardData);
-      });
-      if (existingCard) {
-        existingCardId = existingCard.id;
-        break;
-      }
-    }
+    if (isEditing) {
+      // 🔧 UNIFIED FIX: 更新现有卡片（暂时通过directions更新，后续可以扩展CardDataManager支持更新）
+      console.log('✏️ [MANUAL_CARD] Updating existing card:', data._cardId);
 
-    if (existingCardId && existingCard) {
-      // Update existing card
-      console.log('Updating existing card:', existingCardId);
-
-      const updatedCard = {
-        ...existingCard,
-        cardPreview: {
-          experienceName: data.experienceName || 'Untitled Experience',
-          timeAndLocation: data.locationAndTime || '',
-          oneSentenceSummary: data.oneLineHighlight || 'No summary available'
-        },
-        cardDetail: {
-          ...existingCard.cardDetail,
-          experienceName: data.experienceName || 'Untitled Experience',
-          timeAndLocation: data.locationAndTime || '',
-          backgroundContext: data.scenarioIntroduction || '',
-          myRoleAndTasks: data.myRole || '',
-          taskDetails: data.eventProcess || '',
-          reflectionAndResults: data.reflection || '',
-          highlightSentence: data.oneLineHighlight || ''
-        },
-        completionLevel: (completionPercentage >= 70 ? 'complete' : completionPercentage >= 30 ? 'partial' : 'incomplete') as CompletionLevel,
-        updatedAt: new Date()
-      };
-
-      // Update the card in directions
       const updatedDirections = directions.map(dir => ({
         ...dir,
-        cards: dir.cards.map(card =>
-          card.id === existingCardId ? updatedCard : card
-        )
+        cards: dir.cards.map(card => {
+          if (card.id === data._cardId) {
+            return {
+              ...card,
+              cardPreview: {
+                experienceName: data.experienceName || 'Untitled Experience',
+                timeAndLocation: data.locationAndTime || '',
+                oneSentenceSummary: data.oneLineHighlight || 'No summary available'
+              },
+              cardDetail: {
+                ...card.cardDetail,
+                experienceName: data.experienceName || 'Untitled Experience',
+                timeAndLocation: data.locationAndTime || '',
+                backgroundContext: data.scenarioIntroduction || '',
+                myRoleAndTasks: data.myRole || '',
+                taskDetails: data.eventProcess || '',
+                reflectionAndResults: data.reflection || '',
+                highlightSentence: data.oneLineHighlight || ''
+              },
+              completionLevel: (completionPercentage >= 70 ? 'complete' : completionPercentage >= 30 ? 'partial' : 'incomplete') as CompletionLevel,
+              updatedAt: new Date()
+            };
+          }
+          return card;
+        })
       }));
-      updateDirections(updatedDirections);
 
-      // Update saved cards
-      setSavedCards(prev => new Map(prev.set(existingCardId, data)));
+      setDirections(updatedDirections);
+      setSavedCards(prev => new Map(prev.set(data._cardId!, data)));
 
+      console.log('✅ [MANUAL_CARD] Card updated successfully');
       alert(`Experience card updated successfully! Completion: ${completionPercentage}%`);
     } else {
-      // Create new card
-      const cardId = `card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      // 🔧 UNIFIED FIX: 创建新卡片并通过CardDataManager管理
+      console.log('➕ [MANUAL_CARD] Creating new manual card');
 
-      const newCard = {
-        id: cardId,
+      const newCard: ExperienceCard = {
+        id: `manual-card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         category: 'Focus Match' as const,
         cardPreview: {
           experienceName: data.experienceName || 'Untitled Experience',
@@ -592,18 +584,30 @@ export default function ExperiencePage() {
         updatedAt: new Date()
       };
 
-      // Add the card to the first direction (Focus Match)
-      const updatedDirections = directions.map(dir =>
-        dir.id === 'direction-1'
-          ? { ...dir, cards: [...dir.cards, newCard] }
-          : dir
-      );
-      updateDirections(updatedDirections);
+      // 🔧 UNIFIED FIX: 通过CardDataManager添加手动创建的卡片
+      const success = CardDataManager.addCards([newCard], 'manual');
 
-      // Save the card data
-      setSavedCards(prev => new Map(prev.set(cardId, data)));
+      if (success) {
+        // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新正确执行
+        setTimeout(() => {
+          const updatedDirections = CardDataManager.getDirectionsData();
 
-      alert(`Experience card created successfully! Completion: ${completionPercentage}%`);
+          console.log('🔄 [MANUAL_CARD] About to update directions state:', {
+            newTotalCards: updatedDirections.reduce((sum, dir) => sum + dir.cards.length, 0)
+          });
+
+          setDirections(updatedDirections);
+
+          // 保存卡片数据
+          setSavedCards(prev => new Map(prev.set(newCard.id, data)));
+
+          console.log('✅ [MANUAL_CARD] Manual card created and UI updated');
+          alert(`Experience card created successfully! Completion: ${completionPercentage}%`);
+        }, 100);
+      } else {
+        console.error('❌ [MANUAL_CARD] Failed to add manual card to CardDataManager');
+        alert('Failed to save card. Please try again.');
+      }
     }
 
     setIsDetailModalOpen(false);
@@ -623,11 +627,12 @@ export default function ExperiencePage() {
       ...dir,
       cards: dir.cards.filter(card => card.id !== cardId)
     }));
-    updateDirections(updatedDirections);
+    setDirections(updatedDirections);
   };
 
+  // 🔧 UNIFIED FIX: Experience页面文件上传 - 工作流2
   const handleFileUpload = async (file: File) => {
-    console.log('File uploaded:', file.name);
+    console.log('📁 [EXPERIENCE_UPLOAD] File uploaded:', file.name);
     setHasInteracted(true);
     setUploadedFiles(prev => [...prev, file]);
 
@@ -639,13 +644,13 @@ export default function ExperiencePage() {
     try {
       setIsGeneratingCards(true);
 
-      // Process the uploaded file and generate new AI cards
+      // 处理上传的文件并生成新的AI卡片
       const formData = new FormData();
       formData.append('userGoal', userGoal);
       formData.append('selectedIndustry', selectedIndustry.cardPreview.fieldName);
       formData.append('files', file);
 
-      console.log('📤 Processing uploaded file and generating new cards...');
+      console.log('📤 [EXPERIENCE_UPLOAD] Processing file through AI...');
       const response = await fetch('/api/ai/generate-experience-cards', {
         method: 'POST',
         body: formData,
@@ -655,44 +660,74 @@ export default function ExperiencePage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('✅ New AI cards generated from uploaded file:', data);
+      const aiResponse = await response.json();
+      console.log('✅ [EXPERIENCE_UPLOAD] AI response received:', aiResponse);
 
-      // 🔧 FIX: Convert AI cards with proper source type (uploaded_resume for file uploads)
-      // Force uploaded_resume type for experience page file uploads
-      const newAICards = data.经验卡片推荐.map((card: AICardResponse) => convertAICardToExperienceCard(card, false, true)) || [];
+      // 🔧 UNIFIED FIX: 转换AI响应为ExperienceCard格式
+      if (!aiResponse.经验卡片推荐 || !Array.isArray(aiResponse.经验卡片推荐)) {
+        console.error('❌ [EXPERIENCE_UPLOAD] Invalid AI response structure');
+        alert('Failed to process file. Invalid response from AI.');
+        return;
+      }
 
-      console.log('🔄 [FILE UPLOAD] Converted cards from experience page upload:', {
-        totalCards: newAICards.length,
-        sourceTypes: newAICards.map((c: ExperienceCard) => c.source.type),
-        cardNames: newAICards.map((c: ExperienceCard) => c.cardPreview.experienceName)
+      const newCards = aiResponse.经验卡片推荐
+        .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
+        .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, true)); // forceUploadedResume=true
+
+      console.log('🔄 [EXPERIENCE_UPLOAD] Converted cards:', {
+        originalCount: aiResponse.经验卡片推荐.length,
+        convertedCount: newCards.length,
+        sourceTypes: newCards.map((c: ExperienceCard) => c.source.type),
+        cardCategories: newCards.map((c: ExperienceCard) => ({ name: c.cardPreview.experienceName, category: c.category })),
+        aiResponseCategories: aiResponse.经验卡片推荐.map((c: AICardResponse) => ({ name: c.小卡展示?.经历名称, category: c.卡片分组 }))
       });
 
-      // Add new cards to existing directions
-      const updatedDirections = directions.map(dir => {
-        const newCards = newAICards.filter((card: ExperienceCard) => {
-          if (dir.id === 'direction-1' && card.category === 'Focus Match') return true;
-          if (dir.id === 'direction-2' && card.category === 'Growth Potential') return true;
-          if (dir.id === 'direction-3' && card.category === 'Foundation Skills') return true;
-          return false;
-        });
+      // 🔧 UNIFIED FIX: 通过CardDataManager添加卡片
+      const success = CardDataManager.addCards(newCards, 'experience', 1);
 
-        if (newCards.length > 0) {
-          return {
-            ...dir,
-            cards: [...dir.cards, ...newCards],
-            extractedCount: dir.extractedCount + newCards.filter((c: ExperienceCard) => c.source.type === 'uploaded_resume').length,
-            aiRecommendedCount: dir.aiRecommendedCount + newCards.filter((c: ExperienceCard) => c.source.type === 'ai_generated').length
-          };
-        }
-        return dir;
-      });
-      updateDirections(updatedDirections);
+      if (success) {
+        // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新在下一个事件循环中执行
+        // 这解决了React状态更新时机的问题
+        setTimeout(() => {
+          const updatedDirections = CardDataManager.getDirectionsData();
 
-      alert(`File "${file.name}" processed successfully! Generated ${newAICards.length} new experience cards.`);
+          console.log('🔄 [EXPERIENCE_UPLOAD] About to update directions state:', {
+            currentDirectionsCount: directions.length,
+            currentTotalCards: directions.reduce((sum, dir) => sum + dir.cards.length, 0),
+            newDirectionsCount: updatedDirections.length,
+            newTotalCards: updatedDirections.reduce((sum, dir) => sum + dir.cards.length, 0),
+            newDirectionDetails: updatedDirections.map(dir => ({
+              title: dir.title,
+              cardCount: dir.cards.length,
+              isExpanded: dir.isExpanded,
+              cardDetails: dir.cards.map(c => ({
+                name: c.cardPreview.experienceName,
+                sourceType: c.source.type,
+                category: c.category
+              }))
+            }))
+          });
+
+          // 强制更新UI显示，确保新卡片立即可见
+          setDirections(updatedDirections);
+          setIsGeneratingCards(false);
+
+          console.log('✅ [EXPERIENCE_UPLOAD] File processed successfully and UI updated:', {
+            newCardsCount: newCards.length,
+            totalDirections: updatedDirections.length,
+            totalCards: updatedDirections.reduce((sum, dir) => sum + dir.cards.length, 0)
+          });
+
+          alert(`File "${file.name}" processed successfully! Generated ${newCards.length} new experience cards.`);
+        }, 100); // 100ms延迟确保状态更新正确执行
+
+      } else {
+        console.error('❌ [EXPERIENCE_UPLOAD] Failed to add cards to CardDataManager');
+        alert('Failed to save processed cards. Please try again.');
+      }
 
     } catch (error) {
-      console.error('❌ Error processing uploaded file:', error);
+      console.error('❌ [EXPERIENCE_UPLOAD] Error processing file:', error);
       alert(`Error processing file "${file.name}". Please try again.`);
     } finally {
       setIsGeneratingCards(false);
@@ -703,20 +738,29 @@ export default function ExperiencePage() {
     router.push('/');
   };
 
+  // 🔧 UNIFIED FIX: 导航到Combination页面
   const handleNext = () => {
-    // Check if user has at least one card or has interacted with the interface
-    const hasCards = directions.some(dir => dir.cards.length > 0);
+    console.log('🚀 [EXPERIENCE] Navigating to combination page...');
+
+    // 检查是否有卡片或用户已交互
+    const allCards = CardDataManager.getAllCards();
+    const hasCards = allCards.length > 0;
 
     if (!hasCards && !hasInteracted) {
       alert('Please add at least one experience card or upload a file before proceeding.');
       return;
     }
 
-    // Save current state to localStorage for next page
-    localStorage.setItem('experienceDirections', JSON.stringify(directions));
-    localStorage.setItem('hasInteracted', JSON.stringify(hasInteracted));
+    console.log('📊 [EXPERIENCE] Session stats before navigation:', {
+      totalCards: allCards.length,
+      hasInteracted,
+      sessionStats: CardDataManager.getSessionStats()
+    });
 
-    // Navigate to card combination page
+    // 🔧 UNIFIED FIX: 数据已经通过CardDataManager统一管理，无需额外存储
+    // CardDataManager已经处理了所有数据的持久化
+
+    // 导航到卡片组合页面
     router.push('/combination');
   };
 

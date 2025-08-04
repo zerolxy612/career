@@ -1,11 +1,12 @@
 /**
  * 🎯 CardDataManager - 统一的卡片数据管理器
- * 
+ *
  * 职责：
  * 1. 统一管理所有卡片数据的生命周期
  * 2. 防止数据重复和竞态条件
  * 3. 提供清晰的数据流控制
  * 4. 确保数据一致性和完整性
+ * 5. 支持三种工作流：首页上传、Experience页面上传、手动创建
  */
 
 import { ExperienceCard, CardDirection } from '@/types/card';
@@ -18,14 +19,24 @@ interface SessionData {
   selectedIndustry: string;
   cards: ExperienceCard[];
   metadata: {
-    source: 'homepage' | 'experience' | 'manual';
-    originalFileCount?: number;
+    lastSource: DataSource;
+    totalFileCount: number;
     processedAt: number;
+    workflowHistory: Array<{
+      source: DataSource;
+      timestamp: number;
+      cardCount: number;
+    }>;
   };
 }
 
 // 数据源类型
 type DataSource = 'homepage' | 'experience' | 'manual';
+
+// 卡片去重键生成函数
+function generateCardKey(card: ExperienceCard): string {
+  return `${card.cardPreview.experienceName.trim().toLowerCase()}-${card.cardPreview.timeAndLocation.trim().toLowerCase()}`;
+}
 
 export class CardDataManager {
   private static readonly SESSION_KEY = 'careerProfilingSession';
@@ -45,12 +56,12 @@ export class CardDataManager {
    */
   static startNewSession(userGoal: string, selectedIndustry: string): string {
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     console.log('🆕 [CardDataManager] Starting new session:', sessionId);
-    
+
     // 强制清理所有遗留数据
     this.clearAllLegacyData();
-    
+
     // 创建新会话数据
     const sessionData: SessionData = {
       sessionId,
@@ -59,20 +70,22 @@ export class CardDataManager {
       selectedIndustry,
       cards: [],
       metadata: {
-        source: 'homepage',
-        processedAt: Date.now()
+        lastSource: 'homepage',
+        totalFileCount: 0,
+        processedAt: Date.now(),
+        workflowHistory: []
       }
     };
-    
+
     // 存储新会话
     localStorage.setItem(this.SESSION_KEY, JSON.stringify(sessionData));
-    
+
     console.log('✅ [CardDataManager] New session created successfully');
     return sessionId;
   }
 
   /**
-   * 添加卡片到当前会话（带去重）
+   * 添加卡片到当前会话（带去重和工作流跟踪）
    */
   static addCards(cards: ExperienceCard[], source: DataSource, fileCount?: number): boolean {
     const session = this.getCurrentSession();
@@ -95,11 +108,16 @@ export class CardDataManager {
     // 更新会话数据
     session.cards = deduplicatedCards;
     session.timestamp = Date.now();
-    session.metadata = {
+    session.metadata.lastSource = source;
+    session.metadata.totalFileCount += fileCount || 0;
+    session.metadata.processedAt = Date.now();
+
+    // 记录工作流历史
+    session.metadata.workflowHistory.push({
       source,
-      originalFileCount: fileCount,
-      processedAt: Date.now()
-    };
+      timestamp: Date.now(),
+      cardCount: addedCount
+    });
 
     // 保存到localStorage
     localStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
@@ -107,7 +125,9 @@ export class CardDataManager {
     console.log('✅ [CardDataManager] Cards added successfully:', {
       addedCount,
       totalCount: session.cards.length,
-      duplicatesRemoved: cards.length - addedCount
+      duplicatesRemoved: cards.length - addedCount,
+      source,
+      workflowStep: session.metadata.workflowHistory.length
     });
 
     return true;
@@ -135,16 +155,20 @@ export class CardDataManager {
       {
         id: 'direction-1',
         title: 'Focus Match',
-        description: 'Cards that align with your career focus',
+        subtitle: 'Experiences highly aligned with your career goal',
+        description: 'Add experiences that directly support your target industry and role',
+        isExpanded: true, // 默认展开第一个方向
         cards: cardsByCategory['Focus Match'] || [],
         extractedCount: this.countCardsBySource(cardsByCategory['Focus Match'] || [], 'uploaded_resume'),
         aiRecommendedCount: this.countCardsBySource(cardsByCategory['Focus Match'] || [], 'ai_generated'),
         userCreatedCount: this.countCardsBySource(cardsByCategory['Focus Match'] || [], 'user_input')
       },
       {
-        id: 'direction-2', 
+        id: 'direction-2',
         title: 'Growth Potential',
-        description: 'Cards showing your growth and learning ability',
+        subtitle: 'Experiences that show your development potential',
+        description: 'Add experiences that demonstrate your ability to learn and grow',
+        isExpanded: false,
         cards: cardsByCategory['Growth Potential'] || [],
         extractedCount: this.countCardsBySource(cardsByCategory['Growth Potential'] || [], 'uploaded_resume'),
         aiRecommendedCount: this.countCardsBySource(cardsByCategory['Growth Potential'] || [], 'ai_generated'),
@@ -152,8 +176,10 @@ export class CardDataManager {
       },
       {
         id: 'direction-3',
-        title: 'Foundation Skills', 
-        description: 'Cards demonstrating your foundational capabilities',
+        title: 'Foundation Skills',
+        subtitle: 'Core skills and foundational experiences',
+        description: 'Add experiences that build the foundation for your career development',
+        isExpanded: false,
         cards: cardsByCategory['Foundation Skills'] || [],
         extractedCount: this.countCardsBySource(cardsByCategory['Foundation Skills'] || [], 'uploaded_resume'),
         aiRecommendedCount: this.countCardsBySource(cardsByCategory['Foundation Skills'] || [], 'ai_generated'),
@@ -163,7 +189,16 @@ export class CardDataManager {
 
     console.log('📊 [CardDataManager] Generated directions data:', {
       totalCards: cards.length,
-      directionCounts: directions.map(d => ({ title: d.title, count: d.cards.length }))
+      directionCounts: directions.map(d => ({
+        title: d.title,
+        count: d.cards.length,
+        isExpanded: d.isExpanded,
+        cardDetails: d.cards.map(c => ({
+          name: c.cardPreview.experienceName,
+          category: c.category,
+          sourceType: c.source.type
+        }))
+      }))
     });
 
     return directions;
