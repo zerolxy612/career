@@ -88,10 +88,10 @@
 /* Career Profile Section */
 .career-profile-section {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   grid-template-rows: 1fr;
-  min-height: 600px;
+  min-height: 580px;
 }
 
 /* Main Profile Card (Left Panel - Full Height) */
@@ -100,15 +100,19 @@
   grid-row: 1 / 2;
   display: flex;
   flex-direction: column;
-  min-height: 600px;
+  min-height: 580px;
   padding: 1.5rem;
 }
 
-/* Right Panel (Reserved) */
+/* Right Panel (Competence Structure) */
 .career-profile-section .profile-card.right-panel {
   grid-column: 2 / 3;
   grid-row: 1 / 2;
-  min-height: 600px;
+  min-height: 580px;
+  background-color: #f0f5ff;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Job Recommendation Section */
@@ -176,47 +180,53 @@
   min-height: 200px;
 }
 
-/* Inline Header Styles */
-.inline-header {
-  margin-bottom: 1.5rem;
+/* Centered Header Styles */
+.centered-header {
+  margin-bottom: 1rem;
+  text-align: center;
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
-.title-group {
-  flex: 1;
-}
-
-.title-group h2 {
-  margin: 0 0 0.25rem 0;
-}
-
-.title-group .subtitle {
+.centered-header h2 {
   margin: 0;
+  color: #4285f4;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.centered-header .subtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 1rem;
+  font-style: italic;
 }
 
 /* Chart Section Styles */
 .chart-section {
-  flex: 1;
-  margin-bottom: 1.5rem;
-  min-height: 200px;
+  flex: 0 0 auto;
+  margin-bottom: 0.75rem;
+  height: 220px;
   display: flex;
   flex-direction: column;
 }
 
 .chart-section:last-of-type {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 /* Description Section Styles */
 .description-section {
-  margin-top: auto;
+  margin-top: 0.75rem;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
+  flex: 0 0 auto;
 }
 
 .section-header {
@@ -233,14 +243,14 @@
 /* Chart-specific styles */
 .career-radar-chart {
   width: 100%;
-  height: 100%;
-  flex: 1;
+  height: 200px;
+  flex: 0 0 auto;
 }
 
 .career-awareness-chart {
   width: 100%;
-  height: 100%;
-  flex: 1;
+  height: 180px;
+  flex: 0 0 auto;
 }
 
 /* Competency Description Styles */
@@ -253,6 +263,181 @@
 .competency-text p {
   margin: 0;
   text-align: justify;
+}
+
+/* Right Panel Styles */
+.right-panel-header {
+  margin-bottom: 1.5rem;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.title-icon {
+  font-size: 1.2rem;
+}
+
+.panel-title h2 {
+  color: #4285f4;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.right-panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Competence Section Styles */
+.competence-section {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.competence-section.objective-abilities {
+  flex: 1.2;
+}
+
+.competence-section.subjective-abilities {
+  flex: 0.8;
+}
+
+.competence-section.skills-development {
+  flex: 1.5;
+}
+
+.competence-section .section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-icon {
+  font-size: 1rem;
+}
+
+.competence-section h3 {
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.section-subtitle {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin: 0 0 1rem 0;
+  font-style: italic;
+}
+
+/* Abilities List Styles */
+.abilities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ability-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.skill-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.skill-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.skill-icon.purple { background-color: #8b5cf6; color: white; }
+.skill-icon.gray { background-color: #6b7280; color: white; }
+.skill-icon.pink { background-color: #ec4899; color: white; }
+.skill-icon.blue { background-color: #3b82f6; color: white; }
+
+.skill-name {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 0.9rem;
+}
+
+.skill-reference,
+.skill-insight {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin-left: 1.5rem;
+  line-height: 1.4;
+}
+
+/* Development Table Styles */
+.development-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  align-items: start;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.col-skill,
+.col-level,
+.col-action {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.col-level,
+.col-action {
+  color: #6b7280;
+}
+
+.col-skill .skill-info {
+  gap: 0.4rem;
+}
+
+.col-skill .skill-name {
+  font-size: 0.85rem;
 }
 
 /* Placeholder Styles */
@@ -328,7 +513,53 @@
   .career-profile-section .profile-card.right-panel {
     grid-column: 1;
     grid-row: 2;
-    min-height: 200px;
+    min-height: 400px;
+    padding: 1rem;
+  }
+
+  /* Adjust right panel content for mobile */
+  .competence-section {
+    padding: 1rem;
+  }
+
+  .panel-title h2 {
+    font-size: 1.2rem;
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .table-header {
+    display: none; /* Hide header on mobile for better readability */
+  }
+
+  .table-row {
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background-color: #fafafa;
+  }
+
+  .col-skill,
+  .col-level,
+  .col-action {
+    margin-bottom: 0.5rem;
+  }
+
+  .col-level::before {
+    content: "Current Level: ";
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .col-action::before {
+    content: "Suggested Action: ";
+    font-weight: 600;
+    color: #374151;
   }
 
   /* Adjust chart sections for mobile */
@@ -339,13 +570,17 @@
 
   /* Adjust header for mobile */
   .header-content {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    justify-content: center;
     gap: 0.5rem;
   }
 
-  .title-group h2 {
-    font-size: 1.3rem;
+  .centered-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .centered-header .subtitle {
+    font-size: 0.9rem;
   }
 
   .tab-navigation {

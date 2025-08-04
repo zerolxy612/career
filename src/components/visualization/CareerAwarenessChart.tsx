@@ -48,7 +48,7 @@ export const CareerAwarenessChart: React.FC<CareerAwarenessChartProps> = ({
         Your Self-Career Awareness
       </div>
       
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height={180}>
         <ScatterChart
           margin={{ top: 20, right: 20, bottom: 40, left: 40 }}
           data={data}

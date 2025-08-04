@@ -54,7 +54,7 @@ export const CareerRadarChart: React.FC<CareerRadarChartProps> = ({
 }) => {
   return (
     <div className={`career-radar-chart ${className}`}>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={200}>
         <RadarChart data={data} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
           <PolarGrid 
             stroke="#e5e7eb" 
