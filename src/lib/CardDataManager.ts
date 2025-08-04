@@ -147,12 +147,13 @@ export class CardDataManager {
 
   /**
    * 智能添加卡片（使用AI分类到合适的方向）
+   * 返回分类结果信息，包括哪些方向有新卡片
    */
-  static async addCardsWithSmartClassification(cards: ExperienceCard[], source: DataSource, fileCount?: number): Promise<boolean> {
+  static async addCardsWithSmartClassification(cards: ExperienceCard[], source: DataSource, fileCount?: number): Promise<{ success: boolean; affectedDirections?: string[] }> {
     const session = this.getCurrentSession();
     if (!session) {
       console.error('❌ [CardDataManager] No active session found');
-      return false;
+      return { success: false };
     }
 
     console.log('🧠 [CardDataManager] Adding cards with smart classification:', {
@@ -166,7 +167,8 @@ export class CardDataManager {
     const dynamicDirections = session.dynamicDirections;
     if (!dynamicDirections || dynamicDirections.length !== 3) {
       console.log('⚠️ [CardDataManager] No dynamic directions found, using regular addCards');
-      return this.addCards(cards, source, fileCount);
+      const success = this.addCards(cards, source, fileCount);
+      return { success };
     }
 
     try {
@@ -196,6 +198,9 @@ export class CardDataManager {
         // 应用AI分类结果
         const classifiedCards = this.applyClassificationResults(cards, classificationResult.卡片分类结果);
 
+        // 分析哪些方向受到影响（有新卡片）
+        const affectedDirections = this.getAffectedDirections(classificationResult.卡片分类结果);
+
         // 去重处理
         const deduplicatedCards = this.deduplicateCards([...session.cards, ...classifiedCards]);
         const addedCount = deduplicatedCards.length - session.cards.length;
@@ -222,13 +227,14 @@ export class CardDataManager {
           totalCount: session.cards.length,
           duplicatesRemoved: cards.length - addedCount,
           source,
+          affectedDirections,
           classificationSummary: classificationResult.卡片分类结果.reduce((acc: any, item: any) => {
             acc[item.分配方向] = (acc[item.分配方向] || 0) + 1;
             return acc;
           }, {})
         });
 
-        return true;
+        return { success: true, affectedDirections };
       } else {
         console.error('❌ [CardDataManager] Invalid classification result format');
         throw new Error('Invalid classification result');
@@ -237,7 +243,8 @@ export class CardDataManager {
     } catch (error) {
       console.error('❌ [CardDataManager] Smart classification failed:', error);
       console.log('🔄 [CardDataManager] Falling back to regular addCards');
-      return this.addCards(cards, source, fileCount);
+      const success = this.addCards(cards, source, fileCount);
+      return { success };
     }
   }
 
@@ -610,5 +617,23 @@ export class CardDataManager {
     });
 
     return classifiedCards;
+  }
+
+  /**
+   * 获取受影响的方向（有新卡片的方向）
+   */
+  private static getAffectedDirections(classificationResults: any[]): string[] {
+    const affectedDirections = new Set<string>();
+
+    classificationResults.forEach(result => {
+      if (result.分配方向) {
+        affectedDirections.add(result.分配方向);
+      }
+    });
+
+    const directions = Array.from(affectedDirections);
+    console.log('🎯 [CardDataManager] Affected directions:', directions);
+
+    return directions;
   }
 }

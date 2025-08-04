@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ExperienceCard } from '@/types/card';
+import CareerRadarChart from '@/components/visualization/CareerRadarChart';
+import CareerAwarenessChart from '@/components/visualization/CareerAwarenessChart';
 import './result.css';
 
 
@@ -84,27 +86,49 @@ export default function ResultPage() {
 const CareerProfileResult = () => {
   return (
     <div className="career-profile-section">
-      <div className="profile-card">
-        <div className="card-content">
-          {/* Placeholder for radar chart */}
-          <div className="chart-placeholder">
+      {/* Left Panel - Complete Career Profile */}
+      <div className="profile-card main-profile-full">
+        {/* Header with inline icon and title */}
+        <div className="card-header inline-header">
+          <div className="header-content">
+            <div className="user-icon">👤</div>
+            <div className="title-group">
+              <h2>Your Career Self-Concept</h2>
+              <p className="subtitle">Who You Are?</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Radar Chart Section */}
+        <div className="chart-section">
+          <CareerRadarChart />
+        </div>
+
+        {/* Career Awareness Chart Section */}
+        <div className="chart-section">
+          <CareerAwarenessChart />
+        </div>
+
+        {/* Competency Description Section */}
+        <div className="description-section">
+          <div className="section-header">
+            <h3>Your Competency Dimension Chart</h3>
+          </div>
+          <div className="competency-text">
+            <p>
+              You already possess several objective skills that can be clearly
+              demonstrated to others — such as content planning, project execution,
+              and cross-functional coordination. These are backed by real projects and
+              cards from your experience.
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="profile-card">
+      {/* Right Panel - Reserved for future content */}
+      <div className="profile-card right-panel">
         <div className="card-content">
-          {/* Placeholder for scatter plot */}
-          <div className="chart-placeholder">
-          </div>
-        </div>
-      </div>
-
-      <div className="profile-card">
-        <div className="card-content">
-          {/* Placeholder for competency description */}
-          <div className="text-placeholder">
-          </div>
+          {/* Reserved for future content */}
         </div>
       </div>
     </div>

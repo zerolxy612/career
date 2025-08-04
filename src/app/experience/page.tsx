@@ -266,18 +266,35 @@ export default function ExperiencePage() {
     });
 
     // 🔧 SMART CLASSIFICATION: 通过CardDataManager智能添加卡片
-    const success = await CardDataManager.addCardsWithSmartClassification(experienceCards, 'homepage', fileCount);
+    const result = await CardDataManager.addCardsWithSmartClassification(experienceCards, 'homepage', fileCount);
 
-    if (success) {
+    if (result.success) {
       // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新正确执行
       setTimeout(() => {
         const directionsData = CardDataManager.getDirectionsData();
 
+        // 🔧 NEW: 如果有受影响的方向，自动展开它们
+        if (result.affectedDirections && result.affectedDirections.length > 0) {
+          const updatedDirections = directionsData.map(dir => ({
+            ...dir,
+            isExpanded: result.affectedDirections!.includes(dir.id) || dir.isExpanded
+          }));
+
+          console.log('🔄 [HOMEPAGE_PROCESS] Auto-expanding affected directions:', {
+            affectedDirections: result.affectedDirections,
+            expandedDirections: updatedDirections.filter(d => d.isExpanded).map(d => d.id)
+          });
+
+          setDirections(updatedDirections);
+        } else {
+          setDirections(directionsData);
+        }
+
         console.log('🔄 [HOMEPAGE_PROCESS] About to update directions state:', {
-          newTotalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0)
+          newTotalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0),
+          affectedDirections: result.affectedDirections
         });
 
-        setDirections(directionsData);
         setIsGeneratingCards(false);
 
         console.log('✅ [HOMEPAGE_PROCESS] Homepage cards successfully processed and UI updated');
@@ -416,18 +433,35 @@ export default function ExperiencePage() {
           .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, false)); // AI建议卡片
 
         // 🔧 SMART CLASSIFICATION: 通过CardDataManager智能添加AI建议卡片
-        const success = await CardDataManager.addCardsWithSmartClassification(suggestionCards, 'experience', files.length);
+        const result = await CardDataManager.addCardsWithSmartClassification(suggestionCards, 'experience', files.length);
 
-        if (success) {
+        if (result.success) {
           // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新正确执行
           setTimeout(() => {
             const directionsData = CardDataManager.getDirectionsData();
 
+            // 🔧 NEW: 如果有受影响的方向，自动展开它们
+            if (result.affectedDirections && result.affectedDirections.length > 0) {
+              const updatedDirections = directionsData.map(dir => ({
+                ...dir,
+                isExpanded: result.affectedDirections!.includes(dir.id) || dir.isExpanded
+              }));
+
+              console.log('🔄 [AI_GENERATE] Auto-expanding affected directions:', {
+                affectedDirections: result.affectedDirections,
+                expandedDirections: updatedDirections.filter(d => d.isExpanded).map(d => d.id)
+              });
+
+              setDirections(updatedDirections);
+            } else {
+              setDirections(directionsData);
+            }
+
             console.log('🔄 [AI_GENERATE] About to update directions state:', {
-              newTotalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0)
+              newTotalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0),
+              affectedDirections: result.affectedDirections
             });
 
-            setDirections(directionsData);
             console.log('✅ [AI_GENERATE] AI suggestion cards added and UI updated');
           }, 100);
         } else {
@@ -675,19 +709,36 @@ export default function ExperiencePage() {
       });
 
       // 🔧 SMART CLASSIFICATION: 通过CardDataManager智能添加卡片
-      const success = await CardDataManager.addCardsWithSmartClassification(newCards, 'experience', 1);
+      const result = await CardDataManager.addCardsWithSmartClassification(newCards, 'experience', 1);
 
-      if (success) {
+      if (result.success) {
         // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新在下一个事件循环中执行
         // 这解决了React状态更新时机的问题
         setTimeout(() => {
-          const updatedDirections = CardDataManager.getDirectionsData();
+          const directionsData = CardDataManager.getDirectionsData();
+
+          // 🔧 NEW: 如果有受影响的方向，自动展开它们
+          let updatedDirections;
+          if (result.affectedDirections && result.affectedDirections.length > 0) {
+            updatedDirections = directionsData.map(dir => ({
+              ...dir,
+              isExpanded: result.affectedDirections!.includes(dir.id) || dir.isExpanded
+            }));
+
+            console.log('🔄 [EXPERIENCE_UPLOAD] Auto-expanding affected directions:', {
+              affectedDirections: result.affectedDirections,
+              expandedDirections: updatedDirections.filter(d => d.isExpanded).map(d => d.id)
+            });
+          } else {
+            updatedDirections = directionsData;
+          }
 
           console.log('🔄 [EXPERIENCE_UPLOAD] About to update directions state:', {
             currentDirectionsCount: directions.length,
             currentTotalCards: directions.reduce((sum, dir) => sum + dir.cards.length, 0),
             newDirectionsCount: updatedDirections.length,
             newTotalCards: updatedDirections.reduce((sum, dir) => sum + dir.cards.length, 0),
+            affectedDirections: result.affectedDirections,
             newDirectionDetails: updatedDirections.map(dir => ({
               title: dir.title,
               cardCount: dir.cards.length,
@@ -707,7 +758,8 @@ export default function ExperiencePage() {
           console.log('✅ [EXPERIENCE_UPLOAD] File processed successfully and UI updated:', {
             newCardsCount: newCards.length,
             totalDirections: updatedDirections.length,
-            totalCards: updatedDirections.reduce((sum, dir) => sum + dir.cards.length, 0)
+            totalCards: updatedDirections.reduce((sum, dir) => sum + dir.cards.length, 0),
+            affectedDirections: result.affectedDirections
           });
 
           alert(`File "${file.name}" processed successfully! Generated ${newCards.length} new experience cards.`);
