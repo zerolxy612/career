@@ -228,10 +228,10 @@ export class CardDataManager {
           duplicatesRemoved: cards.length - addedCount,
           source,
           affectedDirections,
-          classificationSummary: classificationResult.卡片分类结果.reduce((acc: any, item: any) => {
+          classificationSummary: classificationResult.卡片分类结果.reduce((acc: Record<string, number>, item: { 分配方向: string }) => {
             acc[item.分配方向] = (acc[item.分配方向] || 0) + 1;
             return acc;
-          }, {})
+          }, {} as Record<string, number>)
         });
 
         return { success: true, affectedDirections };
@@ -521,9 +521,9 @@ export class CardDataManager {
       return result;
     }
 
-    // 简单的分配策略：
+    // 智能分配策略：
     // 1. 优先按照原有的category分配
-    // 2. 如果没有category信息，按照对齐程度分配
+    // 2. 根据动态方向的对齐程度进行映射
     // 3. 平均分配以确保每个方向都有卡片
 
     cards.forEach((card, index) => {
@@ -532,19 +532,24 @@ export class CardDataManager {
       // 根据原有category映射到新方向
       switch (card.category) {
         case 'Focus Match':
-          targetDirectionIndex = 0; // 第一个方向（通常是核心匹配）
+          // 寻找对齐程度为high的方向
+          targetDirectionIndex = directions.findIndex(dir => dir.对齐程度 === 'high') || 0;
           break;
         case 'Growth Potential':
-          targetDirectionIndex = 1; // 第二个方向（通常是发展潜力）
+          // 寻找对齐程度为medium的方向
+          targetDirectionIndex = directions.findIndex(dir => dir.对齐程度 === 'medium') || 1;
           break;
         case 'Foundation Skills':
-          targetDirectionIndex = 2; // 第三个方向（通常是基础技能）
+          // 寻找对齐程度为low的方向
+          targetDirectionIndex = directions.findIndex(dir => dir.对齐程度 === 'low') || 2;
           break;
         default:
           // 如果没有明确的category，按索引轮流分配
           targetDirectionIndex = index % 3;
       }
 
+      // 确保索引在有效范围内
+      targetDirectionIndex = Math.max(0, Math.min(2, targetDirectionIndex));
       result[targetDirectionIndex].push(card);
     });
 
@@ -552,7 +557,8 @@ export class CardDataManager {
       direction1Count: result[0].length,
       direction2Count: result[1].length,
       direction3Count: result[2].length,
-      totalCards: cards.length
+      totalCards: cards.length,
+      directionsUsed: directions.map(d => d.方向标题)
     });
 
     return result;
@@ -561,7 +567,7 @@ export class CardDataManager {
   /**
    * 应用AI分类结果到卡片
    */
-  private static applyClassificationResults(cards: ExperienceCard[], classificationResults: any[]): ExperienceCard[] {
+  private static applyClassificationResults(cards: ExperienceCard[], classificationResults: { 卡片名称: string; 分配方向: string }[]): ExperienceCard[] {
     console.log('🎯 [CardDataManager] Applying classification results:', {
       cardsCount: cards.length,
       classificationsCount: classificationResults.length
@@ -622,7 +628,7 @@ export class CardDataManager {
   /**
    * 获取受影响的方向（有新卡片的方向）
    */
-  private static getAffectedDirections(classificationResults: any[]): string[] {
+  private static getAffectedDirections(classificationResults: { 分配方向: string }[]): string[] {
     const affectedDirections = new Set<string>();
 
     classificationResults.forEach(result => {
