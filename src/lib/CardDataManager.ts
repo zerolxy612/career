@@ -469,10 +469,10 @@ export class CardDataManager {
 
   private static deduplicateCards(cards: ExperienceCard[]): ExperienceCard[] {
     const seen = new Map<string, ExperienceCard>();
-    
+
     cards.forEach(card => {
-      // 使用卡片名称和时间地点作为唯一标识
-      const key = `${card.cardPreview.experienceName}-${card.cardPreview.timeAndLocation}`.toLowerCase();
+      // 使用统一的键生成函数
+      const key = generateCardKey(card);
       if (!seen.has(key)) {
         seen.set(key, card);
       }

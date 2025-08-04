@@ -163,6 +163,7 @@ export default function Home() {
 
       // 🔧 UNIFIED FIX: 使用CardDataManager开始新会话，完全清理旧数据
       const sessionId = CardDataManager.startNewSession(goalText, selectedIndustry.cardPreview.fieldName);
+      console.log('✅ [HOMEPAGE] New session created:', sessionId);
 
       // 存储基础会话信息（CardDataManager已经处理了数据清理）
       localStorage.setItem('selectedIndustry', JSON.stringify(selectedIndustry));

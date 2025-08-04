@@ -67,6 +67,7 @@ export interface CardDirection {
   cards: ExperienceCard[];
   extractedCount: number;
   aiRecommendedCount: number;
+  userCreatedCount: number;
   alignmentLevel?: 'high' | 'medium' | 'low';
 }
 
