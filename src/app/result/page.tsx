@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ExperienceCard } from '@/types/card';
+import { CareerProfileAnalysis, CareerProfileAnalysisRequest, CareerProfileAnalysisResponse } from '@/types/career-profile';
 import CareerRadarChart from '@/components/visualization/CareerRadarChart';
 import CareerAwarenessChart from '@/components/visualization/CareerAwarenessChart';
+import CompetenceStructureComponent from '@/components/CompetenceStructure';
 import './result.css';
 
 
@@ -12,32 +14,106 @@ import './result.css';
 export default function ResultPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'profile' | 'jobs'>('profile');
-  // Removed combinationData state as it's not currently used
+  const [careerProfileData, setCareerProfileData] = useState<CareerProfileAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load combination data from localStorage
-    const storedCombination = localStorage.getItem('selectedCombination');
-    console.log('📋 [RESULT] Loading combination data:', storedCombination);
-
-    if (storedCombination) {
+    const loadCareerProfileData = async () => {
       try {
-        const parsedData = JSON.parse(storedCombination);
-        console.log('✅ [RESULT] Parsed combination data:', {
-          option: parsedData.option,
-          cardsCount: parsedData.cards?.length || 0,
-          cardNames: parsedData.cards?.map((c: ExperienceCard) => c.cardPreview?.experienceName) || []
+        setIsLoading(true);
+        setError(null);
+
+        // Load combination data from localStorage
+        const storedCombination = localStorage.getItem('selectedCombination');
+        const storedUserGoal = localStorage.getItem('userGoal');
+        const storedIndustry = localStorage.getItem('selectedIndustry');
+
+        console.log('📋 [RESULT] Loading data for career profile analysis:', {
+          hasCombination: !!storedCombination,
+          hasUserGoal: !!storedUserGoal,
+          hasIndustry: !!storedIndustry
         });
-        // Data loaded successfully - no need to store in state currently
+
+        if (!storedCombination || !storedUserGoal || !storedIndustry) {
+          throw new Error('Missing required data for career profile analysis');
+        }
+
+        const combinationData = JSON.parse(storedCombination);
+        const userGoal = storedUserGoal;
+        const industryData = JSON.parse(storedIndustry);
+
+        console.log('✅ [RESULT] Parsed data:', {
+          userGoal: userGoal.substring(0, 100) + '...',
+          industry: industryData.cardPreview?.fieldName || 'Unknown',
+          cardsCount: combinationData.cards?.length || 0,
+          cardNames: combinationData.cards?.map((c: ExperienceCard) => c.cardPreview?.experienceName) || []
+        });
+
+        // Prepare API request
+        const requestData: CareerProfileAnalysisRequest = {
+          userGoal,
+          selectedIndustry: industryData.cardPreview?.fieldName || industryData.fieldName || 'Unknown',
+          selectedCards: combinationData.cards?.map((card: ExperienceCard) => ({
+            id: card.id,
+            experienceName: card.cardPreview.experienceName,
+            category: card.category,
+            cardDetail: card.cardDetail
+          })) || [],
+          combinationContext: combinationData.option ? {
+            combinationName: combinationData.option.name || 'Selected Combination',
+            combinationDescription: combinationData.option.description || '',
+            whyThisCombination: combinationData.option.whyThisCombination || ''
+          } : undefined
+        };
+
+        console.log('📤 [RESULT] Calling career profile analysis API...');
+
+        // Call API
+        const response = await fetch('/api/ai/analyze-career-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
+
+        const apiResponse: CareerProfileAnalysisResponse = await response.json();
+
+        if (!apiResponse.success || !apiResponse.data) {
+          throw new Error(apiResponse.error || 'Failed to analyze career profile');
+        }
+
+        console.log('✅ [RESULT] Career profile analysis completed:', {
+          hasRadarData: !!apiResponse.data.radarData,
+          hasQuadrantData: !!apiResponse.data.quadrantData,
+          abilityPointsCount: apiResponse.data.abilityPoints?.length || 0,
+          hasCompetenceStructure: !!apiResponse.data.competenceStructure,
+          confidenceScore: apiResponse.data.analysisMetadata?.confidenceScore
+        });
+
+        setCareerProfileData(apiResponse.data);
+
       } catch (error) {
-        console.error('❌ [RESULT] Error parsing combination data:', error);
-        // Redirect back if data is invalid
-        router.push('/combination');
+        console.error('❌ [RESULT] Error loading career profile data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load career profile data');
+
+        // If missing required data, redirect to combination page
+        if (error instanceof Error && error.message.includes('Missing required data')) {
+          console.warn('⚠️ [RESULT] Missing required data, redirecting to combination page');
+          router.push('/combination');
+          return;
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      console.log('⚠️ [RESULT] No combination data found, redirecting to combination page');
-      // Redirect back if no data
-      router.push('/combination');
-    }
+    };
+
+    loadCareerProfileData();
   }, [router]);
 
   // Removed unused handlers - functionality will be added later if needed
@@ -71,7 +147,11 @@ export default function ResultPage() {
           {/* Main Content Area */}
           <div className="main-content">
             {activeTab === 'profile' ? (
-              <CareerProfileResult />
+              <CareerProfileResult
+                data={careerProfileData}
+                isLoading={isLoading}
+                error={error}
+              />
             ) : (
               <JobRecommendation />
             )}
@@ -83,7 +163,94 @@ export default function ResultPage() {
 }
 
 // Career Profile Result Component
-const CareerProfileResult = () => {
+interface CareerProfileResultProps {
+  data: CareerProfileAnalysis | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+const CareerProfileResult: React.FC<CareerProfileResultProps> = ({ data, isLoading, error }) => {
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="career-profile-section">
+        <div className="profile-card main-profile-full" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #4285f4',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          <p style={{ color: '#6b7280', fontSize: '1.1rem' }}>
+            Analyzing your career profile...
+          </p>
+        </div>
+        <div className="profile-card right-panel" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#6b7280'
+        }}>
+          <p>Loading competence structure...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="career-profile-section">
+        <div className="profile-card main-profile-full" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <div style={{ fontSize: '3rem' }}>⚠️</div>
+          <h3 style={{ color: '#ef4444', margin: 0 }}>Analysis Failed</h3>
+          <p style={{ color: '#6b7280', textAlign: 'center', maxWidth: '400px' }}>
+            {error}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#4285f4',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+        <div className="profile-card right-panel" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#6b7280'
+        }}>
+          <p>Unable to load competence structure</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show data (fallback to default if no data)
+  const profileData = data || null;
   return (
     <div className="career-profile-section">
       {/* Left Panel - Complete Career Profile */}
@@ -99,25 +266,31 @@ const CareerProfileResult = () => {
 
         {/* Radar Chart Section */}
         <div className="chart-section">
-          <CareerRadarChart />
+          <CareerRadarChart
+            data={profileData?.radarData}
+            isLoading={false}
+          />
         </div>
 
         {/* Career Awareness Chart Section */}
         <div className="chart-section">
-          <CareerAwarenessChart />
+          <CareerAwarenessChart
+            quadrantData={profileData?.quadrantData}
+            abilityPoints={profileData?.abilityPoints}
+            isLoading={false}
+          />
         </div>
 
-        {/* Competency Description Section */}
+        {/* Self-Cognition Summary Section */}
         <div className="description-section">
           <div className="section-header">
-            <h3>Your Competency Dimension Chart</h3>
+            <h3>Your Self-Cognition & Ability Structure</h3>
           </div>
           <div className="competency-text">
             <p>
-              You already possess several objective skills that can be clearly
-              demonstrated to others — such as content planning, project execution,
-              and cross-functional coordination. These are backed by real projects and
-              cards from your experience.
+              {profileData?.selfCognitionSummary ||
+                "Your career profile analysis will appear here once the data is loaded. This section provides insights into your self-awareness and ability structure based on your selected experiences."
+              }
             </p>
           </div>
         </div>
@@ -125,125 +298,13 @@ const CareerProfileResult = () => {
 
       {/* Right Panel - Competence Structure */}
       <div className="profile-card right-panel">
-        <div className="right-panel-header">
-          <div className="panel-title">
-            <div className="title-icon">👤</div>
-            <h2>Your Competence Structure</h2>
-          </div>
-        </div>
+        <CompetenceStructureComponent
+          data={profileData?.competenceStructure}
+          isLoading={false}
+        />
 
-        <div className="right-panel-content">
-          {/* Objective Abilities Section */}
-          <div className="competence-section objective-abilities">
-            <div className="section-header">
-              <div className="section-icon">📋</div>
-              <h3>Objective Abilities</h3>
-            </div>
-            <p className="section-subtitle">(Backed by actual experience & cards)</p>
 
-            <div className="abilities-list">
-              <div className="ability-item">
-                <div className="skill-info">
-                  <div className="skill-icon purple">🎯</div>
-                  <span className="skill-name">Project Management & Execution</span>
-                </div>
-                <span className="skill-reference">Product Research Lead – Delivered milestones on time</span>
-              </div>
 
-              <div className="ability-item">
-                <div className="skill-info">
-                  <div className="skill-icon gray">💬</div>
-                  <span className="skill-name">Cross-team Communication & Sync</span>
-                </div>
-                <span className="skill-reference">Campus Film Festival – Coordinated design, logistics</span>
-              </div>
-
-              <div className="ability-item">
-                <div className="skill-info">
-                  <div className="skill-icon pink">📝</div>
-                  <span className="skill-name">Content Planning & Structured Output</span>
-                </div>
-                <span className="skill-reference">Social Media Strategy – Built 2-month content calendar</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Subjective Abilities Section */}
-          <div className="competence-section subjective-abilities">
-            <div className="section-header">
-              <div className="section-icon">▶️</div>
-              <h3>Subjective Abilities</h3>
-            </div>
-            <p className="section-subtitle">(Self-perceived, formed through reflection)</p>
-
-            <div className="abilities-list">
-              <div className="ability-item">
-                <div className="skill-info">
-                  <div className="skill-icon blue">🔍</div>
-                  <span className="skill-name">Fast Learning & Adaptability</span>
-                </div>
-                <span className="skill-insight">You often pick up new tools quickly in unfamiliar situations</span>
-              </div>
-
-              <div className="ability-item">
-                <div className="skill-info">
-                  <div className="skill-icon purple">🤔</div>
-                  <span className="skill-name">Abstract Thinking & Reflection</span>
-                </div>
-                <span className="skill-insight">You regularly reflect on tasks and extract general principles</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Skills Still in Development Section */}
-          <div className="competence-section skills-development">
-            <div className="section-header">
-              <div className="section-icon">⚠️</div>
-              <h3>2. Skills Still in Development</h3>
-            </div>
-
-            <div className="development-table">
-              <div className="table-header">
-                <div className="col-skill">Skill Area</div>
-                <div className="col-level">Current Level</div>
-                <div className="col-action">Suggested Action</div>
-              </div>
-
-              <div className="table-row">
-                <div className="col-skill">
-                  <div className="skill-info">
-                    <div className="skill-icon blue">📊</div>
-                    <span>Data Tool Proficiency</span>
-                  </div>
-                </div>
-                <div className="col-level">Basic understanding, limited hands-on use</div>
-                <div className="col-action">Practice with Excel, Python, or visualization tools</div>
-              </div>
-
-              <div className="table-row">
-                <div className="col-skill">
-                  <div className="skill-info">
-                    <div className="skill-icon gray">💭</div>
-                    <span>Technical Expression</span>
-                  </div>
-                </div>
-                <div className="col-level">Clear ideas, but lack structure in output</div>
-                <div className="col-action">Try mind maps, diagrams, or presentation building</div>
-              </div>
-
-              <div className="table-row">
-                <div className="col-skill">
-                  <div className="skill-info">
-                    <div className="skill-icon purple">📈</div>
-                    <span>Business Metric Sense</span>
-                  </div>
-                </div>
-                <div className="col-level">Limited awareness of ROI, retention, CPA</div>
-                <div className="col-action">Study real business/growth cases and analytics logic</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

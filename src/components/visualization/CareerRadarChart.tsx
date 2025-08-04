@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { CareerRadarData, RADAR_DIMENSION_LABELS } from '@/types/career-profile';
 
 interface RadarDataPoint {
   dimension: string;
@@ -10,52 +11,95 @@ interface RadarDataPoint {
 }
 
 interface CareerRadarChartProps {
-  data?: RadarDataPoint[];
+  data?: CareerRadarData;
   className?: string;
+  isLoading?: boolean;
 }
 
-// 默认职业维度数据
-const defaultRadarData: RadarDataPoint[] = [
-  {
-    dimension: 'Goal Orientation',
-    value: 85,
-    fullMark: 100,
-  },
-  {
-    dimension: 'Interpersonal Readiness',
-    value: 75,
-    fullMark: 100,
-  },
-  {
-    dimension: 'Cognitive Ability',
-    value: 90,
-    fullMark: 100,
-  },
-  {
-    dimension: 'Versatility',
-    value: 70,
-    fullMark: 100,
-  },
-  {
-    dimension: 'Resilience',
-    value: 80,
-    fullMark: 100,
-  },
-  {
-    dimension: 'Innovation',
-    value: 85,
-    fullMark: 100,
-  },
-];
+// 默认职业维度数据 - 8个维度
+const defaultCareerRadarData: CareerRadarData = {
+  interestOrientation: 75,
+  selfEfficacy: 80,
+  goalOrientation: 85,
+  outcomeExpectation: 70,
+  cognitiveAgility: 85,
+  affectiveReadiness: 75,
+  interpersonalReadiness: 80,
+  professionalAwareness: 72
+};
+
+// 将CareerRadarData转换为图表数据格式
+const convertToRadarDataPoints = (data: CareerRadarData): RadarDataPoint[] => {
+  return [
+    {
+      dimension: RADAR_DIMENSION_LABELS.interestOrientation,
+      value: data.interestOrientation,
+      fullMark: 100,
+    },
+    {
+      dimension: RADAR_DIMENSION_LABELS.selfEfficacy,
+      value: data.selfEfficacy,
+      fullMark: 100,
+    },
+    {
+      dimension: RADAR_DIMENSION_LABELS.goalOrientation,
+      value: data.goalOrientation,
+      fullMark: 100,
+    },
+    {
+      dimension: RADAR_DIMENSION_LABELS.outcomeExpectation,
+      value: data.outcomeExpectation,
+      fullMark: 100,
+    },
+    {
+      dimension: RADAR_DIMENSION_LABELS.cognitiveAgility,
+      value: data.cognitiveAgility,
+      fullMark: 100,
+    },
+    {
+      dimension: RADAR_DIMENSION_LABELS.affectiveReadiness,
+      value: data.affectiveReadiness,
+      fullMark: 100,
+    },
+    {
+      dimension: RADAR_DIMENSION_LABELS.interpersonalReadiness,
+      value: data.interpersonalReadiness,
+      fullMark: 100,
+    },
+    {
+      dimension: RADAR_DIMENSION_LABELS.professionalAwareness,
+      value: data.professionalAwareness,
+      fullMark: 100,
+    },
+  ];
+};
 
 export const CareerRadarChart: React.FC<CareerRadarChartProps> = ({
-  data = defaultRadarData,
-  className = ''
+  data = defaultCareerRadarData,
+  className = '',
+  isLoading = false
 }) => {
+  // 转换数据格式
+  const radarDataPoints = convertToRadarDataPoints(data);
+
+  if (isLoading) {
+    return (
+      <div className={`career-radar-chart ${className}`} style={{
+        height: 200,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#6b7280'
+      }}>
+        <div>Loading career profile...</div>
+      </div>
+    );
+  }
+
   return (
     <div className={`career-radar-chart ${className}`}>
       <ResponsiveContainer width="100%" height={200}>
-        <RadarChart data={data} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+        <RadarChart data={radarDataPoints} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
           <PolarGrid 
             stroke="#e5e7eb" 
             strokeWidth={1}
