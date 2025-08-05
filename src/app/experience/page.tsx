@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { IndustryRecommendation } from '@/types/api';
 import { CardDirection, CompletionLevel, ExperienceCard, CardCategory as CardCategoryType } from '@/types/card';
@@ -42,37 +42,7 @@ interface AIGeneratedCardsResponse {
   经验卡片推荐: AICardResponse[];
 }
 
-// Loading component for Suspense fallback
-function ExperiencePageLoading() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f8fafc'
-    }}>
-      <div style={{
-        textAlign: 'center',
-        padding: '2rem'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #4285f4',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 1rem'
-        }}></div>
-        <p style={{ color: '#6b7280', fontSize: '1rem' }}>Loading experience page...</p>
-      </div>
-    </div>
-  );
-}
-
-// Main experience page component that uses useSearchParams
-function ExperiencePageContent() {
+export default function ExperiencePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryRecommendation | null>(null);
@@ -1023,14 +993,5 @@ function ExperiencePageContent() {
         }
       `}</style>
     </div>
-  );
-}
-
-// Main export with Suspense wrapper
-export default function ExperiencePage() {
-  return (
-    <Suspense fallback={<ExperiencePageLoading />}>
-      <ExperiencePageContent />
-    </Suspense>
   );
 }

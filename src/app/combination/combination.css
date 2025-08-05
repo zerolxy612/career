@@ -143,6 +143,25 @@
   background: #3367d6;
 }
 
+.apply-button {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: #4285f4;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  z-index: 10;
+}
+
+.apply-button:hover {
+  background: #3367d6;
+}
+
 /* Selected Cards Area */
 .selected-cards-area {
   margin-top: 1.5rem;

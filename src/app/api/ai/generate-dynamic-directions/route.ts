@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       console.log('✅ [API] AI response parsed successfully:', {
         hasDirections: !!parsedResponse.个性化方向分类,
         directionsCount: parsedResponse.个性化方向分类?.length || 0,
-        directionTitles: parsedResponse.个性化方向分类?.map((d: { 方向标题: string }) => d.方向标题) || []
+        directionTitles: parsedResponse.个性化方向分类?.map((d: any) => d.方向标题) || []
       });
 
     } catch (error) {

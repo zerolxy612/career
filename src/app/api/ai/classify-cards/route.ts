@@ -122,10 +122,10 @@ export async function POST(request: NextRequest) {
       console.log('✅ [API] AI response parsed successfully:', {
         hasClassificationResults: !!parsedResponse.卡片分类结果,
         classificationsCount: parsedResponse.卡片分类结果?.length || 0,
-        classificationSummary: parsedResponse.卡片分类结果?.reduce((acc: Record<string, number>, item: { 分配方向: string }) => {
+        classificationSummary: parsedResponse.卡片分类结果?.reduce((acc: any, item: any) => {
           acc[item.分配方向] = (acc[item.分配方向] || 0) + 1;
           return acc;
-        }, {} as Record<string, number>) || {}
+        }, {}) || {}
       });
 
     } catch (error) {

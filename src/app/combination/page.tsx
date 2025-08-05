@@ -83,9 +83,9 @@ export default function CombinationPage() {
   );
   const [combinationOptions, setCombinationOptions] = useState<CombinationOption[]>([
     { id: 'custom', name: 'Custom', description: 'Build your own combination', isSelected: true },
-    { id: 'option1', name: 'Option 1', description: 'Balanced approach (auto-apply)', isSelected: false, isLoading: false },
-    { id: 'option2', name: 'Option 2', description: 'Growth-focused (auto-apply)', isSelected: false, isLoading: false },
-    { id: 'option3', name: 'Option 3', description: 'Safe transition (auto-apply)', isSelected: false, isLoading: false },
+    { id: 'option1', name: 'Option 1', description: 'Loading...', isSelected: false, isLoading: false },
+    { id: 'option2', name: 'Option 2', description: 'Loading...', isSelected: false, isLoading: false },
+    { id: 'option3', name: 'Option 3', description: 'Loading...', isSelected: false, isLoading: false },
   ]);
 
   useEffect(() => {
@@ -112,6 +112,54 @@ export default function CombinationPage() {
       });
 
       setDirections(directionsData);
+
+      // 🔧 NEW: 获取动态方向并更新组合选项
+      const dynamicDirections = CardDataManager.getDynamicDirections();
+      if (dynamicDirections && dynamicDirections.length === 3) {
+        console.log('🎯 [COMBINATION] Loading dynamic directions for options:', {
+          directionTitles: dynamicDirections.map(d => d.方向标题)
+        });
+
+        // 保持选项名称固定，不修改显示名称
+        setCombinationOptions(prev => [
+          prev[0], // Keep Custom option unchanged
+          {
+            ...prev[1],
+            name: 'Option 1',
+            description: 'AI recommendation based on your profile (auto-apply)'
+          },
+          {
+            ...prev[2],
+            name: 'Option 2',
+            description: 'Alternative approach for your goals (auto-apply)'
+          },
+          {
+            ...prev[3],
+            name: 'Option 3',
+            description: 'Comprehensive skill showcase (auto-apply)'
+          }
+        ]);
+      } else {
+        console.log('⚠️ [COMBINATION] No dynamic directions found, using default options');
+        setCombinationOptions(prev => [
+          prev[0], // Keep Custom option unchanged
+          {
+            ...prev[1],
+            name: 'Option 1',
+            description: 'AI recommendation based on your profile (auto-apply)'
+          },
+          {
+            ...prev[2],
+            name: 'Option 2',
+            description: 'Alternative approach for your goals (auto-apply)'
+          },
+          {
+            ...prev[3],
+            name: 'Option 3',
+            description: 'Comprehensive skill showcase (auto-apply)'
+          }
+        ]);
+      }
     } else {
       // 🔧 FIX: 移除向后兼容逻辑，强制使用CardDataManager确保数据一致性
       console.log('❌ [COMBINATION] No valid CardDataManager session found, redirecting to experience page');
@@ -212,6 +260,7 @@ export default function CombinationPage() {
     const currentOption = combinationOptions.find(opt => opt.id === optionId);
     if (currentOption?.aiRecommendation && currentOption?.recommendedCards) {
       console.log('✅ [COMBINATION] Using cached recommendation for:', optionId);
+      setSelectedOption(optionId); // 设置选中的选项
       applyRecommendationDirectly(currentOption.recommendedCards, optionId);
       return;
     }
@@ -254,6 +303,9 @@ export default function CombinationPage() {
       console.log('📤 [COMBINATION] Sending request to AI API...');
       const requestStartTime = Date.now();
 
+      // 获取动态方向信息
+      const dynamicDirections = CardDataManager.getDynamicDirections();
+
       const response = await fetch('/api/ai/generate-combination-recommendations', {
         method: 'POST',
         headers: {
@@ -261,9 +313,10 @@ export default function CombinationPage() {
         },
         body: JSON.stringify({
           userGoal,
-          selectedIndustry: selectedIndustryData.cardPreview?.fieldName,
+          selectedIndustry: selectedIndustry || 'Unknown Industry',
           availableCards: allCards,
-          optionType: optionId
+          optionType: optionId,
+          dynamicDirections: dynamicDirections
         })
       });
 
@@ -314,7 +367,10 @@ export default function CombinationPage() {
 
       console.log('🎉 [COMBINATION] Recommendation generated, auto-applying to custom area:', optionId);
 
-      // 自动应用推荐到Custom区域
+      // 设置选中的选项
+      setSelectedOption(optionId);
+
+      // 自动应用推荐到Custom区域（恢复原有功能）
       applyRecommendationDirectly(recommendedCards, optionId);
 
     } catch (error) {
@@ -367,20 +423,13 @@ export default function CombinationPage() {
     setSelectedCards(validCards);
     localStorage.setItem('selectedCards', JSON.stringify(validCards));
 
-    // 自动切换到Custom视图显示应用的组合
-    setSelectedOption('custom');
+    // 保持当前选中的选项，不要切换回custom
+    // setSelectedOption('custom'); // 移除这行，保持用户选择的选项状态
 
     console.log('🎉 [AUTO-APPLY] Recommendation auto-applied successfully:', {
       appliedCardsCount: validCards.length,
-      switchedToCustom: true,
       optionId: optionId
     });
-
-    // 显示简短的成功提示
-    if (validCards.length > 0) {
-      // 可以考虑使用toast通知，这里暂时使用console提示
-      console.log(`✨ [USER-FEEDBACK] ${validCards.length} recommended cards automatically applied to your custom combination!`);
-    }
   };
 
   const handleCardSelect = (card: ExperienceCard) => {
@@ -405,6 +454,20 @@ export default function CombinationPage() {
   const handleClear = () => {
     setSelectedCards([]);
     localStorage.removeItem('selectedCards');
+  };
+
+  // Handle Apply button click - switches to custom option view
+  const handleApply = () => {
+    console.log('🎯 [APPLY] Apply button clicked for option:', selectedOption);
+
+    if (selectedOption === 'custom') {
+      console.log('❌ [APPLY] Already in custom option');
+      return;
+    }
+
+    // 只切换到Custom选项显示，不重新应用推荐（推荐已经自动应用了）
+    setSelectedOption('custom');
+    console.log('🔄 [APPLY] Switched to custom option view');
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -478,21 +541,35 @@ export default function CombinationPage() {
     setCurrentCardData(undefined);
   };
 
-  // Handle info icon click for combination details
-  const handleInfoClick = (optionId: string, e: React.MouseEvent) => {
+  // Handle info icon click for combination details - shows details for the most recent AI recommendation
+  const handleCustomAreaInfoClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    console.log('🔍 [INFO] Info icon clicked for option:', optionId);
+    console.log('🔍 [INFO] Custom area info icon clicked');
+    console.log('🔍 [INFO] Current combination options:', combinationOptions.map(opt => ({
+      id: opt.id,
+      name: opt.name,
+      hasAiRecommendation: !!opt.aiRecommendation,
+      isSelected: selectedOption === opt.id
+    })));
 
-    // Only show details for options that have AI recommendations
-    const option = combinationOptions.find(opt => opt.id === optionId);
-    if (!option || !option.aiRecommendation) {
-      console.log('❌ [INFO] No AI recommendation available for option:', optionId);
+    // Find the most recent option with AI recommendation
+    const optionsWithRecommendations = combinationOptions.filter(opt =>
+      opt.id !== 'custom' && opt.aiRecommendation
+    );
+
+    if (optionsWithRecommendations.length === 0) {
+      console.log('❌ [INFO] No AI recommendations available');
+      alert('No AI recommendations available. Please select Option 1, 2, or 3 to generate recommendations first.');
       return;
     }
 
-    setSelectedOptionForDetails(optionId);
+    // Use the most recent recommendation (last one in the array)
+    const mostRecentOption = optionsWithRecommendations[optionsWithRecommendations.length - 1];
+
+    console.log('✅ [INFO] Opening details modal for most recent recommendation:', mostRecentOption.id);
+    setSelectedOptionForDetails(mostRecentOption.id);
     setIsDetailsModalOpen(true);
   };
 
@@ -620,7 +697,17 @@ export default function CombinationPage() {
                 <span className="custom-label">CUSTOM</span>
               </div>
 
-              <div className="info-icon">ⓘ</div>
+              <div
+                className="info-icon"
+                onClick={handleCustomAreaInfoClick}
+                title="View detailed analysis for AI recommendations"
+                style={{
+                  cursor: combinationOptions.some(opt => opt.id !== 'custom' && opt.aiRecommendation) ? 'pointer' : 'not-allowed',
+                  opacity: combinationOptions.some(opt => opt.id !== 'custom' && opt.aiRecommendation) ? 1 : 0.5
+                }}
+              >
+                ⓘ
+              </div>
 
               <div className="custom-content">
                 <div className="custom-instructions">
@@ -633,9 +720,16 @@ export default function CombinationPage() {
                 </div>
               </div>
 
-              <button className="clear-button" onClick={handleClear}>
-                Clear
-              </button>
+              {/* Dynamic button: Apply for AI recommendations, Clear for custom */}
+              {selectedOption !== 'custom' ? (
+                <button className="apply-button" onClick={handleApply}>
+                  Apply
+                </button>
+              ) : (
+                <button className="clear-button" onClick={handleClear}>
+                  Clear
+                </button>
+              )}
 
               {/* Selected Cards Display Area */}
               <div className="selected-cards-area">
@@ -681,27 +775,11 @@ export default function CombinationPage() {
                     )}
                   </div>
 
-                  {/* Info icon for options with AI recommendations */}
-                  {option.id !== 'custom' && option.aiRecommendation && !option.isLoading && (
-                    <div
-                      className="info-icon"
-                      onClick={(e) => handleInfoClick(option.id, e)}
-                      title="View detailed analysis"
-                    >
-                      ⓘ
-                    </div>
-                  )}
+
 
                 </div>
 
-                {/* 简化的状态显示 */}
-                {selectedOption === option.id && option.aiRecommendation && !option.isLoading && (
-                  <div className="recommendation-applied">
-                    <div className="success-message">
-                      ✅ Recommendation applied to Custom area
-                    </div>
-                  </div>
-                )}
+
 
                 {/* 错误显示 */}
                 {selectedOption === option.id && recommendationError && !option.aiRecommendation && (

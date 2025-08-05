@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWithGemini } from '@/lib/ai/gemini';
-import { AUTO_COMBINATION_RECOMMENDATION_PROMPT } from '@/lib/ai/prompts';
+import { DYNAMIC_COMBINATION_RECOMMENDATION_PROMPT, AUTO_COMBINATION_RECOMMENDATION_PROMPT } from '@/lib/ai/prompts';
 import { consoleLog } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -8,13 +8,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const requestData = await request.json();
-    const { userGoal, selectedIndustry, availableCards, optionType } = requestData;
+    const { userGoal, selectedIndustry, availableCards, optionType, dynamicDirections } = requestData;
 
     console.log('📋 [API] Request parameters:', {
       userGoal: userGoal?.substring(0, 100) + '...',
       selectedIndustry,
       availableCardsCount: availableCards?.length || 0,
-      optionType
+      optionType,
+      hasDynamicDirections: !!dynamicDirections
     });
 
     // Log the complete user input to console
@@ -55,12 +56,27 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 构建AI提示词
-    const prompt = AUTO_COMBINATION_RECOMMENDATION_PROMPT
-      .replace('{userGoal}', userGoal)
-      .replace('{selectedIndustry}', selectedIndustry)
-      .replace('{availableCards}', JSON.stringify(formattedCards, null, 2))
-      .replace(/{optionType}/g, optionType);
+    // 构建AI提示词 - 优先使用动态方向提示词
+    let prompt;
+    if (dynamicDirections && Array.isArray(dynamicDirections) && dynamicDirections.length === 3) {
+      console.log('🎯 [API] Using dynamic directions prompt');
+      prompt = DYNAMIC_COMBINATION_RECOMMENDATION_PROMPT
+        .replace('{userGoal}', userGoal)
+        .replace('{selectedIndustry}', selectedIndustry)
+        .replace('{availableCards}', JSON.stringify(formattedCards, null, 2))
+        .replace(/{optionType}/g, optionType)
+        .replace('{dynamicDirections}', JSON.stringify(dynamicDirections, null, 2))
+        .replace('{direction1Title}', dynamicDirections[0]?.方向标题 || 'Direction 1')
+        .replace('{direction2Title}', dynamicDirections[1]?.方向标题 || 'Direction 2')
+        .replace('{direction3Title}', dynamicDirections[2]?.方向标题 || 'Direction 3');
+    } else {
+      console.log('⚠️ [API] Using fallback auto combination prompt');
+      prompt = AUTO_COMBINATION_RECOMMENDATION_PROMPT
+        .replace('{userGoal}', userGoal)
+        .replace('{selectedIndustry}', selectedIndustry)
+        .replace('{availableCards}', JSON.stringify(formattedCards, null, 2))
+        .replace(/{optionType}/g, optionType);
+    }
 
     console.log('📤 [API] Sending prompt to Gemini AI');
     console.log('📤 [API] Prompt length:', prompt.length);
