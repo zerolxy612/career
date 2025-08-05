@@ -617,19 +617,22 @@ export default function CombinationPage() {
       handleCardClick(card, 'direct-click');
     };
 
+    // 确定能力类型：Focus Match 和 Growth Potential 为客观能力(O)，Foundation Skills 为主观能力(S)
+    const isSubjectiveAbility = card.category === 'Foundation Skills';
+    const abilityType = isSubjectiveAbility ? 'S' : 'O';
+
     return (
       <div
         ref={setNodeRef}
         style={style}
         {...listeners}
         {...attributes}
-        className={`pool-card ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging-source' : ''}`}
+        className={`pool-card ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging-source' : ''} ${isSubjectiveAbility ? 'subjective-ability' : 'objective-ability'}`}
         onClick={handleClick}
       >
         <div className="card-category-indicator">
-          <div className={`category-icon ${card.category.toLowerCase().replace(' ', '-')}`}>
-            {card.category === 'Focus Match' ? 'F' :
-             card.category === 'Growth Potential' ? 'G' : 'S'}
+          <div className={`category-icon ${abilityType.toLowerCase()}-ability`}>
+            {abilityType}
           </div>
         </div>
         <div className="card-info">
@@ -828,21 +831,25 @@ export default function CombinationPage() {
 
       {/* Drag Overlay */}
       <DragOverlay>
-        {draggedCard ? (
-          <div className="pool-card drag-overlay">
-            <div className="card-category-indicator">
-              <div className={`category-icon ${draggedCard.category.toLowerCase().replace(' ', '-')}`}>
-                {draggedCard.category === 'Focus Match' ? 'F' :
-                 draggedCard.category === 'Growth Potential' ? 'G' : 'S'}
+        {draggedCard ? (() => {
+          const isSubjectiveAbility = draggedCard.category === 'Foundation Skills';
+          const abilityType = isSubjectiveAbility ? 'S' : 'O';
+
+          return (
+            <div className={`pool-card drag-overlay ${isSubjectiveAbility ? 'subjective-ability' : 'objective-ability'}`}>
+              <div className="card-category-indicator">
+                <div className={`category-icon ${abilityType.toLowerCase()}-ability`}>
+                  {abilityType}
+                </div>
+              </div>
+              <div className="card-info">
+                <p className="card-time">{draggedCard.cardPreview.timeAndLocation}</p>
+                <h4>{draggedCard.cardPreview.experienceName}</h4>
+                <p className="card-summary">{draggedCard.cardPreview.oneSentenceSummary}</p>
               </div>
             </div>
-            <div className="card-info">
-              <p className="card-time">{draggedCard.cardPreview.timeAndLocation}</p>
-              <h4>{draggedCard.cardPreview.experienceName}</h4>
-              <p className="card-summary">{draggedCard.cardPreview.oneSentenceSummary}</p>
-            </div>
-          </div>
-        ) : null}
+          );
+        })() : null}
       </DragOverlay>
 
       {/* Experience Card Detail Modal */}

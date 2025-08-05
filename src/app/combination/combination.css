@@ -495,6 +495,28 @@
   box-shadow: 0 4px 16px rgba(66, 133, 244, 0.15);
 }
 
+/* 主观能力(S)卡片特殊背景颜色 */
+.pool-card.subjective-ability {
+  background: #f4f8da;
+}
+
+/* 客观能力(O)卡片保持原有背景颜色 */
+.pool-card.objective-ability {
+  background: #ffffff;
+}
+
+/* 主观能力(S)卡片hover状态 */
+.pool-card.subjective-ability:hover {
+  border-color: #4285f4;
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.1);
+  background: #f0f4d0; /* 稍微深一点的绿色调 */
+}
+
+/* 拖拽overlay中的主观能力卡片 */
+.pool-card.drag-overlay.subjective-ability {
+  background: #f4f8da;
+}
+
 .card-category-indicator {
   flex-shrink: 0;
 }
@@ -511,6 +533,17 @@
   font-size: 1.1rem;
 }
 
+/* 客观能力(O)图标样式 */
+.category-icon.o-ability {
+  background: #4285f4;
+}
+
+/* 主观能力(S)图标样式 */
+.category-icon.s-ability {
+  background: #34a853;
+}
+
+/* 保留原有类别样式以兼容其他地方的使用 */
 .category-icon.focus-match {
   background: #4285f4;
 }

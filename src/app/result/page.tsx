@@ -7,6 +7,7 @@ import { CareerProfileAnalysis, CareerProfileAnalysisRequest, CareerProfileAnaly
 import CareerRadarChart from '@/components/visualization/CareerRadarChart';
 import CareerAwarenessChart from '@/components/visualization/CareerAwarenessChart';
 import CompetenceStructureComponent from '@/components/CompetenceStructure';
+import { exportSelfCognitionToPDF } from '@/lib/pdfExport';
 import './result.css';
 
 
@@ -170,6 +171,23 @@ interface CareerProfileResultProps {
 }
 
 const CareerProfileResult: React.FC<CareerProfileResultProps> = ({ data, isLoading, error }) => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  // PDF导出处理函数
+  const handleExportPDF = async () => {
+    try {
+      setIsExporting(true);
+      console.log('🔄 [PDF Export] Starting PDF export...');
+      await exportSelfCognitionToPDF();
+      console.log('✅ [PDF Export] PDF export completed successfully!');
+    } catch (error) {
+      console.error('❌ [PDF Export] Failed to export PDF:', error);
+      alert('导出PDF失败，请稍后重试。');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -254,7 +272,7 @@ const CareerProfileResult: React.FC<CareerProfileResultProps> = ({ data, isLoadi
   return (
     <div className="career-profile-section">
       {/* Left Panel - Complete Career Profile */}
-      <div className="profile-card main-profile-full">
+      <div id="self-cognition-panel" className="profile-card main-profile-full">
         {/* Header with centered icon and title */}
         <div className="card-header centered-header">
           <div className="header-content">
@@ -292,6 +310,27 @@ const CareerProfileResult: React.FC<CareerProfileResultProps> = ({ data, isLoadi
                 "Your career profile analysis will appear here once the data is loaded. This section provides insights into your self-awareness and ability structure based on your selected experiences."
               }
             </p>
+          </div>
+
+          {/* PDF Export Button */}
+          <div className="export-section">
+            <button
+              className="export-pdf-button"
+              onClick={handleExportPDF}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <>
+                  <span className="export-icon">⏳</span>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <span className="export-icon">📄</span>
+                  Export as PDF
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
