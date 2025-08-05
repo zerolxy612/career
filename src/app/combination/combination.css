@@ -517,6 +517,32 @@
   background: #f4f8da;
 }
 
+/* 主观能力(S)卡片中的文本元素特殊背景颜色 */
+.pool-card.subjective-ability .card-info h4 {
+  background: #ffcfe4;
+}
+
+.pool-card.subjective-ability .card-time {
+  background: #ffcfe4;
+}
+
+.pool-card.subjective-ability .card-summary {
+  background: #ffcfe4;
+}
+
+/* 拖拽overlay中的主观能力卡片文本元素 */
+.pool-card.drag-overlay.subjective-ability .card-info h4 {
+  background: #ffcfe4;
+}
+
+.pool-card.drag-overlay.subjective-ability .card-time {
+  background: #ffcfe4;
+}
+
+.pool-card.drag-overlay.subjective-ability .card-summary {
+  background: #ffcfe4;
+}
+
 .card-category-indicator {
   flex-shrink: 0;
 }
