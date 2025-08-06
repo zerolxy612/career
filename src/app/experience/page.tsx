@@ -65,8 +65,29 @@ function ExperiencePageContent() {
 
   // Calculate completion percentage for experience data
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
-    const fields = Object.values(data);
-    const filledFields = fields.filter(field => field.trim().length > 0);
+    // Exclude _cardId from calculation
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { _cardId, ...fieldsToCheck } = data;
+    const fields = Object.values(fieldsToCheck);
+
+    // Filter out empty fields and placeholder text
+    const filledFields = fields.filter(field => {
+      if (!field || field.trim().length === 0) return false;
+
+      // Check for placeholder patterns
+      const trimmedField = field.trim();
+      const isPlaceholder =
+        trimmedField.includes('[') && trimmedField.includes('待补充]') ||
+        trimmedField.includes('[') && trimmedField.includes('信息缺失]') ||
+        trimmedField.includes('信息缺失') ||
+        trimmedField.includes('结果信息缺失') ||
+        trimmedField.includes('时间地点信息缺失') ||
+        trimmedField === '[待补充]' ||
+        trimmedField === '[信息缺失]';
+
+      return !isPlaceholder;
+    });
+
     return Math.round((filledFields.length / fields.length) * 100);
   };
 
@@ -353,11 +374,28 @@ function ExperiencePageContent() {
         safeGet(aiCard.详情卡展示, '高光总结句')
       ];
 
-      const filledFields = fields.filter(field => field && field.trim().length > 0);
+      // Filter out empty fields and placeholder text
+      const filledFields = fields.filter(field => {
+        if (!field || field.trim().length === 0) return false;
+
+        // Check for placeholder patterns
+        const trimmedField = field.trim();
+        const isPlaceholder =
+          trimmedField.includes('[') && trimmedField.includes('待补充]') ||
+          trimmedField.includes('[') && trimmedField.includes('信息缺失]') ||
+          trimmedField.includes('信息缺失') ||
+          trimmedField.includes('结果信息缺失') ||
+          trimmedField.includes('时间地点信息缺失') ||
+          trimmedField === '[待补充]' ||
+          trimmedField === '[信息缺失]';
+
+        return !isPlaceholder;
+      });
+
       const fillRatio = filledFields.length / fields.length;
 
       if (fillRatio === 0) return 'incomplete';
-      if (fillRatio < 1) return 'partial';
+      if (fillRatio < 0.7) return 'partial';
       return 'complete';
     };
 

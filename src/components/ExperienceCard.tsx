@@ -73,7 +73,7 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
   // Use card data if provided, otherwise use individual props
   const cardTitle = card?.cardPreview?.experienceName || title || 'Untitled Experience';
   const cardDescription = card?.cardPreview?.oneSentenceSummary || description || 'No description available';
-  const completion = completionPercentage ?? (card ? getCompletionPercentage(card.completionLevel) : 0);
+  const completion = completionPercentage ?? (card ? calculateActualCompletionPercentage(card) : 0);
 
   // 🔧 FIX: Correct card type determination logic
   const cardType = card?.source?.type === 'user_input' ? 'real' : 'ai-suggested';
@@ -214,7 +214,43 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
   );
 };
 
-// Helper function to get completion percentage from completion level
+// Helper function to calculate actual completion percentage from card data
+function calculateActualCompletionPercentage(card: ExperienceCardType): number {
+  const fields = [
+    card.cardPreview.experienceName,
+    card.cardPreview.timeAndLocation,
+    card.cardPreview.oneSentenceSummary,
+    card.cardDetail.experienceName,
+    card.cardDetail.timeAndLocation,
+    card.cardDetail.backgroundContext,
+    card.cardDetail.myRoleAndTasks,
+    card.cardDetail.taskDetails,
+    card.cardDetail.reflectionAndResults,
+    card.cardDetail.highlightSentence
+  ];
+
+  // Filter out empty fields and placeholder text
+  const filledFields = fields.filter(field => {
+    if (!field || field.trim().length === 0) return false;
+
+    // Check for placeholder patterns
+    const trimmedField = field.trim();
+    const isPlaceholder =
+      trimmedField.includes('[') && trimmedField.includes('待补充]') ||
+      trimmedField.includes('[') && trimmedField.includes('信息缺失]') ||
+      trimmedField.includes('信息缺失') ||
+      trimmedField.includes('结果信息缺失') ||
+      trimmedField.includes('时间地点信息缺失') ||
+      trimmedField === '[待补充]' ||
+      trimmedField === '[信息缺失]';
+
+    return !isPlaceholder;
+  });
+
+  return Math.round((filledFields.length / fields.length) * 100);
+}
+
+// Helper function to get completion percentage from completion level (fallback)
 function getCompletionPercentage(completionLevel: string): number {
   switch (completionLevel) {
     case 'complete':

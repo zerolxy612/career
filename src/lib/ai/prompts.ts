@@ -58,6 +58,13 @@ Please parse the following file content and extract key information for career p
 File Content:
 {fileContent}
 
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- Analyze the primary language of the file content
+- If the file content is primarily in Chinese, respond ENTIRELY in Chinese
+- If the file content is primarily in English, respond ENTIRELY in English
+- If the content contains multiple languages, prioritize English
+- Keep the response language consistent throughout ALL fields
+
 Please extract the following information:
 1. Educational background
 2. Work experience
@@ -75,10 +82,18 @@ export const EXPERIENCE_EXTRACTION_PROMPT = `
 用户选择的行业方向：{selectedIndustry}
 文件内容：{fileContent}
 
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- 分析用户目标和文件内容的主要语言
+- 如果用户目标主要是中文，则所有输出内容使用中文
+- 如果用户目标主要是英文，则所有输出内容使用英文
+- 如果语言混合，优先使用英文
+- 保持整个响应的语言一致性，不要混合使用多种语言
+- 高光总结句始终使用英文
+
 重要原则：
 1. 只提取文件中明确提到的真实经历
 2. 不要编造或推测不存在的信息
-3. 如果某些信息缺失（如时间、地点），请标记为"信息缺失"或留空
+3. 如果某些信息缺失（如时间、地点），请使用"[信息待补充]"而不是"信息缺失"
 4. 根据实际提取到的经历数量生成卡片，不强制要求特定数量
 
 请分析用户的经历，并按照以下分类整理：
@@ -97,16 +112,16 @@ export const EXPERIENCE_EXTRACTION_PROMPT = `
       "卡片分组": "Focus Match",
       "小卡展示": {
         "经历名称": "从文件中提取的真实项目/经历名称",
-        "时间与地点": "从文件中提取的真实时间地点，如果缺失则写'时间地点信息缺失'",
+        "时间与地点": "从文件中提取的真实时间地点，如果缺失则写'[时间地点待补充]'",
         "一句话概述": "基于文件内容的真实概述"
       },
       "详情卡展示": {
         "经历名称": "完整的真实经历标题",
-        "时间与地点": "真实的时间地点信息，缺失则标注'信息缺失'",
-        "背景与情境说明": "基于文件内容的真实背景描述",
-        "我的角色与任务": "文件中明确提到的角色和任务",
-        "任务细节描述": "文件中描述的具体工作内容",
-        "反思与结果总结": "文件中提到的结果或成果，如无则写'结果信息缺失'",
+        "时间与地点": "真实的时间地点信息，缺失则标注'[时间地点待补充]'",
+        "背景与情境说明": "基于文件内容的真实背景描述，如信息不足则写'[背景信息待补充]'",
+        "我的角色与任务": "文件中明确提到的角色和任务，如不明确则写'[角色职责待补充]'",
+        "任务细节描述": "文件中描述的具体工作内容，如缺失则写'[工作细节待补充]'",
+        "反思与结果总结": "文件中提到的结果或成果，如无则写'[成果反思待补充]'",
         "高光总结句": "基于真实经历的核心价值总结（英文）",
         "生成来源": {
           "类型": "uploaded_resume",
@@ -123,11 +138,12 @@ export const EXPERIENCE_EXTRACTION_PROMPT = `
 2. 不要编造时间、地点、公司名称等具体信息
 3. 如果文件中经历很少，生成的卡片数量也应该相应减少
 4. 每张卡片必须标注置信度（high/medium/low）
-5. 对于信息不完整的经历，诚实标注"信息缺失"
-6. 高光总结句使用英文，其他内容根据用户文件语言决定
+5. 对于信息不完整的经历，使用"[字段名称待补充]"格式，避免使用"信息缺失"等负面表述
+6. 高光总结句使用英文，其他内容严格遵循语言跟随规则
 7. 如果无法从文件中提取到任何有效经历，请在响应中说明
+8. 使用"[待补充]"格式的字段不应计入完成度统计
 
-特别注意：宁可生成少量准确的卡片，也不要编造虚假信息！
+特别注意：宁可生成少量准确的卡片，也不要编造虚假信息！使用积极的占位符格式提升用户体验。
 `;
 
 export const EXPERIENCE_CARD_GENERATION_PROMPT = `
@@ -135,6 +151,14 @@ export const EXPERIENCE_CARD_GENERATION_PROMPT = `
 
 用户目标：{userGoal}
 选择的行业：{selectedIndustry}
+
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- 分析用户目标的主要语言
+- 如果用户目标主要是中文，则所有输出内容使用中文
+- 如果用户目标主要是英文，则所有输出内容使用英文
+- 如果语言混合，优先使用英文
+- 保持整个响应的语言一致性
+- 高光总结句始终使用英文
 
 请为用户生成AI推荐的经验卡片，帮助用户思考可能需要补充的经历。
 
@@ -182,6 +206,13 @@ export const COMBINATION_RECOMMENDATION_PROMPT = `
 选择行业：{selectedIndustry}
 可用卡片：{availableCards}
 推荐类型：{optionType}
+
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- 分析用户目标的主要语言
+- 如果用户目标主要是中文，则所有输出内容使用中文
+- 如果用户目标主要是英文，则所有输出内容使用英文
+- 如果语言混合，优先使用英文
+- 保持整个响应的语言一致性，包括所有字段名称和内容
 
 请分析用户的卡片池，为{optionType}生成最优的卡片组合推荐。
 
@@ -359,6 +390,13 @@ export const SMART_CARD_CLASSIFICATION_PROMPT = `
 用户目标：{userGoal}
 选择行业：{selectedIndustry}
 
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- 分析用户目标的主要语言
+- 如果用户目标主要是中文，则所有输出内容使用中文
+- 如果用户目标主要是英文，则所有输出内容使用英文
+- 如果语言混合，优先使用英文
+- 保持整个响应的语言一致性
+
 当前方向分类：
 {dynamicDirections}
 
@@ -411,6 +449,13 @@ export const DYNAMIC_DIRECTIONS_GENERATION_PROMPT = `
 用户目标：{userGoal}
 选择行业：{selectedIndustry}
 
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- 分析用户目标的主要语言
+- 如果用户目标主要是中文，则所有输出内容使用中文
+- 如果用户目标主要是英文，则所有输出内容使用英文
+- 如果语言混合，优先使用英文
+- 保持整个响应的语言一致性，包括方向标题、副标题和描述
+
 请严格按照以下JSON格式输出：
 
 \`\`\`json
@@ -450,7 +495,7 @@ export const DYNAMIC_DIRECTIONS_GENERATION_PROMPT = `
 3. 方向描述要具体且实用，指导用户添加相关经验
 4. 三个方向要有明确的层次关系：核心匹配 → 支撑发展 → 基础能力
 5. 所有内容要与用户的具体目标和行业紧密相关
-6. 使用中文输出，保持专业性和可读性
+6. 严格遵循语言跟随规则，保持专业性和可读性
 `;
 
 // 详细组合分析提示词 - 用于生成详细的推荐路径分析
@@ -462,6 +507,13 @@ export const DETAILED_COMBINATION_ANALYSIS_PROMPT = `
 推荐选项：{optionType}
 推荐的卡片组合：{recommendedCards}
 可用卡片池：{availableCards}
+
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- 分析用户目标的主要语言
+- 如果用户目标主要是中文，则所有输出内容使用中文
+- 如果用户目标主要是英文，则所有输出内容使用英文
+- 如果语言混合，优先使用英文
+- 保持整个响应的语言一致性，包括所有字段名称和内容
 
 请根据以下推荐策略生成详细分析：
 - option1: BALANCED STORY (平衡叙述) - 确保稳定性的同时开启适度的成长潜力
