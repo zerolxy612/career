@@ -47,6 +47,7 @@ export default function Home() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadError, setUploadError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [industries, setIndustries] = useState<IndustryRecommendation[]>([]);
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryRecommendation | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -160,6 +161,7 @@ export default function Home() {
   const handleNext = async () => {
     if (selectedIndustry) {
       console.log('🚀 [HOMEPAGE] Starting navigation with unified data flow...');
+      setIsNavigating(true);
 
       // 🔧 UNIFIED FIX: 使用CardDataManager开始新会话，完全清理旧数据
       const sessionId = CardDataManager.startNewSession(goalText, selectedIndustry.cardPreview.fieldName);
@@ -172,7 +174,6 @@ export default function Home() {
       // 🔧 UNIFIED FIX: 如果有文件，立即处理并通过CardDataManager统一管理
       if (uploadedFiles.length > 0) {
         console.log('📁 [HOMEPAGE] Processing files through unified workflow...');
-        setIsLoading(true);
 
         try {
           const formData = new FormData();
@@ -205,14 +206,15 @@ export default function Home() {
           }
         } catch (error) {
           console.error('❌ [HOMEPAGE] Error processing files:', error);
-        } finally {
-          setIsLoading(false);
+          setIsNavigating(false);
+          return; // 如果处理文件失败，不继续导航
         }
       }
 
       // 🔧 UNIFIED FIX: 导航到Experience页面，让其从CardDataManager统一读取数据
       console.log('🚀 [HOMEPAGE] Navigating to experience page...');
       router.push('/experience');
+      // 注意：不在这里重置isNavigating，因为页面即将切换
     }
   };
 
@@ -470,8 +472,16 @@ export default function Home() {
                 <button
                   onClick={handleNext}
                   className="goal-next-button active"
+                  disabled={isNavigating}
                 >
-                  Next
+                  {isNavigating ? (
+                    <>
+                      <Loader2 className="animate-spin" size={16} />
+                      {uploadedFiles.length > 0 ? 'Processing Files...' : 'Loading...'}
+                    </>
+                  ) : (
+                    'Next'
+                  )}
                 </button>
               </div>
             )}

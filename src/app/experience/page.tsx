@@ -201,20 +201,7 @@ function ExperiencePageContent() {
     // 1. 首先生成或加载动态方向分类
     await initializeDynamicDirections(userGoal, selectedIndustry.cardPreview.fieldName);
 
-    // 2. 检查CardDataManager中是否有现有数据
-    const existingCards = CardDataManager.getAllCards();
-    console.log('📋 [EXPERIENCE] Existing cards in CardDataManager:', existingCards.length);
-
-    if (existingCards.length > 0) {
-      // 有现有数据，直接加载
-      console.log('✅ [EXPERIENCE] Loading existing cards from CardDataManager');
-      const directionsData = CardDataManager.getDirectionsData();
-      setDirections(directionsData);
-      setIsGeneratingCards(false);
-      return;
-    }
-
-    // 3. 检查是否有首页传递的AI响应需要处理
+    // 2. 检查是否有首页传递的AI响应需要处理（优先处理）
     const homepageAIResponse = localStorage.getItem('homepageAIResponse');
     const homepageFileCount = localStorage.getItem('homepageFileCount');
 
@@ -232,15 +219,33 @@ function ExperiencePageContent() {
         localStorage.removeItem('homepageFileCount');
 
         console.log('✅ [EXPERIENCE] Homepage data processed and cleaned up');
-        return;
+        return; // 🔧 FIX: 确保处理完首页数据后直接返回，不再执行其他逻辑
       } catch (error) {
         console.error('❌ [EXPERIENCE] Error processing homepage AI response:', error);
+        // 清理损坏的数据
+        localStorage.removeItem('homepageAIResponse');
+        localStorage.removeItem('homepageFileCount');
       }
     }
 
-    // 4. 没有现有数据，生成新的AI建议卡片或显示空结构
-    console.log('🤖 [EXPERIENCE] No existing data, generating AI suggestion cards...');
-    await generateAICards(userGoal, selectedIndustry, []);
+    // 3. 检查CardDataManager中是否有现有数据
+    const existingCards = CardDataManager.getAllCards();
+    console.log('📋 [EXPERIENCE] Existing cards in CardDataManager:', existingCards.length);
+
+    if (existingCards.length > 0) {
+      // 有现有数据，直接加载
+      console.log('✅ [EXPERIENCE] Loading existing cards from CardDataManager');
+      const directionsData = CardDataManager.getDirectionsData();
+      setDirections(directionsData);
+      setIsGeneratingCards(false);
+      return;
+    }
+
+    // 4. 没有现有数据且没有首页数据，显示空的方向结构供手动创建
+    console.log('📝 [EXPERIENCE] No existing data, showing empty directions for manual card creation');
+    const directionsData = CardDataManager.getDirectionsData();
+    setDirections(directionsData);
+    setIsGeneratingCards(false);
   };
 
   // 🔧 UNIFIED FIX: 处理首页AI响应的专用函数
@@ -384,101 +389,7 @@ function ExperiencePageContent() {
     };
   };
 
-  // 🔧 UNIFIED FIX: 生成AI建议卡片（当没有现有数据时）
-  const generateAICards = async (goal: string, industry: IndustryRecommendation, files: File[] = []) => {
-    console.log('🤖 [AI_GENERATE] Generating AI suggestion cards...', {
-      goal: goal.substring(0, 50) + '...',
-      industry: industry.cardPreview.fieldName,
-      filesCount: files.length
-    });
-    setIsGeneratingCards(true);
-
-    try {
-      // 🔧 UNIFIED FIX: 如果没有文件，显示空的方向结构供手动创建
-      if (files.length === 0) {
-        console.log('📝 [AI_GENERATE] No files provided, showing empty directions for manual card creation');
-
-        // 使用CardDataManager获取方向数据（包括动态方向）
-        const directionsData = CardDataManager.getDirectionsData();
-        setDirections(directionsData);
-        setIsGeneratingCards(false);
-        return;
-      }
-
-      // 🔧 UNIFIED FIX: 如果有文件，通过AI生成建议卡片
-      const formData = new FormData();
-      formData.append('userGoal', goal);
-      formData.append('selectedIndustry', industry.cardPreview.fieldName);
-
-      files.forEach((file) => {
-        formData.append('files', file);
-      });
-
-      console.log('📤 [AI_GENERATE] Sending request to generate AI suggestion cards...');
-      const response = await fetch('/api/ai/generate-experience-cards', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const aiResponse = await response.json();
-      console.log('✅ [AI_GENERATE] AI suggestion cards generated:', aiResponse);
-
-      // 🔧 UNIFIED FIX: 处理AI响应并通过CardDataManager管理
-      if (aiResponse.经验卡片推荐 && Array.isArray(aiResponse.经验卡片推荐)) {
-        const suggestionCards = aiResponse.经验卡片推荐
-          .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
-          .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, false)); // AI建议卡片
-
-        // 🔧 SMART CLASSIFICATION: 通过CardDataManager智能添加AI建议卡片
-        const result = await CardDataManager.addCardsWithSmartClassification(suggestionCards, 'experience', files.length);
-
-        if (result.success) {
-          // 🔧 CRITICAL FIX: 使用setTimeout确保状态更新正确执行
-          setTimeout(() => {
-            const directionsData = CardDataManager.getDirectionsData();
-
-            // 🔧 NEW: 如果有受影响的方向，自动展开它们
-            if (result.affectedDirections && result.affectedDirections.length > 0) {
-              const updatedDirections = directionsData.map(dir => ({
-                ...dir,
-                isExpanded: result.affectedDirections!.includes(dir.id) || dir.isExpanded
-              }));
-
-              console.log('🔄 [AI_GENERATE] Auto-expanding affected directions:', {
-                affectedDirections: result.affectedDirections,
-                expandedDirections: updatedDirections.filter(d => d.isExpanded).map(d => d.id)
-              });
-
-              setDirections(updatedDirections);
-            } else {
-              setDirections(directionsData);
-            }
-
-            console.log('🔄 [AI_GENERATE] About to update directions state:', {
-              newTotalCards: directionsData.reduce((sum, dir) => sum + dir.cards.length, 0),
-              affectedDirections: result.affectedDirections
-            });
-
-            console.log('✅ [AI_GENERATE] AI suggestion cards added and UI updated');
-          }, 100);
-        } else {
-          console.error('❌ [AI_GENERATE] Failed to add AI suggestion cards to CardDataManager');
-        }
-      }
-
-    } catch (error) {
-      console.error('❌ [AI_GENERATE] Error generating AI suggestion cards:', error);
-      // 显示空方向作为降级处理，使用CardDataManager获取方向数据
-      const directionsData = CardDataManager.getDirectionsData();
-      setDirections(directionsData);
-    } finally {
-      setIsGeneratingCards(false);
-    }
-  };
+  // 🔧 REMOVED: generateAICards函数已移除，因为重构后的数据初始化逻辑不再需要它
 
   const toggleDirection = (directionId: string) => {
     const updatedDirections = directions.map(dir =>

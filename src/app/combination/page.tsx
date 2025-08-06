@@ -678,6 +678,19 @@ export default function CombinationPage() {
   // Get all cards from all directions
   const allCards = directions.flatMap(direction => direction.cards);
 
+  // 🔧 DEBUG: 添加调试日志来跟踪卡片数量
+  console.log('🎯 [COMBINATION] Card pool analysis:', {
+    directionsCount: directions.length,
+    cardsByDirection: directions.map(dir => ({
+      title: dir.title,
+      cardCount: dir.cards.length,
+      cardNames: dir.cards.map(c => c.cardPreview.experienceName)
+    })),
+    totalCards: allCards.length,
+    allCardNames: allCards.map(c => c.cardPreview.experienceName),
+    cardSources: allCards.map(c => c.source.type)
+  });
+
   return (
     <DndContext
       sensors={sensors}

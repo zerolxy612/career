@@ -253,7 +253,14 @@ export class CardDataManager {
    */
   static getAllCards(): ExperienceCard[] {
     const session = this.getCurrentSession();
-    return session?.cards || [];
+    const cards = session?.cards || [];
+    console.log('📊 [CardDataManager] getAllCards called:', {
+      sessionExists: !!session,
+      cardCount: cards.length,
+      cardNames: cards.map(c => c.cardPreview.experienceName),
+      cardSources: cards.map(c => c.source.type)
+    });
+    return cards;
   }
 
   /**

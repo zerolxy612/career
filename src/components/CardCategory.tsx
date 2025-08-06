@@ -75,11 +75,23 @@ export const CardCategory: React.FC<CardCategoryProps> = ({
             <p style={{
               fontSize: '0.9rem',
               color: '#666',
-              margin: 0,
+              margin: direction.isExpanded ? 0 : '0 0 0.5rem 0',
               fontStyle: 'italic'
             }}>
               {direction.subtitle}
             </p>
+
+            {/* Card Statistics - only show when collapsed */}
+            {!direction.isExpanded && direction.cards.length > 0 && (
+              <div style={{
+                fontSize: '0.85rem',
+                color: '#4285f4',
+                margin: '0.5rem 0 0 0',
+                fontWeight: '500'
+              }}>
+                There are currently {direction.cards.length} Cards in the {direction.title.toLowerCase()}, Includes {direction.extractedCount} extracted cards and {direction.aiRecommendedCount} AI-recommended cards.
+              </div>
+            )}
           </div>
 
           {/* Expand/Collapse Icon - positioned absolutely to right */}
