@@ -143,41 +143,48 @@ export const CombinationDetailsModal = ({
 
           {detailsData && (
             <div className="details-content">
-              {/* Option Name */}
-              <div className="section">
-                <h3 className="option-name">{detailsData.推荐路径选项.option名称}</h3>
+              {/* Matching Summary & Logic */}
+              <div className="matching-summary">
+                <p className="summary-label">Matching Summary & Logic</p>
                 <p className="logic-summary">{detailsData.推荐路径选项.匹配逻辑摘要}</p>
               </div>
 
               {/* Why this combination */}
-              <div className="section">
-                <h4 className="section-title">Why this combination</h4>
-                <div className="target-position">
-                  <strong>Target Position:</strong> {detailsData.推荐路径选项['Why this combination'].目标岗位}
-                </div>
-                
-                <div className="identified-abilities">
-                  <strong>Identified Abilities:</strong>
-                  <ul>
+              <div className="why-combination">
+                <h4 className="section-title">Why this combination?</h4>
+
+                <div className="target-role-section">
+                  <p className="target-role">
+                    <span className="label">Your target role:</span> {detailsData.推荐路径选项['Why this combination'].目标岗位}
+                  </p>
+                  <p className="skills-label">→ Key skills identified:</p>
+                  <ul className="skills-list">
                     {detailsData.推荐路径选项['Why this combination'].识别能力.map((ability, index) => (
-                      <li key={index}>{ability}</li>
+                      <li key={index} className="skill-item">
+                        <span className="checkmark">✅</span> {ability}
+                      </li>
                     ))}
                   </ul>
                 </div>
-                
+
                 <div className="combination-explanation">
-                  <strong>Combination Explanation:</strong>
                   <p>{detailsData.推荐路径选项['Why this combination'].组合解释}</p>
                 </div>
               </div>
 
-              {/* Card Combination */}
-              <div className="section">
-                <h4 className="section-title">Card Combination</h4>
-                <div className="cards-list">
+              {/* Strategy Direction & Card Breakdown */}
+              <div className="strategy-section">
+                <h4 className="section-title">Strategy Direction & Card Breakdown</h4>
+                <p className="card-insight-label">Card Insight</p>
+
+                <div className="cards-table">
+                  <div className="table-header">
+                    <div className="header-card">Card</div>
+                    <div className="header-role">Role in Strategy</div>
+                  </div>
                   {detailsData.推荐路径选项.卡片组合.map((card, index) => (
-                    <div key={index} className="card-item">
-                      <div className="card-name">{card.卡片名称}</div>
+                    <div key={index} className="table-row">
+                      <div className="card-name">{String.fromCharCode(65 + index)} - {card.卡片名称}</div>
                       <div className="card-role">{card.角色定位}</div>
                     </div>
                   ))}
@@ -185,33 +192,35 @@ export const CombinationDetailsModal = ({
               </div>
 
               {/* Supplementary Suggestions */}
-              <div className="section">
-                <h4 className="section-title">Supplementary Suggestions</h4>
-                <ul className="suggestions-list">
+              <div className="supplement-section">
+                <p className="supplement-intro">To strengthen your match further, consider supplementing with:</p>
+                <ul className="supplement-list">
                   {detailsData.推荐路径选项.补充建议方向.map((suggestion, index) => (
-                    <li key={index}>{suggestion}</li>
+                    <li key={index} className="supplement-item">
+                      <span className="supplement-icon">🌱</span> {suggestion}
+                    </li>
                   ))}
                 </ul>
               </div>
 
-              {/* Risks and Recommendations */}
-              <div className="section">
-                <h4 className="section-title">Risks & Recommendations</h4>
-                
-                <div className="risks">
-                  <strong>Potential Challenges:</strong>
-                  <ul>
+              {/* Risks & Tips */}
+              <div className="risks-section">
+                <h4 className="section-title">Risks & Tips</h4>
+
+                <div className="potential-gaps">
+                  <p className="subsection-title">Potential Gaps</p>
+                  <ul className="gaps-list">
                     {detailsData.推荐路径选项.风险与建议.潜在挑战.map((challenge, index) => (
-                      <li key={index}>{challenge}</li>
+                      <li key={index} className="gap-item">{challenge}</li>
                     ))}
                   </ul>
                 </div>
-                
-                <div className="recommendations">
-                  <strong>Action Recommendations:</strong>
-                  <ul>
+
+                <div className="tips-for-action">
+                  <p className="subsection-title">Tips for Action</p>
+                  <ul className="tips-list">
                     {detailsData.推荐路径选项.风险与建议.行动建议.map((action, index) => (
-                      <li key={index}>{action}</li>
+                      <li key={index} className="tip-item">{action}</li>
                     ))}
                   </ul>
                 </div>
