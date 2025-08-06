@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { IndustryRecommendation } from '@/types/api';
 import { CardDirection, CompletionLevel, ExperienceCard, CardCategory as CardCategoryType } from '@/types/card';
@@ -42,7 +42,8 @@ interface AIGeneratedCardsResponse {
   经验卡片推荐: AICardResponse[];
 }
 
-export default function ExperiencePage() {
+// 内部组件，使用useSearchParams
+function ExperiencePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryRecommendation | null>(null);
@@ -993,5 +994,25 @@ export default function ExperiencePage() {
         }
       `}</style>
     </div>
+  );
+}
+
+// 主导出组件，用Suspense包装
+export default function ExperiencePage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        fontSize: '1.2rem',
+        color: '#666'
+      }}>
+        Loading...
+      </div>
+    }>
+      <ExperiencePageContent />
+    </Suspense>
   );
 }

@@ -44,10 +44,10 @@ interface SessionData {
 // 数据源类型
 type DataSource = 'homepage' | 'experience' | 'manual';
 
-// 卡片去重键生成函数
-function generateCardKey(card: ExperienceCard): string {
-  return `${card.cardPreview.experienceName.trim().toLowerCase()}-${card.cardPreview.timeAndLocation.trim().toLowerCase()}`;
-}
+// 卡片去重键生成函数 (暂时保留，可能在未来使用)
+// function generateCardKey(card: ExperienceCard): string {
+//   return `${card.cardPreview.experienceName.trim().toLowerCase()}-${card.cardPreview.timeAndLocation.trim().toLowerCase()}`;
+// }
 
 export class CardDataManager {
   private static readonly SESSION_KEY = 'careerProfilingSession';
@@ -228,10 +228,10 @@ export class CardDataManager {
           duplicatesRemoved: cards.length - addedCount,
           source,
           affectedDirections,
-          classificationSummary: classificationResult.卡片分类结果.reduce((acc: any, item: any) => {
+          classificationSummary: classificationResult.卡片分类结果.reduce((acc: Record<string, number>, item: { 分配方向: string }) => {
             acc[item.分配方向] = (acc[item.分配方向] || 0) + 1;
             return acc;
-          }, {})
+          }, {} as Record<string, number>)
         });
 
         return { success: true, affectedDirections };
@@ -302,7 +302,7 @@ export class CardDataManager {
       });
 
       // 按动态方向分组卡片（这里需要智能匹配卡片到方向）
-      const cardsByDirection = this.groupCardsByDynamicDirections(cards, dynamicDirections);
+      const cardsByDirection = this.groupCardsByDynamicDirections(cards);
 
       // 构建动态方向数据结构
       const directions: CardDirection[] = dynamicDirections.map((dynDir, index) => ({
@@ -513,7 +513,7 @@ export class CardDataManager {
    * 根据动态方向智能分组卡片
    * 使用简单的关键词匹配和对齐程度来分配卡片
    */
-  private static groupCardsByDynamicDirections(cards: ExperienceCard[], directions: DynamicDirection[]): ExperienceCard[][] {
+  private static groupCardsByDynamicDirections(cards: ExperienceCard[]): ExperienceCard[][] {
     const result: ExperienceCard[][] = [[], [], []];
 
     // 如果没有卡片，返回空数组
@@ -561,7 +561,7 @@ export class CardDataManager {
   /**
    * 应用AI分类结果到卡片
    */
-  private static applyClassificationResults(cards: ExperienceCard[], classificationResults: any[]): ExperienceCard[] {
+  private static applyClassificationResults(cards: ExperienceCard[], classificationResults: Array<{ 卡片名称: string; 分配方向: string }>): ExperienceCard[] {
     console.log('🎯 [CardDataManager] Applying classification results:', {
       cardsCount: cards.length,
       classificationsCount: classificationResults.length
@@ -622,7 +622,7 @@ export class CardDataManager {
   /**
    * 获取受影响的方向（有新卡片的方向）
    */
-  private static getAffectedDirections(classificationResults: any[]): string[] {
+  private static getAffectedDirections(classificationResults: Array<{ 分配方向: string }>): string[] {
     const affectedDirections = new Set<string>();
 
     classificationResults.forEach(result => {
