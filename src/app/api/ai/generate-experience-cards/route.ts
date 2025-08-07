@@ -8,12 +8,34 @@ import { parseFiles, formatParsedContentForAI } from '@/lib/fileParser';
 
 export async function POST(request: NextRequest) {
   console.log('🔥 [API] /api/ai/generate-experience-cards - Request received');
+  console.log('📋 [API] === 开始经验卡片生成流程 ===');
 
   try {
     const formData = await request.formData();
     const userGoal = formData.get('userGoal') as string;
     const selectedIndustry = formData.get('selectedIndustry') as string;
-    const files = formData.getAll('files') as File[];
+    const rawFiles = formData.getAll('files') as File[];
+
+    console.log('📥 [API] FormData解析结果:', {
+      userGoal: userGoal?.substring(0, 100) + (userGoal?.length > 100 ? '...' : ''),
+      selectedIndustry,
+      rawFilesCount: rawFiles.length,
+      rawFilesInfo: rawFiles.map(f => ({
+        name: f?.name || 'undefined',
+        type: f?.type || 'undefined',
+        size: f?.size || 'undefined',
+        isValid: !!(f && f.name && f.size > 0)
+      }))
+    });
+
+    // 过滤掉无效的文件对象
+    const files = rawFiles.filter(file => file && file.name && file.size > 0);
+
+    console.log('🔍 [API] 文件过滤结果:', {
+      原始文件数: rawFiles.length,
+      有效文件数: files.length,
+      有效文件列表: files.map(f => ({ name: f.name, type: f.type, size: f.size }))
+    });
 
     // Log the complete user input to console
     consoleLog.userInput('生成经验卡片API', `目标: ${userGoal}, 行业: ${selectedIndustry}`, files);
@@ -28,23 +50,47 @@ export async function POST(request: NextRequest) {
 
     let fileContent = '';
     let hasFiles = false;
+    let parsedFilesData: any[] = [];
 
     // Process uploaded files if any
     if (files && files.length > 0) {
-      console.group('📁 文件解析 - 生成经验卡片API');
-      console.log(`开始解析 ${files.length} 个文件`);
+      console.log('📁 [API] === 开始文件解析阶段 ===');
+      console.log(`📁 [API] 准备解析 ${files.length} 个文件:`, files.map(f => ({
+        name: f.name,
+        type: f.type,
+        size: f.size + ' bytes'
+      })));
       hasFiles = true;
 
       try {
+        console.log('🔄 [API] 调用parseFiles函数...');
         const parsedFiles = await parseFiles(files);
-        fileContent = formatParsedContentForAI(parsedFiles);
+        parsedFilesData = parsedFiles; // 保存解析结果供后续使用
+        console.log('📊 [API] parseFiles返回结果:', {
+          返回数组长度: parsedFiles.length,
+          详细结果: parsedFiles.map(f => ({
+            fileName: f.fileName,
+            parseSuccess: f.parseSuccess,
+            extractedTextLength: f.extractedTextLength,
+            parseError: f.parseError || 'none',
+            parsingMethod: f.metadata?.parsingMethod || 'unknown'
+          }))
+        });
 
-        console.log('✅ 所有文件解析完成');
-        console.log('📊 解析结果摘要:', {
+        console.log('🔄 [API] 调用formatParsedContentForAI函数...');
+        fileContent = formatParsedContentForAI(parsedFiles);
+        console.log('📝 [API] 格式化后的文件内容:', {
+          内容长度: fileContent.length,
+          内容预览: fileContent.substring(0, 300) + (fileContent.length > 300 ? '...' : '')
+        });
+
+        console.log('✅ [API] 所有文件解析完成');
+        console.log('📊 [API] 解析结果摘要:', {
           文件总数: parsedFiles.length,
           解析成功: parsedFiles.filter(f => f.parseSuccess).length,
           解析失败: parsedFiles.filter(f => !f.parseSuccess).length,
-          总文本长度: parsedFiles.reduce((sum, f) => sum + f.extractedTextLength, 0)
+          总文本长度: parsedFiles.reduce((sum, f) => sum + f.extractedTextLength, 0),
+          格式化后内容长度: fileContent.length
         });
 
         // 显示每个文件的解析结果
@@ -100,12 +146,24 @@ export async function POST(request: NextRequest) {
 
       // Try to parse JSON response
       const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
-      const jsonString = jsonMatch ? jsonMatch[1] : response;
+      let jsonString = jsonMatch ? jsonMatch[1] : response;
 
       console.log('🔄 [API] JSON extraction result:', {
         foundJsonBlock: !!jsonMatch,
         jsonStringLength: jsonString.length,
         jsonStringPreview: jsonString.substring(0, 300) + (jsonString.length > 300 ? '...' : '')
+      });
+
+      // 清理JSON字符串中的控制字符
+      console.log('🧹 [API] 清理JSON字符串中的控制字符...');
+      jsonString = jsonString
+        .replace(/[\x00-\x1F\x7F]/g, ' ') // 移除控制字符
+        .replace(/\s+/g, ' ') // 合并多个空格
+        .trim();
+
+      console.log('🔄 [API] 清理后的JSON预览:', {
+        cleanedLength: jsonString.length,
+        cleanedPreview: jsonString.substring(0, 300) + (jsonString.length > 300 ? '...' : '')
       });
 
       parsedResponse = JSON.parse(jsonString);
@@ -125,7 +183,18 @@ export async function POST(request: NextRequest) {
       firstCardName: parsedResponse.经验卡片推荐?.[0]?.小卡展示?.经历名称 || 'N/A'
     });
 
-    return NextResponse.json(parsedResponse);
+    // 🔍 [DEBUG] 添加文件解析详情到响应中，供前端调试使用
+    const responseWithDebugInfo = {
+      ...parsedResponse,
+      文件解析详情: parsedFilesData
+    };
+
+    console.log('🔍 [API] 添加调试信息到响应:', {
+      包含文件解析详情: responseWithDebugInfo.文件解析详情.length > 0,
+      文件解析详情数量: responseWithDebugInfo.文件解析详情.length
+    });
+
+    return NextResponse.json(responseWithDebugInfo);
   } catch (error) {
     console.error('❌ [API] Critical error in generate-experience-cards API:', error);
     console.error('❌ [API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');

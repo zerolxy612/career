@@ -608,16 +608,39 @@ function ExperiencePageContent() {
 
   // 🔧 UNIFIED FIX: Experience页面文件上传 - 工作流2
   const handleFileUpload = async (file: File) => {
-    console.log('📁 [EXPERIENCE_UPLOAD] File uploaded:', file.name);
+    // 强制显示日志，确保能看到
+    console.clear(); // 清空控制台
+    console.log('🚨🚨🚨 [EXPERIENCE_UPLOAD] === 开始文件上传流程 === 🚨🚨🚨');
+    console.log('🚨🚨🚨 [EXPERIENCE_UPLOAD] 如果您看到这条消息，说明前端日志正常工作！');
+    console.log('📁 [EXPERIENCE_UPLOAD] 文件信息:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified,
+      isValidFile: !!(file && file.name && file.size > 0)
+    });
+
+    // 立即显示文件内容预览（如果是文本文件）
+    if (file.type.includes('text') || file.name.toLowerCase().endsWith('.txt')) {
+      try {
+        const text = await file.text();
+        console.log('📄 [EXPERIENCE_UPLOAD] 文本文件内容预览:', text.substring(0, 500));
+      } catch (e) {
+        console.log('📄 [EXPERIENCE_UPLOAD] 无法读取文本文件内容:', e);
+      }
+    }
+
     setHasInteracted(true);
     setUploadedFiles(prev => [...prev, file]);
 
     if (!selectedIndustry || !userGoal) {
+      console.error('❌ [EXPERIENCE_UPLOAD] 缺少必要参数:', { selectedIndustry, userGoal });
       alert('Missing user goal or selected industry. Please go back and complete the setup.');
       return;
     }
 
     try {
+      console.log('🚀 [EXPERIENCE_UPLOAD] 开始生成卡片流程');
       setIsGeneratingCards(true);
 
       // 处理上传的文件并生成新的AI卡片
@@ -626,18 +649,85 @@ function ExperiencePageContent() {
       formData.append('selectedIndustry', selectedIndustry.cardPreview.fieldName);
       formData.append('files', file);
 
-      console.log('📤 [EXPERIENCE_UPLOAD] Processing file through AI...');
+      console.log('📤 [EXPERIENCE_UPLOAD] FormData准备完成:', {
+        userGoal,
+        selectedIndustry,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+
+      console.log('📤 [EXPERIENCE_UPLOAD] 发送API请求到 /api/ai/generate-experience-cards');
+      const startTime = Date.now();
+
       const response = await fetch('/api/ai/generate-experience-cards', {
         method: 'POST',
         body: formData,
       });
 
+      const responseTime = Date.now() - startTime;
+      console.log('📥 [EXPERIENCE_UPLOAD] API响应接收完成:', {
+        status: response.status,
+        statusText: response.statusText,
+        responseTime: `${responseTime}ms`,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ [EXPERIENCE_UPLOAD] API请求失败:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText.substring(0, 500) + '...'
+        });
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
 
       const aiResponse = await response.json();
-      console.log('✅ [EXPERIENCE_UPLOAD] AI response received:', aiResponse);
+      console.log('🚨🚨🚨 [EXPERIENCE_UPLOAD] AI响应接收成功！🚨🚨🚨');
+      console.log('✅ [EXPERIENCE_UPLOAD] AI响应解析成功:', {
+        hasResponse: !!aiResponse,
+        responseKeys: Object.keys(aiResponse || {}),
+        hasExperienceCards: !!(aiResponse?.经验卡片推荐),
+        cardsCount: Array.isArray(aiResponse?.经验卡片推荐) ? aiResponse.经验卡片推荐.length : 0,
+        responsePreview: JSON.stringify(aiResponse).substring(0, 300) + '...'
+      });
+
+      // 🔍 [DEBUG] 显示PDF解析的原始内容
+      console.log('🚨🚨🚨 [EXPERIENCE_UPLOAD] 开始检查文件解析详情...');
+      console.log('🔍 [EXPERIENCE_UPLOAD] aiResponse完整内容:', aiResponse);
+
+      if (aiResponse?.文件解析详情) {
+        console.log('🚨🚨🚨 [EXPERIENCE_UPLOAD] === 找到PDF解析原始内容详情 === 🚨🚨🚨');
+        console.log('📄 [EXPERIENCE_UPLOAD] 文件解析详情:', aiResponse.文件解析详情);
+
+        if (Array.isArray(aiResponse.文件解析详情)) {
+          aiResponse.文件解析详情.forEach((fileDetail: any, index: number) => {
+            console.log(`📄 [EXPERIENCE_UPLOAD] 文件${index + 1} - ${fileDetail.fileName}:`, {
+              解析成功: fileDetail.parseSuccess,
+              解析方法: fileDetail.parsingMethod,
+              文本长度: fileDetail.extractedTextLength,
+              错误信息: fileDetail.parseError || 'none',
+              原始文本内容: fileDetail.extractedText
+            });
+
+            // 特别显示PDF文件的原始内容
+            if (fileDetail.fileName?.toLowerCase().includes('.pdf') || fileDetail.parsingMethod === 'pdf-extraction') {
+              console.log('🚨🚨🚨🚨🚨 [PDF_DEBUG] 找到PDF文件！🚨🚨🚨🚨🚨');
+              console.log(`🔍 [PDF_DEBUG] PDF文件名:`, fileDetail.fileName);
+              console.log(`🔍 [PDF_DEBUG] PDF解析方法:`, fileDetail.parsingMethod);
+              console.log(`🔍 [PDF_DEBUG] PDF解析是否成功:`, fileDetail.parseSuccess);
+              console.log(`🔍 [PDF_DEBUG] PDF解析错误:`, fileDetail.parseError || 'none');
+              console.log(`🚨🚨🚨 [PDF_DEBUG] PDF文件原始解析内容 (完整):`);
+              console.log(fileDetail.extractedText);
+              console.log(`🚨🚨🚨 [PDF_DEBUG] PDF内容长度:`, fileDetail.extractedText?.length || 0);
+            }
+          });
+        }
+      } else {
+        console.log('❌ [EXPERIENCE_UPLOAD] 没有找到文件解析详情！');
+        console.log('❌ [EXPERIENCE_UPLOAD] aiResponse中的所有键:', Object.keys(aiResponse || {}));
+      }
 
       // 🔧 UNIFIED FIX: 转换AI响应为ExperienceCard格式
       if (!aiResponse.经验卡片推荐 || !Array.isArray(aiResponse.经验卡片推荐)) {

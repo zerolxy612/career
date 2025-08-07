@@ -10,7 +10,10 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const userInput = formData.get('userInput') as string;
-    const files = formData.getAll('files') as File[];
+    const rawFiles = formData.getAll('files') as File[];
+
+    // 过滤掉无效的文件对象
+    const files = rawFiles.filter(file => file && file.name && file.size > 0);
 
     // Log the complete user input to console
     consoleLog.userInput('分析目标API', userInput, files);

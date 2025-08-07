@@ -18,36 +18,60 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileSelect = (file: File) => {
+    console.log('🚨🚨🚨 [FLOATING_UPLOAD] 文件选择事件触发！🚨🚨🚨');
+    console.log('📁 [FLOATING_UPLOAD] 选择的文件:', {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+
     // Validate file size
     if (file.size > maxSize * 1024 * 1024) {
+      console.error('❌ [FLOATING_UPLOAD] 文件太大:', file.size, 'bytes, 最大允许:', maxSize, 'MB');
       alert(`File size must be less than ${maxSize}MB`);
       return;
     }
 
     // Validate file type
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    console.log('🔍 [FLOATING_UPLOAD] 文件扩展名检查:', {
+      fileExtension,
+      acceptedTypes,
+      isAccepted: acceptedTypes.includes(fileExtension)
+    });
+
     if (!acceptedTypes.includes(fileExtension)) {
+      console.error('❌ [FLOATING_UPLOAD] 不支持的文件类型:', fileExtension);
       alert(`File type not supported. Please upload: ${acceptedTypes}`);
       return;
     }
 
+    console.log('✅ [FLOATING_UPLOAD] 文件验证通过，开始上传...');
     setIsUploading(true);
+
+    console.log('🔄 [FLOATING_UPLOAD] 调用onFileSelect回调函数...');
     onFileSelect(file);
-    
+
     // Simulate upload delay
     setTimeout(() => {
+      console.log('✅ [FLOATING_UPLOAD] 上传状态重置');
       setIsUploading(false);
     }, 1000);
   };
 
   const handleClick = () => {
+    console.log('🚨🚨🚨 [FLOATING_UPLOAD] 上传按钮被点击！🚨🚨🚨');
     fileInputRef.current?.click();
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🚨🚨🚨 [FLOATING_UPLOAD] 文件输入框变化事件触发！🚨🚨🚨');
     const file = event.target.files?.[0];
+    console.log('📁 [FLOATING_UPLOAD] 从输入框获取的文件:', file);
     if (file) {
       handleFileSelect(file);
+    } else {
+      console.log('❌ [FLOATING_UPLOAD] 没有选择文件');
     }
   };
 
