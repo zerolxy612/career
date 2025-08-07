@@ -7,6 +7,7 @@ import { CareerProfileAnalysis, CareerProfileAnalysisRequest, CareerProfileAnaly
 import CareerRadarChart from '@/components/visualization/CareerRadarChart';
 import CareerAwarenessChart from '@/components/visualization/CareerAwarenessChart';
 import CompetenceStructureComponent from '@/components/CompetenceStructure';
+import JobRecommendationSection from '@/components/JobRecommendationSection';
 import { exportSelfCognitionToPDF } from '@/lib/pdfExport';
 import './result.css';
 
@@ -154,7 +155,7 @@ export default function ResultPage() {
                 error={error}
               />
             ) : (
-              <JobRecommendation />
+              <JobRecommendation careerProfileData={careerProfileData} />
             )}
           </div>
         </div>
@@ -350,27 +351,10 @@ const CareerProfileResult: React.FC<CareerProfileResultProps> = ({ data, isLoadi
 };
 
 // Job Recommendation Component
-const JobRecommendation = () => {
-  return (
-    <div className="job-recommendation-section">
-      <div className="recommendation-card">
-        <div className="card-content">
-          <div className="competence-section">
-            <div className="abilities-placeholder">
-            </div>
-          </div>
+interface JobRecommendationProps {
+  careerProfileData: CareerProfileAnalysis | null;
+}
 
-          <div className="competence-section">
-            <div className="abilities-placeholder">
-            </div>
-          </div>
-
-          <div className="competence-section">
-            <div className="skills-table-placeholder">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+const JobRecommendation: React.FC<JobRecommendationProps> = ({ careerProfileData }) => {
+  return <JobRecommendationSection careerProfileData={careerProfileData} />;
 };

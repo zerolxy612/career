@@ -1,12 +1,22 @@
 // Job Recommendation Types
 export interface JobRecommendation {
   id: string;
-  jobName: string;
+  jobTitle: string;
   matchingScore: number;
-  recommendationReason: string;
-  basedOnCards: string[];
-  jobRequirements: string[];
   category: 'target' | 'adjacent';
+  companyType: string;
+  jobDescription: string;
+  keyResponsibilities: string[];
+  requiredSkills: string[];
+  matchingReasons: string[];
+  developmentSuggestions: string[];
+  salaryRange: string;
+  careerGrowthPath: string;
+  // Legacy fields for backward compatibility
+  jobName?: string;
+  recommendationReason?: string;
+  basedOnCards?: string[];
+  jobRequirements?: string[];
   coverLetter?: CoverLetter;
 }
 
@@ -35,4 +45,95 @@ export interface JobSearchResult {
   jobs: JobRecommendation[];
   totalCount: number;
   filters: JobSearchFilters;
+}
+
+// Job Recommendation Summary
+export interface RecommendationSummary {
+  totalJobs: number;
+  averageMatchingScore: number;
+  topStrengths: string[];
+  keyDevelopmentAreas: string[];
+  overallAssessment: string;
+}
+
+// Job Recommendation API Types
+export interface JobRecommendationRequest {
+  userGoal: string;
+  selectedIndustry: string;
+  careerProfileData: any;
+  selectedCards: {
+    id: string;
+    experienceName: string;
+    category: string;
+    cardDetail: {
+      experienceName: string;
+      timeAndLocation: string;
+      backgroundContext: string;
+      myRoleAndTasks: string;
+      taskDetails: string;
+      reflectionAndResults: string;
+      highlightSentence: string;
+    };
+  }[];
+}
+
+export interface JobRecommendationResponse {
+  success: boolean;
+  data?: {
+    directions: JobDirection[];
+  };
+  error?: string;
+  processingTime?: number;
+}
+
+// New Job Direction Types for simplified UI
+export interface JobDirection {
+  target_position: string;
+  match_level: number;
+  direction_summary: string;
+  recommendation_reason: string;
+  explore_instruction: string;
+  based_on_experience_cards: string[];
+  job_requirements: string[];
+  direction_tags: string[];
+}
+
+// Similar Jobs Types
+export interface SimilarJobsRequest {
+  selectedJob: JobDirection;
+  userGoal: string;
+  selectedCards: {
+    id: string;
+    experienceName: string;
+    category: string;
+    cardDetail: any;
+  }[];
+}
+
+export interface SimilarJobsResponse {
+  success: boolean;
+  data?: {
+    similar_jobs: SimilarJob[];
+    recommendation_context: RecommendationContext;
+  };
+  error?: string;
+  processingTime?: number;
+}
+
+export interface SimilarJob {
+  job_title: string;
+  match_level: number;
+  similarity_reason: string;
+}
+
+export interface RecommendationContext {
+  target_role: string;
+  shared_competencies: SharedCompetency[];
+  overall_explanation: string;
+}
+
+export interface SharedCompetency {
+  competency: string;
+  icon: string;
+  description: string;
 }

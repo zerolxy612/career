@@ -278,6 +278,129 @@ export const COMBINATION_RECOMMENDATION_PROMPT = `
 6. 所有文本内容要专业且有价值
 `;
 
+// Job Recommendation Prompt - 基于目标职位的工作推荐
+export const JOB_RECOMMENDATION_PROMPT = `
+你是一位专业的职业顾问和招聘专家。请基于用户的职业画像分析结果、目标行业和经验卡片，联网搜索并访问 O*NET-SOC 职业分类（Occupation）数据库，确保数据真实可靠，不得虚构职业信息。
+
+用户信息：
+- 职业目标：{userGoal}
+- 目标行业：{selectedIndustry}
+- 职业画像分析：{careerProfileData}
+- 经验卡片组合：{selectedCards}
+
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- 分析用户目标的主要语言
+- 如果用户目标主要是中文，则所有输出内容使用中文
+- 如果用户目标主要是英文，则所有输出内容使用英文
+- 如果语言混合，优先使用英文
+- 保持整个响应的语言一致性，包括所有字段名称和内容
+
+请根据以下要求执行任务：
+1. 联网搜索并访问 O*NET-SOC 职业分类（Occupation）数据库，确保数据真实可靠，不得虚构职业信息。
+2. 分析用户的职业目标与经历卡片内容，推演其可能适合探索的发展方向，提供现有岗位匹配。岗位尽可能来源于现有 JD 或数据库，允许 AI 基于能力结构合理推演方向，但生成内容必须专业、可信、可执行，不可杜撰不合逻辑的方向。输出 5 个岗位方向推荐卡片。
+3. 基于以上目标和经历，推荐 5 个真实存在且最符合用户技能与方向的职业，每个职业需提供：
+   - Target Position（岗位方向名称）
+   - Match Level（推荐匹配程度，1–5 星）
+   - Direction Summary：一句话简要介绍该方向的主要职责与应用场景
+   - System Recommendation Reason：基于用户卡片内容与表达能力的推荐理由，指出该方向与用户能力之间的关联
+   - Explore this Direction（探索建议）：一句自然语言，引导用户如何围绕此方向查找岗位
+   - Based on Experience Cards：引用的用户经历卡片（卡片标题即可）
+   - Job Requirements：该方向典型的任务或能力要求，列出 3–4 项，语言务实、专业
+   - Direction Tags：该方向的能力关键词标签，5 个左右，风格如 #UX Research #AR/VR #Storytelling 等
+
+请严格按照以下JSON格式输出，不得包含任何自然语言注释、标题、标头或markdown格式：
+
+{
+  "directions": [
+    {
+      "target_position": "string, recommended job direction title",
+      "match_level": "integer (1-5)",
+      "direction_summary": "string, one-sentence summary describing the core responsibility or application area of this direction",
+      "recommendation_reason": "string, explanation of why this direction is a good fit for the user based on their experience cards or demonstrated abilities",
+      "explore_instruction": "string, natural-language sentence suggesting how to explore or search for roles under this direction",
+      "based_on_experience_cards": [
+        "string, experience card title 1",
+        "string, experience card title 2",
+        "string, experience card title 3"
+      ],
+      "job_requirements": [
+        "string, typical task or responsibility 1",
+        "string, typical task or responsibility 2",
+        "string, typical task or responsibility 3"
+      ],
+      "direction_tags": [
+        "#tag1",
+        "#tag2",
+        "#tag3",
+        "#tag4",
+        "#tag5"
+      ]
+    }
+  ]
+}
+
+要求：
+1. 输出结果必须真实、基于权威数据，严禁捏造不存在的职业或任务描述
+2. 输出格式必须结构清晰、语义完整，可作为卡片界面展示内容直接使用
+3. 每个字段应为完整自然语言表达，不可省略
+4. 不得捏造不存在的职业术语或使用虚构岗位名称，必须专业、真实、常见于职场或招聘语境
+5. 所有内容要专业、准确且有价值
+`;
+
+// Similar Jobs Recommendation Prompt - 基于选中岗位的相似岗位推荐
+export const SIMILAR_JOBS_RECOMMENDATION_PROMPT = `
+你是一位专业的职业顾问和招聘专家。请基于用户选中的目标岗位，联网搜索并访问 O*NET-SOC 职业分类数据库，推荐5个相似的岗位方向。
+
+用户信息：
+- 选中的目标岗位：{selectedJob}
+- 用户职业目标：{userGoal}
+- 用户经验卡片：{selectedCards}
+
+🌐 CRITICAL LANGUAGE REQUIREMENTS:
+- 分析用户目标的主要语言
+- 如果用户目标主要是中文，则所有输出内容使用中文
+- 如果用户目标主要是英文，则所有输出内容使用英文
+- 如果语言混合，优先使用英文
+- 保持整个响应的语言一致性
+
+请根据以下要求执行任务：
+1. 基于选中的目标岗位，分析其核心能力要求和工作内容
+2. 联网搜索O*NET数据库，找到与该岗位相似的其他职业方向
+3. 推荐5个相似但不完全相同的岗位，确保真实存在
+4. 分析这些相似岗位与目标岗位的共同核心能力
+5. 提供推荐理由，说明为什么用户适合这些相似岗位
+
+请严格按照以下JSON格式输出：
+
+{
+  "similar_jobs": [
+    {
+      "job_title": "string, similar job title",
+      "match_level": "integer (1-5)",
+      "similarity_reason": "string, explanation of why this job is similar to the target position"
+    }
+  ],
+  "recommendation_context": {
+    "target_role": "string, the selected target job title",
+    "shared_competencies": [
+      {
+        "competency": "string, shared core competency name",
+        "icon": "string, emoji icon for the competency",
+        "description": "string, brief description of how this competency applies"
+      }
+    ],
+    "overall_explanation": "string, explanation of why these similar jobs are recommended based on the target role"
+  }
+}
+
+要求：
+1. 相似岗位必须真实存在，基于O*NET或实际招聘市场数据
+2. 匹配度应该在3-5之间（因为是相似岗位）
+3. 共同核心能力应该有3个，每个都要有合适的emoji图标
+4. 推荐理由要具体且有逻辑性
+5. 所有内容要专业、准确且有价值
+`;
+
 // 动态方向组合推荐提示词 - 基于个性化方向进行卡片组合推荐
 export const DYNAMIC_COMBINATION_RECOMMENDATION_PROMPT = `
 根据用户设定的职业目标、选择的行业方向和个性化的经验方向分类，从可用的经验卡片中选择最合适的卡片组合来讲述一个连贯、有说服力的个人职业故事。
