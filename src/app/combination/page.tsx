@@ -636,7 +636,6 @@ export default function CombinationPage() {
           </div>
         </div>
         <div className="card-info">
-          <p className="card-time">{card.cardPreview.timeAndLocation}</p>
           <h4>{card.cardPreview.experienceName}</h4>
           <p className="card-summary">{card.cardPreview.oneSentenceSummary}</p>
         </div>
@@ -726,14 +725,16 @@ export default function CombinationPage() {
               </div>
 
               <div className="custom-content">
-                <div className="custom-instructions">
-                  <h3>Drag cards from the pool below to customize your combination.</h3>
-                  <p>Ready to craft a set that screams you? Let&apos;s do it!</p>
-                  <p className="tip">
-                    <span className="tip-icon">👉</span>
-                    Not sure where to start? Check out the auto-generated options for inspiration!
-                  </p>
-                </div>
+                {selectedCards.length === 0 && (
+                  <div className="custom-instructions">
+                    <h3>Drag cards from the pool below to customize your combination.</h3>
+                    <p>Ready to craft a set that screams you? Let&apos;s do it!</p>
+                    <p className="tip">
+                      <span className="tip-icon">👉</span>
+                      Not sure where to start? Check out the auto-generated options for inspiration!
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Dynamic button: Apply for AI recommendations, Clear for custom */}
@@ -749,21 +750,26 @@ export default function CombinationPage() {
 
               {/* Selected Cards Display Area */}
               <div className="selected-cards-area">
-                {selectedCards.map(card => (
-                  <div key={card.id} className="selected-card">
-                    <div className="card-content">
-                      <h4>{card.cardPreview.experienceName}</h4>
-                      <p>{card.cardPreview.timeAndLocation}</p>
-                      <p>{card.cardPreview.oneSentenceSummary}</p>
+                {selectedCards.map(card => {
+                  // 确定能力类型：Focus Match 和 Growth Potential 为客观能力(O)，Foundation Skills 为主观能力(S)
+                  const isSubjectiveAbility = card.category === 'Foundation Skills';
+                  const abilityClass = isSubjectiveAbility ? 'subjective-ability' : 'objective-ability';
+
+                  return (
+                    <div key={card.id} className={`selected-card ${abilityClass}`}>
+                      <div className="card-content">
+                        <h4>{card.cardPreview.experienceName}</h4>
+                        <p>{card.cardPreview.oneSentenceSummary}</p>
+                      </div>
+                      <button
+                        className="remove-card-btn"
+                        onClick={() => handleCardSelect(card)}
+                      >
+                        ×
+                      </button>
                     </div>
-                    <button
-                      className="remove-card-btn"
-                      onClick={() => handleCardSelect(card)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </DroppableCustomArea>
 
@@ -856,7 +862,6 @@ export default function CombinationPage() {
                 </div>
               </div>
               <div className="card-info">
-                <p className="card-time">{draggedCard.cardPreview.timeAndLocation}</p>
                 <h4>{draggedCard.cardPreview.experienceName}</h4>
                 <p className="card-summary">{draggedCard.cardPreview.oneSentenceSummary}</p>
               </div>

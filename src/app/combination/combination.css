@@ -171,13 +171,23 @@
 }
 
 .selected-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  background: #ffffff;
   border: 2px solid #4285f4;
   border-radius: 12px;
   padding: 1rem;
   position: relative;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
+}
+
+/* 主观能力(S)选中卡片背景色 */
+.selected-card.subjective-ability {
+  background: #f4f8da;
+}
+
+/* 客观能力(O)选中卡片背景色 */
+.selected-card.objective-ability {
+  background: #ffffff;
 }
 
 .selected-card:hover {
@@ -198,6 +208,19 @@
   color: #4a5568;
   font-size: 0.85rem;
   line-height: 1.4;
+}
+
+/* 主观能力(S)选中卡片中的文本元素特殊背景颜色 */
+.selected-card.subjective-ability .card-content h4 {
+  background: #ffcfe4;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+}
+
+.selected-card.subjective-ability .card-content p {
+  background: #ffcfe4;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
 }
 
 .remove-card-btn {
@@ -522,9 +545,9 @@
   background: #ffcfe4;
 }
 
-.pool-card.subjective-ability .card-time {
+/* .pool-card.subjective-ability .card-time {
   background: #ffcfe4;
-}
+} */
 
 .pool-card.subjective-ability .card-summary {
   background: #ffcfe4;
@@ -535,9 +558,9 @@
   background: #ffcfe4;
 }
 
-.pool-card.drag-overlay.subjective-ability .card-time {
+/* .pool-card.drag-overlay.subjective-ability .card-time {
   background: #ffcfe4;
-}
+} */
 
 .pool-card.drag-overlay.subjective-ability .card-summary {
   background: #ffcfe4;
@@ -556,7 +579,7 @@
   justify-content: center;
   font-weight: 700;
   color: white;
-  font-size: 1.1rem;
+  font-size: 1.6rem;
 }
 
 /* 客观能力(O)图标样式 */
@@ -566,7 +589,7 @@
 
 /* 主观能力(S)图标样式 */
 .category-icon.s-ability {
-  background: #34a853;
+  background: #f7b4d1;
 }
 
 /* 保留原有类别样式以兼容其他地方的使用 */
@@ -610,7 +633,7 @@
   max-width: 100%;
 }
 
-.card-time {
+/* .card-time {
   margin: 0;
   font-size: 0.7rem;
   background: #b9cfff;
@@ -625,7 +648,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
-}
+} */
 
 .card-summary {
   margin: 0;
@@ -764,7 +787,7 @@
   }
 
   .card-info h4,
-  .card-time,
+  /* .card-time, */
   .card-summary {
     white-space: normal;
     text-align: center;
@@ -777,10 +800,10 @@
     min-height: 20px;
   }
 
-  .card-time {
+  /* .card-time {
     height: auto;
     min-height: 16px;
-  }
+  } */
 
   .card-summary {
     height: auto;
