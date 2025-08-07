@@ -216,14 +216,17 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
       <div className="target-goal-section">
         <div className="section-header">
           <h3>Based on Target Goal</h3>
-          <button 
-            className="refresh-button"
+          <img
+            src="/refresh.png"
+            alt="Refresh"
+            className="refresh-icon"
             onClick={handleRefresh}
-            disabled={isLoading}
             title="Refresh recommendations"
-          >
-            🔄
-          </button>
+            style={{
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              opacity: isLoading ? 0.5 : 1
+            }}
+          />
         </div>
 
         {/* Loading State */}
@@ -263,18 +266,64 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
       {/* Adjacent Fields Suggestions Section */}
       <div className="adjacent-fields-section">
         <div className="section-header">
-          <h3>▷ Adjacent Fields Suggestions</h3>
+          <h3> Adjacent Fields Suggestions</h3>
           {similarJobs.length > 0 && (
-            <button
-              className="refresh-button"
+            <img
+              src="/refresh.png"
+              alt="Refresh"
+              className="refresh-icon"
               onClick={handleRefreshSimilarJobs}
-              disabled={isSimilarJobsLoading}
               title="Get another batch"
-            >
-              🔄
-            </button>
+              style={{
+                cursor: isSimilarJobsLoading ? 'not-allowed' : 'pointer',
+                opacity: isSimilarJobsLoading ? 0.5 : 1
+              }}
+            />
           )}
         </div>
+
+        {/* Recommendation Context - 只在选中岗位时显示 */}
+        {selectedJob && recommendationContext && (
+          <div className="recommendation-context">
+            <div className="context-header">
+              <h4>💡 Why we also suggest this?</h4>
+            </div>
+            <div className="context-content">
+              <p className="context-reasoning">
+                Based on your target role: <span className="target-role-name">{recommendationContext.target_role || selectedJob.target_position}</span>.
+              </p>
+              <p className="context-description">
+                Shares core competencies with Below Job in these areas:
+              </p>
+              <div className="competencies-list">
+                {recommendationContext.shared_competencies && recommendationContext.shared_competencies.length > 0 ? (
+                  recommendationContext.shared_competencies.map((competency: any, index: number) => (
+                    <div key={index} className="competency-item">
+                      <span className="competency-icon">{competency.icon}</span>
+                      <span className="competency-name">{competency.competency}</span>
+                    </div>
+                  ))
+                ) : (
+                  // 默认显示的核心能力
+                  <>
+                    <div className="competency-item">
+                      <span className="competency-icon">😕</span>
+                      <span className="competency-name">Market Insight</span>
+                    </div>
+                    <div className="competency-item">
+                      <span className="competency-icon">🎯</span>
+                      <span className="competency-name">Creative Expression</span>
+                    </div>
+                    <div className="competency-item">
+                      <span className="competency-icon">📄</span>
+                      <span className="competency-name">Execution Coordination</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Default message when no job is selected */}
         {!selectedJob && (

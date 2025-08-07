@@ -6,7 +6,7 @@ interface SimilarJobCardProps {
   index: number;
 }
 
-const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job, index }) => {
+const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job }) => {
   // 根据匹配等级确定背景颜色
   const getBackgroundColor = (level: number) => {
     if (level >= 5) return '#e8f5e8'; // 绿色 - 5星
@@ -32,25 +32,32 @@ const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job, index }) => {
   };
 
   return (
-    <div 
+    <div
       className="similar-job-card"
       style={{ backgroundColor: getBackgroundColor(job.match_level) }}
     >
-      {/* 工作标题和匹配度 */}
+      {/* 工作标题和匹配度 - 左右布局 */}
       <div className="job-header">
+        {/* 左侧：图标 + Job Title */}
         <div className="job-title-section">
-          <div className="job-icon">🎯</div>
-          <div className="job-title-info">
-            <div className="job-title-label">Job Title:</div>
-            <div className="job-title">{job.job_title}</div>
+          <div className="job-icon">📌</div>
+          <div className="job-title-content">
+            <span className="job-title-label">Job Title:</span>
+            <span className="job-title">{job.job_title}</span>
           </div>
         </div>
-        
-        <div className="match-level-section">
-          <div className="match-level-label">Match Level:</div>
-          <div className="match-level-stars">
-            {renderStars(job.match_level)}
-          </div>
+
+        {/* 右侧：搜索图标 */}
+        <div className="job-search-icon">
+          🔍
+        </div>
+      </div>
+
+      {/* Match Level - 独立行 */}
+      <div className="match-level-section">
+        <span className="match-level-label">Match Level:</span>
+        <div className="match-level-stars">
+          {renderStars(job.match_level)}
         </div>
       </div>
     </div>

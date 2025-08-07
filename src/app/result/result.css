@@ -141,12 +141,12 @@
   justify-content: space-between;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #4285f4;
+  /* border-bottom: 2px solid #4285f4; */
 }
 
 .target-goal-section .section-header h3 {
   color: #4285f4;
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
 }
@@ -179,6 +179,17 @@
   transform: none;
 }
 
+/* Refresh Icon */
+.refresh-icon {
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+.refresh-icon:hover {
+  transform: rotate(180deg);
+}
+
 /* Adjacent Fields Section */
 .adjacent-fields-section {
   background: rgba(255, 255, 255, 0.95);
@@ -192,9 +203,12 @@
 }
 
 .adjacent-fields-section .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #4285f4;
+  /* border-bottom: 2px solid #4285f4; */
 }
 
 .adjacent-fields-section .section-header h3 {
@@ -221,34 +235,77 @@
   margin: 0.5rem 0;
 }
 
+/* Recommendation Context */
+.recommendation-context {
+  background: #e3f2fd;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(66, 133, 244, 0.2);
+}
+
+.context-header h4 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.context-content {
+  line-height: 1.6;
+}
+
+.context-reasoning {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.target-role-name {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.context-description {
+  margin: 0 0 1rem 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.competencies-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.competency-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(66, 133, 244, 0.1);
+  font-size: 0.9rem;
+}
+
+.competency-icon {
+  font-size: 1.1rem;
+}
+
+.competency-name {
+  color: #333;
+  font-weight: 500;
+}
+
 /* Similar Jobs Container */
 .similar-jobs-container {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 0.5rem;
 }
 
-.similar-jobs-container::-webkit-scrollbar {
-  width: 6px;
-}
 
-.similar-jobs-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.similar-jobs-container::-webkit-scrollbar-thumb {
-  background: #4285f4;
-  border-radius: 3px;
-}
-
-.similar-jobs-container::-webkit-scrollbar-thumb:hover {
-  background: #3367d6;
-}
 
 /* Similar Job Card */
 .similar-job-card {
@@ -257,12 +314,15 @@
   border: 1px solid rgba(66, 133, 244, 0.2);
   transition: all 0.2s ease;
   margin-bottom: 0.5rem;
+  cursor: pointer;
 }
 
 .similar-job-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
 }
+
+/* Similar Job Card 自动继承 job-header, job-title-section 等样式 */
 
 /* Job Detail Modal */
 .modal-overlay {
@@ -407,32 +467,12 @@
 
 /* Job Recommendations Container */
 .job-recommendations-container {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 0.5rem;
 }
 
-.job-recommendations-container::-webkit-scrollbar {
-  width: 6px;
-}
 
-.job-recommendations-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.job-recommendations-container::-webkit-scrollbar-thumb {
-  background: #4285f4;
-  border-radius: 3px;
-}
-
-.job-recommendations-container::-webkit-scrollbar-thumb:hover {
-  background: #3367d6;
-}
 
 /* Job Recommendation Card */
 .job-recommendation-card {
@@ -480,7 +520,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  /* margin-bottom: 0.75rem; */
 }
 
 .job-title-section {
@@ -503,15 +543,16 @@
 }
 
 .job-title-label {
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   color: #4285f4;
-  font-weight: 600;
+  /* font-weight: 600; */
   margin-bottom: 0;
+  font-weight: bold;
 }
 
 .job-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  /* font-weight: 600; */
   color: #4285f4;
   line-height: 1.2;
 }
@@ -538,7 +579,7 @@
 }
 
 .match-level-label {
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   color: #4285f4;
   font-weight: 600;
   margin-bottom: 0;
@@ -559,6 +600,7 @@
 }
 
 .star.empty {
+  padding-top: .15rem;
   color: #d1d5db;
 }
 
@@ -1247,9 +1289,7 @@
     padding: 1rem;
   }
 
-  .job-recommendations-container {
-    max-height: 300px;
-  }
+
 
   .job-recommendation-card {
     padding: 0.75rem;
