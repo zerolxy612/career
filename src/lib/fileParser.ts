@@ -1,4 +1,4 @@
-import * as mammoth from 'mammoth';
+import mammoth from 'mammoth';
 
 export interface ParsedFileContent {
   fileName: string;
@@ -117,19 +117,15 @@ export async function parseFile(file: File): Promise<ParsedFileContent> {
           isBuffer: Buffer.isBuffer(buffer)
         });
 
-        // 提取PDF文本 - 使用正确的参数格式
-        const data = await extract(buffer, {
-          // pdf-extraction的选项
-          normalizeWhitespace: false,
-          disableCombineTextItems: false
-        });
+        // 提取PDF文本 - pdf-extraction只接受buffer参数
+        const data = await extract(buffer);
 
         console.log('📊 [PARSER] PDF提取完成，原始数据:', {
           hasData: !!data,
           dataType: typeof data,
           hasText: !!data?.text,
           textLength: data?.text?.length || 0,
-          pages: data?.pages || 'unknown',
+          pages: data?.numpages || 'unknown',
           rawDataKeys: Object.keys(data || {}),
           rawDataPreview: data ? JSON.stringify(data).substring(0, 200) : 'null'
         });
@@ -162,12 +158,12 @@ export async function parseFile(file: File): Promise<ParsedFileContent> {
         result.parseSuccess = true;
         result.metadata = {
           parsingMethod: 'pdf-extraction',
-          pageCount: data.pages || 1,
+          pageCount: data.numpages || 1,
           wordCount: result.extractedText.split(/\s+/).filter(word => word.length > 0).length
         };
 
         console.log(`✅ [PARSER] PDF解析成功: ${file.name}`, {
-          页数: data.pages || 1,
+          页数: data.numpages || 1,
           文本长度: result.extractedTextLength,
           词数: result.metadata?.wordCount || 0,
           文本预览: result.extractedText.substring(0, 200) + (result.extractedText.length > 200 ? '...' : ''),

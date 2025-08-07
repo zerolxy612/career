@@ -32,14 +32,14 @@ export async function POST(request: NextRequest) {
 
     // 格式化职业画像数据
     const formattedCareerProfile = JSON.stringify({
-      radarData: careerProfileData.radarData,
-      quadrantData: careerProfileData.quadrantData,
-      abilityPoints: careerProfileData.abilityPoints?.slice(0, 5), // 只取前5个能力点
+      radarData: careerProfileData.analysisResults?.radarData,
+      quadrantData: careerProfileData.analysisResults?.quadrantData,
       competenceStructure: {
-        objectiveAbilities: careerProfileData.competenceStructure?.objectiveAbilities,
-        subjectiveAbilities: careerProfileData.competenceStructure?.subjectiveAbilities,
-        developmentPotential: careerProfileData.competenceStructure?.developmentPotential
-      }
+        objectiveAbilities: careerProfileData.analysisResults?.competenceStructure?.objectiveAbilities,
+        subjectiveAbilities: careerProfileData.analysisResults?.competenceStructure?.subjectiveAbilities,
+        developmentPotential: careerProfileData.analysisResults?.competenceStructure?.developmentPotential
+      },
+      metadata: careerProfileData.metadata
     }, null, 2);
 
     // 格式化卡片信息

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateWithGemini } from '@/lib/ai/gemini';
 import { EXPERIENCE_EXTRACTION_PROMPT } from '@/lib/ai/prompts';
 import { consoleLog } from '@/lib/logger';
-import { parseFiles, formatParsedContentForAI } from '@/lib/fileParser';
+import { parseFiles, formatParsedContentForAI, ParsedFileContent } from '@/lib/fileParser';
 
 
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     let fileContent = '';
     let hasFiles = false;
-    let parsedFilesData: any[] = [];
+    let parsedFilesData: ParsedFileContent[] = [];
 
     // Process uploaded files if any
     if (files && files.length > 0) {

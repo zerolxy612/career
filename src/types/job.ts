@@ -1,4 +1,21 @@
 // Job Recommendation Types
+import { CardDetail } from './card';
+import { CareerRadarData, CareerQuadrantData, CompetenceStructure } from './career-profile';
+
+// Career Profile Data interface
+export interface CareerProfileData {
+  userGoal: string;
+  selectedIndustry: string;
+  analysisResults?: {
+    radarData?: CareerRadarData;
+    quadrantData?: CareerQuadrantData;
+    competenceStructure?: CompetenceStructure;
+  };
+  metadata?: {
+    analysisTimestamp?: number;
+    confidenceScore?: number;
+  };
+}
 export interface JobRecommendation {
   id: string;
   jobTitle: string;
@@ -60,7 +77,7 @@ export interface RecommendationSummary {
 export interface JobRecommendationRequest {
   userGoal: string;
   selectedIndustry: string;
-  careerProfileData: any;
+  careerProfileData: CareerProfileData;
   selectedCards: {
     id: string;
     experienceName: string;
@@ -106,7 +123,7 @@ export interface SimilarJobsRequest {
     id: string;
     experienceName: string;
     category: string;
-    cardDetail: any;
+    cardDetail: CardDetail;
   }[];
 }
 

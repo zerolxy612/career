@@ -10,7 +10,8 @@ interface JobRecommendationCardProps {
 
 const JobRecommendationCard: React.FC<JobRecommendationCardProps> = ({
   job,
-  index,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  index: _index,
   isSelected = false,
   onClick
 }) => {

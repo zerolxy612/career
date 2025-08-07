@@ -250,18 +250,7 @@ function calculateActualCompletionPercentage(card: ExperienceCardType): number {
   return Math.round((filledFields.length / fields.length) * 100);
 }
 
-// Helper function to get completion percentage from completion level (fallback)
-function getCompletionPercentage(completionLevel: string): number {
-  switch (completionLevel) {
-    case 'complete':
-      return 100;
-    case 'partial':
-      return 60;
-    case 'incomplete':
-    default:
-      return 20;
-  }
-}
+
 
 // Helper function to get completion color based on percentage
 function getCompletionColor(percentage: number): string {

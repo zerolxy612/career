@@ -8,6 +8,7 @@ import { CardCategory } from '@/components/CardCategory';
 import { FloatingUploadButton } from '@/components/FileUpload';
 import { ExperienceCardDetail, ExperienceDetailData } from '@/components/ExperienceCardDetail';
 import { CardDataManager } from '@/lib/CardDataManager';
+import { ParsedFileContent } from '@/lib/fileParser';
 
 // Define types for AI response structure
 interface AIGenerationSource {
@@ -702,20 +703,20 @@ function ExperiencePageContent() {
         console.log('📄 [EXPERIENCE_UPLOAD] 文件解析详情:', aiResponse.文件解析详情);
 
         if (Array.isArray(aiResponse.文件解析详情)) {
-          aiResponse.文件解析详情.forEach((fileDetail: any, index: number) => {
+          aiResponse.文件解析详情.forEach((fileDetail: ParsedFileContent, index: number) => {
             console.log(`📄 [EXPERIENCE_UPLOAD] 文件${index + 1} - ${fileDetail.fileName}:`, {
               解析成功: fileDetail.parseSuccess,
-              解析方法: fileDetail.parsingMethod,
+              解析方法: fileDetail.metadata?.parsingMethod,
               文本长度: fileDetail.extractedTextLength,
               错误信息: fileDetail.parseError || 'none',
               原始文本内容: fileDetail.extractedText
             });
 
             // 特别显示PDF文件的原始内容
-            if (fileDetail.fileName?.toLowerCase().includes('.pdf') || fileDetail.parsingMethod === 'pdf-extraction') {
+            if (fileDetail.fileName?.toLowerCase().includes('.pdf') || fileDetail.metadata?.parsingMethod === 'pdf-extraction') {
               console.log('🚨🚨🚨🚨🚨 [PDF_DEBUG] 找到PDF文件！🚨🚨🚨🚨🚨');
               console.log(`🔍 [PDF_DEBUG] PDF文件名:`, fileDetail.fileName);
-              console.log(`🔍 [PDF_DEBUG] PDF解析方法:`, fileDetail.parsingMethod);
+              console.log(`🔍 [PDF_DEBUG] PDF解析方法:`, fileDetail.metadata?.parsingMethod);
               console.log(`🔍 [PDF_DEBUG] PDF解析是否成功:`, fileDetail.parseSuccess);
               console.log(`🔍 [PDF_DEBUG] PDF解析错误:`, fileDetail.parseError || 'none');
               console.log(`🚨🚨🚨 [PDF_DEBUG] PDF文件原始解析内容 (完整):`);

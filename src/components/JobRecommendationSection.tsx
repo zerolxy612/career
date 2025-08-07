@@ -1,19 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import JobRecommendationCard from './JobRecommendationCard';
 import SimilarJobCard from './SimilarJobCard';
 import JobDetailModal from './JobDetailModal';
-import { JobDirection, JobRecommendationRequest, JobRecommendationResponse, SimilarJobsRequest, SimilarJobsResponse } from '@/types/job';
+import { JobDirection, JobRecommendationRequest, JobRecommendationResponse, SimilarJobsRequest, SimilarJobsResponse, SimilarJob, RecommendationContext, SharedCompetency } from '@/types/job';
 import { CareerProfileAnalysis } from '@/types/career-profile';
 
 interface JobRecommendationSectionProps {
   careerProfileData: CareerProfileAnalysis | null;
 }
 
+// Interface for card data from localStorage
+interface StoredCard {
+  id: string;
+  category: string;
+  cardPreview: {
+    experienceName: string;
+  };
+  cardDetail: {
+    experienceName: string;
+    timeAndLocation: string;
+    backgroundContext: string;
+    myRoleAndTasks: string;
+    taskDetails: string;
+    reflectionAndResults: string;
+    highlightSentence: string;
+  };
+}
+
 const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ careerProfileData }) => {
   const [jobDirections, setJobDirections] = useState<JobDirection[]>([]);
   const [selectedJob, setSelectedJob] = useState<JobDirection | null>(null);
-  const [similarJobs, setSimilarJobs] = useState<any[]>([]);
-  const [recommendationContext, setRecommendationContext] = useState<any>(null);
+  const [similarJobs, setSimilarJobs] = useState<SimilarJob[]>([]);
+  const [recommendationContext, setRecommendationContext] = useState<RecommendationContext | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSimilarJobsLoading, setIsSimilarJobsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +56,7 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
       return {
         userGoal,
         selectedIndustry: industryData.cardPreview?.fieldName || industryData.fieldName || 'Unknown',
-        selectedCards: combinationData.cards?.map((card: any) => ({
+        selectedCards: combinationData.cards?.map((card: StoredCard) => ({
           id: card.id,
           experienceName: card.cardPreview.experienceName,
           category: card.category,
@@ -51,7 +70,7 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
   };
 
   // 加载工作推荐
-  const loadJobRecommendations = async (showLoading = true) => {
+  const loadJobRecommendations = useCallback(async (showLoading = true) => {
     if (!careerProfileData) {
       console.log('⚠️ [JOB_RECOMMENDATION] No career profile data available');
       return;
@@ -70,7 +89,22 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
       const requestData: JobRecommendationRequest = {
         userGoal: userData.userGoal,
         selectedIndustry: userData.selectedIndustry,
-        careerProfileData: careerProfileData,
+        careerProfileData: careerProfileData ? {
+          userGoal: userData.userGoal,
+          selectedIndustry: userData.selectedIndustry,
+          analysisResults: {
+            radarData: careerProfileData.radarData,
+            quadrantData: careerProfileData.quadrantData,
+            competenceStructure: careerProfileData.competenceStructure
+          },
+          metadata: {
+            analysisTimestamp: careerProfileData.analysisMetadata?.analysisTimestamp,
+            confidenceScore: careerProfileData.analysisMetadata?.confidenceScore
+          }
+        } : {
+          userGoal: userData.userGoal,
+          selectedIndustry: userData.selectedIndustry
+        },
         selectedCards: userData.selectedCards
       };
 
@@ -115,14 +149,14 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
         setIsLoading(false);
       }
     }
-  };
+  }, [careerProfileData]);
 
   // 自动加载推荐（仅在有职业画像数据时）
   useEffect(() => {
     if (careerProfileData && !hasLoadedOnce) {
       loadJobRecommendations();
     }
-  }, [careerProfileData, hasLoadedOnce]);
+  }, [careerProfileData, hasLoadedOnce, loadJobRecommendations]);
 
   // 加载相似岗位推荐
   const loadSimilarJobs = async (job: JobDirection) => {
@@ -216,9 +250,11 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
       <div className="target-goal-section">
         <div className="section-header">
           <h3>Based on Target Goal</h3>
-          <img
+          <Image
             src="/refresh.png"
             alt="Refresh"
+            width={20}
+            height={20}
             className="refresh-icon"
             onClick={handleRefresh}
             title="Refresh recommendations"
@@ -268,9 +304,11 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
         <div className="section-header">
           <h3> Adjacent Fields Suggestions</h3>
           {similarJobs.length > 0 && (
-            <img
+            <Image
               src="/refresh.png"
               alt="Refresh"
+              width={20}
+              height={20}
               className="refresh-icon"
               onClick={handleRefreshSimilarJobs}
               title="Get another batch"
@@ -297,7 +335,7 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
               </p>
               <div className="competencies-list">
                 {recommendationContext.shared_competencies && recommendationContext.shared_competencies.length > 0 ? (
-                  recommendationContext.shared_competencies.map((competency: any, index: number) => (
+                  recommendationContext.shared_competencies.map((competency: SharedCompetency, index: number) => (
                     <div key={index} className="competency-item">
                       <span className="competency-icon">{competency.icon}</span>
                       <span className="competency-name">{competency.competency}</span>
@@ -361,7 +399,7 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         job={selectedJob}
-        recommendationContext={recommendationContext}
+        recommendationContext={recommendationContext || undefined}
       />
     </div>
   );
