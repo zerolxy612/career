@@ -38,24 +38,28 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
 
   const [editingField, setEditingField] = useState<string | null>(null);
 
-  // Update formData when initialData changes
+  // Update formData when initialData changes or modal opens
   useEffect(() => {
-    if (initialData) {
-      console.log('🔄 [ExperienceCardDetail] Updating formData with initialData:', initialData);
-      setFormData(initialData);
-    } else {
-      console.log('🆕 [ExperienceCardDetail] Creating new card - resetting formData');
-      setFormData({
-        experienceName: '',
-        locationAndTime: '',
-        scenarioIntroduction: '',
-        myRole: '',
-        eventProcess: '',
-        reflection: '',
-        oneLineHighlight: ''
-      });
+    if (isOpen) {
+      if (initialData) {
+        console.log('🔄 [ExperienceCardDetail] Updating formData with initialData:', initialData);
+        setFormData(initialData);
+      } else {
+        console.log('🆕 [ExperienceCardDetail] Creating new card - resetting formData');
+        setFormData({
+          experienceName: '',
+          locationAndTime: '',
+          scenarioIntroduction: '',
+          myRole: '',
+          eventProcess: '',
+          reflection: '',
+          oneLineHighlight: ''
+        });
+      }
+      // Reset editing field when modal opens
+      setEditingField(null);
     }
-  }, [initialData]);
+  }, [initialData, isOpen]);
 
   // Calculate completion percentage
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
