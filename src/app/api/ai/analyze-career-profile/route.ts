@@ -216,6 +216,38 @@ export async function POST(request: NextRequest) {
 
     const parsedResponse = JSON.parse(jsonString);
 
+    // 验证响应数据格式
+    console.log('🔍 [API] Validating response data structure...');
+    const requiredFields = ['radarData', 'quadrantData', 'abilityPoints', 'selfCognitionSummary', 'competenceStructure'];
+    const missingFields = requiredFields.filter(field => !parsedResponse[field]);
+
+    if (missingFields.length > 0) {
+      console.error('❌ [API] Missing required fields in AI response:', missingFields);
+      throw new Error(`AI response missing required fields: ${missingFields.join(', ')}`);
+    }
+
+    // 验证雷达图数据
+    if (!parsedResponse.radarData || typeof parsedResponse.radarData !== 'object') {
+      throw new Error('Invalid radarData format in AI response');
+    }
+
+    // 验证象限图数据
+    if (!parsedResponse.quadrantData || typeof parsedResponse.quadrantData !== 'object') {
+      throw new Error('Invalid quadrantData format in AI response');
+    }
+
+    // 验证能力点数据
+    if (!Array.isArray(parsedResponse.abilityPoints)) {
+      throw new Error('Invalid abilityPoints format in AI response');
+    }
+
+    // 验证能力结构数据
+    if (!parsedResponse.competenceStructure || typeof parsedResponse.competenceStructure !== 'object') {
+      throw new Error('Invalid competenceStructure format in AI response');
+    }
+
+    console.log('✅ [API] Response data structure validation passed');
+
     // 添加元数据
     parsedResponse.analysisMetadata = {
       ...parsedResponse.analysisMetadata,

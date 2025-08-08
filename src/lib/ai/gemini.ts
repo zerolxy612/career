@@ -11,7 +11,7 @@ export const generationConfig = {
   temperature: 0.7,
   topK: 40,
   topP: 0.95,
-  maxOutputTokens: 2048,
+  maxOutputTokens: 4096, // Increased for career profile analysis
 };
 
 // Safety settings
