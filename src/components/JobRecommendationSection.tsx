@@ -3,7 +3,7 @@ import Image from 'next/image';
 import JobRecommendationCard from './JobRecommendationCard';
 import SimilarJobCard from './SimilarJobCard';
 import JobDetailModal from './JobDetailModal';
-import { JobDirection, JobRecommendationRequest, JobRecommendationResponse, SimilarJobsRequest, SimilarJobsResponse, SimilarJob, SimilarJobDirection, RecommendationContext, SimilarReasonPopup, SharedCompetency } from '@/types/job';
+import { JobDirection, JobRecommendationRequest, JobRecommendationResponse, SimilarJobsRequest, SimilarJobsResponse, SimilarJobDirection, RecommendationContext, SimilarReasonPopup, SharedCompetency } from '@/types/job';
 import { CareerProfileAnalysis } from '@/types/career-profile';
 
 interface JobRecommendationSectionProps {
@@ -436,6 +436,22 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
         onClose={() => setIsModalOpen(false)}
         job={selectedJob}
         recommendationContext={recommendationContext || undefined}
+        userGoal={(() => {
+          try {
+            const userData = getUserData();
+            return userData.userGoal;
+          } catch {
+            return '';
+          }
+        })()}
+        experienceCards={(() => {
+          try {
+            const userData = getUserData();
+            return userData.selectedCards;
+          } catch {
+            return [];
+          }
+        })()}
       />
     </div>
   );

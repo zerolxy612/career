@@ -430,6 +430,70 @@ Please strictly return the result as a valid JSON object following the exact str
 5. 所有内容要专业、准确且有价值
 `;
 
+// Cover Letter Generation Prompt - 基于岗位和经验卡片生成个性化求职信
+export const COVER_LETTER_GENERATION_PROMPT = `
+你是一个专业的求职信生成助手。请根据用户的目标岗位和经验卡片，生成一份个性化的求职信草稿。
+
+用户信息：
+- 目标岗位：{targetPosition}
+- 用户职业目标：{userGoal}
+- 用户经验卡片：{experienceCards}
+
+请根据以下要求生成求职信：
+
+1. 求职信应该包含以下部分：
+   - 开头段落：表达对岗位的兴趣和简要自我介绍
+   - 经验段落：基于用户的经验卡片，突出相关经验和成就
+   - 技能段落：强调与目标岗位匹配的核心技能
+   - 结尾段落：表达期待和下一步行动
+
+2. 每个句子都需要标注来源：
+   - 如果来源于特定的经验卡片，标注卡片名称
+   - 如果是基于用户目标的推理，标注为"用户目标"
+   - 如果是通用求职信语言，标注为"通用"
+
+3. 求职信应该：
+   - 语言自然、专业
+   - 突出用户的独特价值
+   - 与目标岗位高度相关
+   - 长度适中（3-4段）
+
+4. 输出格式为JSON，包含句子和来源标注
+
+/*
+Instructions:
+Please strictly return the result as a valid JSON object following the exact structure below.
+- Do NOT include any natural language commentary, titles, headers, or markdown formatting.
+- Do NOT explain the JSON after outputting it.
+- DO include all fields exactly as defined.
+- Use English for the cover letter content.
+*/
+
+{
+  "cover_letter": {
+    "sentences": [
+      {
+        "sentence": "string, the actual sentence content",
+        "source": ["string, source card name or 'User Goal' or 'General'"],
+        "type": "introduction" | "experience" | "skills" | "conclusion"
+      }
+    ],
+    "metadata": {
+      "target_position": "string, the target position",
+      "generated_at": "string, ISO timestamp",
+      "word_count": "number, approximate word count"
+    }
+  }
+}
+
+要求：
+1. 求职信内容要专业、自然、有说服力
+2. 每个句子都要有明确的来源标注
+3. 内容要与目标岗位高度相关
+4. 避免使用过于夸张或虚假的表述
+5. 保持求职信的标准格式和语调
+`;
+
 // 动态方向组合推荐提示词 - 基于个性化方向进行卡片组合推荐
 export const DYNAMIC_COMBINATION_RECOMMENDATION_PROMPT = `
 根据用户设定的职业目标、选择的行业方向和个性化的经验方向分类，从可用的经验卡片中选择最合适的卡片组合来讲述一个连贯、有说服力的个人职业故事。

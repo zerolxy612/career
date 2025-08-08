@@ -353,19 +353,352 @@
   position: relative;
 }
 
+/* Two Column Modal Layout */
+.modal-content.two-column {
+  max-width: 1200px;
+  width: 95vw;
+  max-height: 90vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.two-column-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.left-panel {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  border-right: 1px solid #e5e7eb;
+}
+
+.right-panel {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background: #f8f9fa;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  padding: 1.5rem 2rem;
   border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+/* Job Details Panel Styles */
+.job-details-panel .position-header {
+  margin-bottom: 2rem;
   padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.position-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #4285f4;
+  margin: 0 0 1rem 0;
+}
+
+.match-level-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.match-level-label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.match-level-stars {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.star.filled {
+  color: #fbbf24;
+}
+
+.star.empty {
+  color: #d1d5db;
+}
+
+.detail-section {
+  margin-bottom: 1.5rem;
+}
+
+.detail-section h4 {
+  margin: 0 0 0.75rem 0;
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.summary-text,
+.reason-text,
+.explore-text {
+  margin: 0;
+  color: #374151;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.search-button {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.search-button:hover {
+  background: #3367d6;
+}
+
+.experience-cards-list,
+.requirements-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.experience-card-item,
+.requirement-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.card-icon {
+  color: #4285f4;
+  font-size: 1rem;
+  margin-top: 0.1rem;
+}
+
+.card-name {
+  color: #374151;
+  font-weight: 500;
+}
+
+.requirement-bullet {
+  color: #4285f4;
+  font-weight: bold;
+  margin-top: 0.1rem;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.direction-tag {
+  background: #e0f2fe;
+  color: #0277bd;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .modal-header h2 {
   margin: 0;
   color: #333;
   font-size: 1.5rem;
+}
+
+/* Cover Letter Panel Styles */
+.cover-letter-panel {
+  background: #f8f9fa;
+}
+
+.cover-letter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.cover-letter-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4285f4;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title-icon {
+  font-size: 1.4rem;
+}
+
+.cover-letter-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refresh-button {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: #bbdefb;
+}
+
+.edit-button {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.edit-button:hover:not(:disabled) {
+  background: #e1bee7;
+}
+
+.download-button {
+  background: #e8f5e8;
+  color: #388e3c;
+}
+
+.download-button:hover:not(:disabled) {
+  background: #c8e6c9;
+}
+
+.cover-letter-content {
+  min-height: 400px;
+}
+
+.cover-letter-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.cover-letter-loading .loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #4285f4;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.cover-letter-loading p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.cover-letter-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.cover-letter-error .error-message {
+  color: #dc2626;
+  margin: 0 0 1rem 0;
+}
+
+.cover-letter-error .retry-button {
+  background: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.cover-letter-text {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cover-letter-sentence {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cover-letter-sentence:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.sentence-text {
+  margin: 0 0 0.75rem 0;
+  color: #1f2937;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.sentence-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.source-tag {
+  background: #e0f2fe;
+  color: #0277bd;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .close-button {
@@ -424,50 +757,32 @@
   color: #333;
 }
 
-.job-details {
-  margin-top: 1.5rem;
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.detail-section {
-  margin-bottom: 1.5rem;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.detail-section h3 {
-  margin: 0 0 0.75rem 0;
-  color: #4285f4;
-  font-size: 1.1rem;
+.modal-content.two-column {
+  animation: fadeIn 0.3s ease-out;
 }
 
-.detail-section p {
-  margin: 0.5rem 0;
-  color: #555;
+.cover-letter-sentence {
+  animation: fadeIn 0.5s ease-out;
+  animation-fill-mode: both;
 }
 
-.detail-section ul {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
-}
+.cover-letter-sentence:nth-child(1) { animation-delay: 0.1s; }
+.cover-letter-sentence:nth-child(2) { animation-delay: 0.2s; }
+.cover-letter-sentence:nth-child(3) { animation-delay: 0.3s; }
+.cover-letter-sentence:nth-child(4) { animation-delay: 0.4s; }
 
-.detail-section li {
-  margin: 0.25rem 0;
-  color: #555;
-}
-
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.tag {
-  background-color: #e3f2fd;
-  color: #1976d2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 16px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
+/* Legacy styles - keeping for backward compatibility */
 
 /* Job Recommendations Container */
 .job-recommendations-container {
@@ -1254,6 +1569,68 @@
 }
 
 
+
+/* Modal Responsive Design */
+@media (max-width: 1024px) {
+  .modal-content.two-column {
+    max-width: 95vw;
+    width: 95vw;
+  }
+
+  .two-column-body {
+    flex-direction: column;
+  }
+
+  .left-panel,
+  .right-panel {
+    flex: none;
+    border-right: none;
+  }
+
+  .left-panel {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .right-panel {
+    background: white;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-content.two-column {
+    max-width: 100vw;
+    width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .modal-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .left-panel,
+  .right-panel {
+    padding: 1.5rem;
+  }
+
+  .position-title {
+    font-size: 1.2rem;
+  }
+
+  .cover-letter-title {
+    font-size: 1.1rem;
+  }
+
+  .action-button {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {
