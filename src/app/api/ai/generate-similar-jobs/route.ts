@@ -91,18 +91,31 @@ export async function POST(request: NextRequest) {
     // Log the complete AI response to console
     consoleLog.aiResponse('生成相似岗位推荐API', response, parsedResponse, responseTime);
 
-    // 验证响应结构
-    if (!parsedResponse.similar_jobs || !Array.isArray(parsedResponse.similar_jobs)) {
-      console.error('❌ [API] Invalid response structure - missing similar_jobs');
-      throw new Error('Invalid AI response structure');
+    // 验证响应结构 - 支持新旧两种格式
+    const hasNewFormat = parsedResponse.directions && Array.isArray(parsedResponse.directions);
+    const hasLegacyFormat = parsedResponse.similar_jobs && Array.isArray(parsedResponse.similar_jobs);
+
+    if (!hasNewFormat && !hasLegacyFormat) {
+      console.error('❌ [API] Invalid response structure - missing both directions and similar_jobs');
+      throw new Error('Invalid AI response structure - either directions or similar_jobs array is required');
     }
 
     console.log('✅ [API] AI response validation passed');
-    console.log('✅ [API] Similar jobs data:', {
-      similarJobsCount: parsedResponse.similar_jobs.length,
-      targetRole: parsedResponse.recommendation_context?.target_role || 'N/A',
-      sharedCompetenciesCount: parsedResponse.recommendation_context?.shared_competencies?.length || 0
-    });
+
+    if (hasNewFormat) {
+      console.log('✅ [API] Similar jobs data (new format):', {
+        directionsCount: parsedResponse.directions.length,
+        hasReasonPopup: !!parsedResponse.similar_reason_popup,
+        coreSimilaritiesCount: parsedResponse.similar_reason_popup?.core_similarities?.length || 0,
+        firstDirection: parsedResponse.directions[0]?.target_position || 'N/A'
+      });
+    } else {
+      console.log('✅ [API] Similar jobs data (legacy format):', {
+        similarJobsCount: parsedResponse.similar_jobs.length,
+        targetRole: parsedResponse.recommendation_context?.target_role || 'N/A',
+        sharedCompetenciesCount: parsedResponse.recommendation_context?.shared_competencies?.length || 0
+      });
+    }
 
     const apiResponse: SimilarJobsResponse = {
       success: true,

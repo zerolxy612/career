@@ -130,13 +130,35 @@ export interface SimilarJobsRequest {
 export interface SimilarJobsResponse {
   success: boolean;
   data?: {
-    similar_jobs: SimilarJob[];
-    recommendation_context: RecommendationContext;
+    directions: SimilarJobDirection[];
+    similar_reason_popup: SimilarReasonPopup;
+    // 保持向后兼容性
+    similar_jobs?: SimilarJob[];
+    recommendation_context?: RecommendationContext;
   };
   error?: string;
   processingTime?: number;
 }
 
+// 新的相似岗位方向结构，与JobDirection保持一致
+export interface SimilarJobDirection {
+  target_position: string;
+  match_level: number | string; // 支持数字或星级格式
+  direction_summary: string;
+  recommendation_reason: string;
+  explore_instruction: string;
+  based_on_experience_cards: string[];
+  job_requirements: string[];
+  direction_tags: string[];
+}
+
+// 新的相似推荐弹窗结构
+export interface SimilarReasonPopup {
+  reason_intro: string;
+  core_similarities: string[]; // 格式如 "📊 Data Insight"
+}
+
+// 保留旧的接口以保持向后兼容性
 export interface SimilarJob {
   job_title: string;
   match_level: number;

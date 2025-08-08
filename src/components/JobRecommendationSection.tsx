@@ -3,7 +3,7 @@ import Image from 'next/image';
 import JobRecommendationCard from './JobRecommendationCard';
 import SimilarJobCard from './SimilarJobCard';
 import JobDetailModal from './JobDetailModal';
-import { JobDirection, JobRecommendationRequest, JobRecommendationResponse, SimilarJobsRequest, SimilarJobsResponse, SimilarJob, RecommendationContext, SharedCompetency } from '@/types/job';
+import { JobDirection, JobRecommendationRequest, JobRecommendationResponse, SimilarJobsRequest, SimilarJobsResponse, SimilarJob, SimilarJobDirection, RecommendationContext, SimilarReasonPopup, SharedCompetency } from '@/types/job';
 import { CareerProfileAnalysis } from '@/types/career-profile';
 
 interface JobRecommendationSectionProps {
@@ -31,7 +31,9 @@ interface StoredCard {
 const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ careerProfileData }) => {
   const [jobDirections, setJobDirections] = useState<JobDirection[]>([]);
   const [selectedJob, setSelectedJob] = useState<JobDirection | null>(null);
-  const [similarJobs, setSimilarJobs] = useState<SimilarJob[]>([]);
+  const [similarJobs, setSimilarJobs] = useState<SimilarJobDirection[]>([]);
+  const [similarReasonPopup, setSimilarReasonPopup] = useState<SimilarReasonPopup | null>(null);
+  // 保留旧的状态以保持向后兼容性
   const [recommendationContext, setRecommendationContext] = useState<RecommendationContext | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSimilarJobsLoading, setIsSimilarJobsLoading] = useState(false);
@@ -191,13 +193,39 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
         throw new Error(data.error || 'Failed to get similar jobs');
       }
 
-      console.log('✅ [SIMILAR_JOBS] Similar jobs loaded:', {
-        similarJobsCount: data.data.similar_jobs.length,
-        targetRole: data.data.recommendation_context.target_role
-      });
+      // 支持新旧两种数据格式
+      if (data.data.directions && data.data.directions.length > 0) {
+        // 新格式：使用 directions
+        console.log('✅ [SIMILAR_JOBS] Similar jobs loaded (new format):', {
+          directionsCount: data.data.directions.length,
+          hasReasonPopup: !!data.data.similar_reason_popup,
+          coreSimilaritiesCount: data.data.similar_reason_popup?.core_similarities?.length || 0
+        });
 
-      setSimilarJobs(data.data.similar_jobs);
-      setRecommendationContext(data.data.recommendation_context);
+        setSimilarJobs(data.data.directions);
+        setSimilarReasonPopup(data.data.similar_reason_popup);
+      } else if (data.data.similar_jobs && data.data.similar_jobs.length > 0) {
+        // 旧格式：使用 similar_jobs，转换为新格式
+        console.log('✅ [SIMILAR_JOBS] Similar jobs loaded (legacy format):', {
+          similarJobsCount: data.data.similar_jobs.length,
+          targetRole: data.data.recommendation_context?.target_role || 'N/A'
+        });
+
+        // 将旧格式转换为新格式
+        const convertedDirections: SimilarJobDirection[] = data.data.similar_jobs.map(job => ({
+          target_position: job.job_title,
+          match_level: job.match_level,
+          direction_summary: job.similarity_reason,
+          recommendation_reason: job.similarity_reason,
+          explore_instruction: `Explore opportunities in ${job.job_title}`,
+          based_on_experience_cards: [],
+          job_requirements: [],
+          direction_tags: []
+        }));
+
+        setSimilarJobs(convertedDirections);
+        setRecommendationContext(data.data.recommendation_context || null);
+      }
 
     } catch (error) {
       console.error('❌ [SIMILAR_JOBS] Error loading similar jobs:', error);
@@ -302,7 +330,7 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
       {/* Adjacent Fields Suggestions Section */}
       <div className="adjacent-fields-section">
         <div className="section-header">
-          <h3> Adjacent Fields Suggestions</h3>
+          <h3>Adjacent Fields Suggestions</h3>
           {similarJobs.length > 0 && (
             <Image
               src="/refresh.png"
@@ -321,44 +349,52 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
         </div>
 
         {/* Recommendation Context - 只在选中岗位时显示 */}
-        {selectedJob && recommendationContext && (
+        {selectedJob && (recommendationContext || similarReasonPopup) && (
           <div className="recommendation-context">
             <div className="context-header">
               <h4>💡 Why we also suggest this?</h4>
             </div>
             <div className="context-content">
-              <p className="context-reasoning">
-                Based on your target role: <span className="target-role-name">{recommendationContext.target_role || selectedJob.target_position}</span>.
-              </p>
-              <p className="context-description">
-                Shares core competencies with Below Job in these areas:
-              </p>
-              <div className="competencies-list">
-                {recommendationContext.shared_competencies && recommendationContext.shared_competencies.length > 0 ? (
-                  recommendationContext.shared_competencies.map((competency: SharedCompetency, index: number) => (
-                    <div key={index} className="competency-item">
-                      <span className="competency-icon">{competency.icon}</span>
-                      <span className="competency-name">{competency.competency}</span>
-                    </div>
-                  ))
-                ) : (
-                  // 默认显示的核心能力
-                  <>
-                    <div className="competency-item">
-                      <span className="competency-icon">😕</span>
-                      <span className="competency-name">Market Insight</span>
-                    </div>
-                    <div className="competency-item">
-                      <span className="competency-icon">🎯</span>
-                      <span className="competency-name">Creative Expression</span>
-                    </div>
-                    <div className="competency-item">
-                      <span className="competency-icon">📄</span>
-                      <span className="competency-name">Execution Coordination</span>
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* 新格式：使用 similarReasonPopup */}
+              {similarReasonPopup ? (
+                <>
+                  <p className="context-description">
+                    {similarReasonPopup.reason_intro}
+                  </p>
+                  <div className="competencies-list">
+                    {similarReasonPopup.core_similarities.slice(0, 3).map((similarity: string, index: number) => {
+                      // 解析格式如 "📊 Data Insight"
+                      const parts = similarity.split(' ');
+                      const icon = parts[0];
+                      const name = parts.slice(1).join(' ');
+                      return (
+                        <div key={index} className="competency-item">
+                          <span className="competency-icon">{icon}</span>
+                          <span className="competency-name">{name}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                /* 旧格式：使用 recommendationContext */
+                <>
+                  <p className="context-description">
+                    {recommendationContext?.overall_explanation ||
+                     `These positions share core competencies with ${selectedJob.target_position} in the following areas:`}
+                  </p>
+                  <div className="competencies-list">
+                    {recommendationContext?.shared_competencies && recommendationContext.shared_competencies.length > 0 && (
+                      recommendationContext.shared_competencies.slice(0, 3).map((competency: SharedCompetency, index: number) => (
+                        <div key={index} className="competency-item">
+                          <span className="competency-icon">{competency.icon}</span>
+                          <span className="competency-name">{competency.competency}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -385,7 +421,7 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
           <div className="similar-jobs-container">
             {similarJobs.map((job, index) => (
               <SimilarJobCard
-                key={`${job.job_title}-${index}`}
+                key={`${job.target_position}-${index}`}
                 job={job}
                 index={index}
               />

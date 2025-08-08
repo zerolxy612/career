@@ -1,12 +1,24 @@
 import React from 'react';
-import { SimilarJob } from '@/types/job';
+import { SimilarJobDirection } from '@/types/job';
 
 interface SimilarJobCardProps {
-  job: SimilarJob;
+  job: SimilarJobDirection;
   index: number;
 }
 
 const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job }) => {
+  // 处理匹配等级，支持数字和字符串格式
+  const getMatchLevel = (level: number | string): number => {
+    if (typeof level === 'string') {
+      // 如果是星级格式，计算星星数量
+      const starCount = (level.match(/★/g) || []).length;
+      return starCount > 0 ? starCount : 3; // 默认3星
+    }
+    return level;
+  };
+
+  const matchLevel = getMatchLevel(job.match_level);
+
   // 根据匹配等级确定背景颜色
   const getBackgroundColor = (level: number) => {
     if (level >= 5) return '#e8f5e8'; // 绿色 - 5星
@@ -19,7 +31,7 @@ const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job }) => {
   // 根据匹配等级显示星级
   const renderStars = (level: number) => {
     const stars = [];
-    
+
     for (let i = 0; i < 5; i++) {
       if (i < level) {
         stars.push(<span key={i} className="star filled">⭐</span>);
@@ -34,7 +46,7 @@ const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job }) => {
   return (
     <div
       className="similar-job-card"
-      style={{ backgroundColor: getBackgroundColor(job.match_level) }}
+      style={{ backgroundColor: getBackgroundColor(matchLevel) }}
     >
       {/* 工作标题和匹配度 - 左右布局 */}
       <div className="job-header">
@@ -43,7 +55,7 @@ const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job }) => {
           <div className="job-icon">📌</div>
           <div className="job-title-content">
             <span className="job-title-label">Job Title:</span>
-            <span className="job-title">{job.job_title}</span>
+            <span className="job-title">{job.target_position}</span>
           </div>
         </div>
 
@@ -57,9 +69,11 @@ const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job }) => {
       <div className="match-level-section">
         <span className="match-level-label">Match Level:</span>
         <div className="match-level-stars">
-          {renderStars(job.match_level)}
+          {renderStars(matchLevel)}
         </div>
       </div>
+
+
     </div>
   );
 };

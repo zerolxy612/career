@@ -349,54 +349,83 @@ export const JOB_RECOMMENDATION_PROMPT = `
 
 // Similar Jobs Recommendation Prompt - 基于选中岗位的相似岗位推荐
 export const SIMILAR_JOBS_RECOMMENDATION_PROMPT = `
-你是一位专业的职业顾问和招聘专家。请基于用户选中的目标岗位，联网搜索并访问 O*NET-SOC 职业分类数据库，推荐5个相似的岗位方向。
+你是一个职业画像系统中的相似岗位推荐解释模块。请根据以下要求，生成推荐岗位的"相似推荐弹窗内容"，用于解释系统为什么在当前岗位目标基础上推荐另一个相似岗位：
 
 用户信息：
 - 选中的目标岗位：{selectedJob}
 - 用户职业目标：{userGoal}
 - 用户经验卡片：{selectedCards}
 
-🌐 CRITICAL LANGUAGE REQUIREMENTS:
-- 分析用户目标的主要语言
-- 如果用户目标主要是中文，则所有输出内容使用中文
-- 如果用户目标主要是英文，则所有输出内容使用英文
-- 如果语言混合，优先使用英文
-- 保持整个响应的语言一致性
-
 请根据以下要求执行任务：
-1. 基于选中的目标岗位，分析其核心能力要求和工作内容
-2. 联网搜索O*NET数据库，找到与该岗位相似的其他职业方向
-3. 推荐5个相似但不完全相同的岗位，确保真实存在
-4. 分析这些相似岗位与目标岗位的共同核心能力
-5. 提供推荐理由，说明为什么用户适合这些相似岗位
+1. 当前用户已被推荐一个岗位方向（Target Role），例如 "Content Analyst"。
+2. 你需要参考用户的过往经历卡片（Experience Cards）内容，理解用户具备的核心能力（如分析能力、执行协调、跨团队沟通等），然后推荐一个与该岗位方向相似的方向的四个岗位（Suggested Role），例如 "Marketing Data Coordinator"；
+3. 每个岗位需要包含以下信息：
+  - Target Position（岗位方向名称）
+  - Match Level（推荐匹配程度，1–5 星）
+  - Direction Summary：一句话简要介绍该方向的主要职责与应用场景
+  - System Recommendation Reason：基于用户卡片内容与表达能力的推荐理由，指出该方向与用户能力之间的关联
+  - Explore this Direction（探索建议）：一句自然语言，引导用户如何围绕此方向查找岗位（如：You can further explore this direction by searching for job postings that emphasize...）
+  - Based on Experience Cards：引用的用户经历卡片（卡片标题即可）
+  - Job Requirements：该方向典型的任务或能力要求，列出 3–4 项，语言务实、专业
+  - Direction Tags：该方向的能力关键词标签，5 个左右，风格如 #UX Research #AR/VR #Storytelling 等
+4. 同时，为这 4 个推荐方向统一生成一个弹窗解释结构（similar_reason_popup），用于解释它们为何与当前目标岗位相似，包含：
+  - 推荐理由说明（reason_intro）
+  - 能力相似点列表（core_similarities），格式为 emoji + 简洁能力名称，如 📊 Market Insight
+5. 文案整体需自然、可信、表达专业，面向终端用户，不得捏造不真实技能或岗位职责；
+6. 最终输出为一个标准 JSON 结构，仅包含系统弹窗所需字段，不得输出 markdown、注释或附加解释。
 
-请严格按照以下JSON格式输出：
+/*
+Instructions:
+Please strictly return the result as a valid JSON object following the exact structure below.
+- Do NOT include any natural language commentary, titles, headers, or markdown formatting (e.g., no \`\`\`json or "Here is the result:").
+- Do NOT explain the JSON after outputting it.
+- DO include all fields exactly as defined, even if some are left empty.
+- Use English strings. Match keys and nesting exactly.
+*/
 
 {
-  "similar_jobs": [
+  "directions": [
     {
-      "job_title": "string, similar job title",
-      "match_level": "integer (1-5)",
-      "similarity_reason": "string, explanation of why this job is similar to the target position"
+      "target_position": "string, recommended job direction title",
+      "match_level": "integer (1-5) or string in stars format (e.g. \"★★★★☆\")",
+      "direction_summary": "string, one-sentence summary describing the core responsibility or application area of this direction",
+      "recommendation_reason": "string, explanation of why this direction is a good fit for the user based on their experience cards or demonstrated abilities",
+      "explore_instruction": "string, natural-language sentence suggesting how to explore or search for roles under this direction",
+      "based_on_experience_cards": [
+        "string, experience card title 1",
+        "string, experience card title 2",
+        "string, experience card title 3"
+      ],
+      "job_requirements": [
+        "string, typical task or responsibility 1",
+        "string, typical task or responsibility 2",
+        "string, typical task or responsibility 3",
+        "string, typical task or responsibility 4"
+      ],
+      "direction_tags": [
+        "#tag1",
+        "#tag2",
+        "#tag3",
+        "#tag4",
+        "#tag5"
+      ]
     }
   ],
-  "recommendation_context": {
-    "target_role": "string, the selected target job title",
-    "shared_competencies": [
-      {
-        "competency": "string, shared core competency name",
-        "icon": "string, emoji icon for the competency",
-        "description": "string, brief description of how this competency applies"
-      }
-    ],
-    "overall_explanation": "string, explanation of why these similar jobs are recommended based on the target role"
+  "similar_reason_popup": {
+    "reason_intro": "string, explanation of why these recommended directions are similar to the current target role based on shared competencies or structural similarities",
+    "core_similarities": [
+      "📊 Data Insight",
+      "📋 Structured Reporting",
+      "🤝 Cross-functional Collaboration",
+      "🔍 Analytical Thinking"
+    ]
   }
 }
 
 要求：
-1. 相似岗位必须真实存在，基于O*NET或实际招聘市场数据
+1. 推荐4个相似岗位，必须真实存在，基于实际招聘市场数据
 2. 匹配度应该在3-5之间（因为是相似岗位）
-3. 共同核心能力应该有3个，每个都要有合适的emoji图标
+3. 能力相似点应该有4个，每个都要有合适的emoji图标
 4. 推荐理由要具体且有逻辑性
 5. 所有内容要专业、准确且有价值
 `;
