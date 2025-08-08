@@ -11,49 +11,7 @@ interface CareerAwarenessChartProps {
   isLoading?: boolean;
 }
 
-// 默认象限数据
-const defaultQuadrantData: CareerQuadrantData = {
-  externalDriven: 75,
-  internalDriven: 65,
-  structuredAnalytical: 80,
-  expressiveInterpersonal: 70
-};
-
-// 默认能力点数据
-const defaultAbilityPoints: AbilityPoint[] = [
-  {
-    id: 'analytical-thinking',
-    name: 'Analytical Thinking',
-    x: -60,
-    y: 40,
-    description: 'Strong analytical capabilities through systematic problem-solving approaches.',
-    evidence: 'Derived from project coordination experiences'
-  },
-  {
-    id: 'team-collaboration',
-    name: 'Team Collaboration',
-    x: 50,
-    y: 30,
-    description: 'Excellent interpersonal and collaborative skills in cross-functional teams.',
-    evidence: 'Supported by workshop facilitation experiences'
-  },
-  {
-    id: 'strategic-planning',
-    name: 'Strategic Planning',
-    x: -40,
-    y: -20,
-    description: 'Ability to develop and execute long-term strategic initiatives.',
-    evidence: 'Evidenced through goal-setting and outcome tracking'
-  },
-  {
-    id: 'creative-problem-solving',
-    name: 'Creative Problem Solving',
-    x: 30,
-    y: -50,
-    description: 'Innovative approach to complex challenges and solution development.',
-    evidence: 'Demonstrated in various project contexts'
-  }
-];
+// 默认数据已移除 - 只使用真实AI数据
 
 // 将AbilityPoint转换为ECharts散点图数据格式
 const convertToEChartsData = (abilityPoints: AbilityPoint[]) => {
@@ -71,14 +29,11 @@ const convertToEChartsData = (abilityPoints: AbilityPoint[]) => {
 };
 
 export const CareerAwarenessChart: React.FC<CareerAwarenessChartProps> = ({
-  quadrantData: _quadrantData = defaultQuadrantData,
-  abilityPoints = defaultAbilityPoints,
+  quadrantData: _quadrantData, // 暂时不使用，但保留接口
+  abilityPoints,
   className = '',
   isLoading = false
 }) => {
-  // 转换能力点数据为ECharts格式
-  const scatterData = convertToEChartsData(abilityPoints);
-
   if (isLoading) {
     return (
       <div className={`career-awareness-chart ${className}`} style={{
@@ -88,10 +43,31 @@ export const CareerAwarenessChart: React.FC<CareerAwarenessChartProps> = ({
         justifyContent: 'center',
         color: '#6b7280'
       }}>
-        <div>Loading ability analysis...</div>
+        <div>Loading real AI ability analysis...</div>
       </div>
     );
   }
+
+  // 只有真实数据才显示图表，不使用默认数据
+  if (!abilityPoints || abilityPoints.length === 0) {
+    return (
+      <div className={`career-awareness-chart ${className}`} style={{
+        height: 240,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#6b7280',
+        flexDirection: 'column',
+        gap: '0.5rem'
+      }}>
+        <div>🚫 No Real AI Data</div>
+        <div style={{ fontSize: '0.8rem' }}>Only real AI analysis will be displayed</div>
+      </div>
+    );
+  }
+
+  // 转换能力点数据为ECharts格式
+  const scatterData = convertToEChartsData(abilityPoints);
 
   // ECharts配置选项
   const option = {

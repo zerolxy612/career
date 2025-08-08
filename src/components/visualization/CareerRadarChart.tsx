@@ -16,17 +16,7 @@ interface CareerRadarChartProps {
   isLoading?: boolean;
 }
 
-// 默认职业维度数据 - 8个维度
-const defaultCareerRadarData: CareerRadarData = {
-  interestOrientation: 75,
-  selfEfficacy: 80,
-  goalOrientation: 85,
-  outcomeExpectation: 70,
-  cognitiveAgility: 85,
-  affectiveReadiness: 75,
-  interpersonalReadiness: 80,
-  professionalAwareness: 72
-};
+// 默认数据已移除 - 只使用真实AI数据
 
 // 将CareerRadarData转换为图表数据格式
 const convertToRadarDataPoints = (data: CareerRadarData): RadarDataPoint[] => {
@@ -75,13 +65,10 @@ const convertToRadarDataPoints = (data: CareerRadarData): RadarDataPoint[] => {
 };
 
 export const CareerRadarChart: React.FC<CareerRadarChartProps> = ({
-  data = defaultCareerRadarData,
+  data,
   className = '',
   isLoading = false
 }) => {
-  // 转换数据格式
-  const radarDataPoints = convertToRadarDataPoints(data);
-
   if (isLoading) {
     return (
       <div className={`career-radar-chart ${className}`} style={{
@@ -91,10 +78,31 @@ export const CareerRadarChart: React.FC<CareerRadarChartProps> = ({
         justifyContent: 'center',
         color: '#6b7280'
       }}>
-        <div>Loading career profile...</div>
+        <div>Loading real AI career profile...</div>
       </div>
     );
   }
+
+  // 只有真实数据才显示图表，不使用默认数据
+  if (!data) {
+    return (
+      <div className={`career-radar-chart ${className}`} style={{
+        height: 200,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#6b7280',
+        flexDirection: 'column',
+        gap: '0.5rem'
+      }}>
+        <div>🚫 No Real AI Data</div>
+        <div style={{ fontSize: '0.8rem' }}>Only real AI analysis will be displayed</div>
+      </div>
+    );
+  }
+
+  // 转换数据格式
+  const radarDataPoints = convertToRadarDataPoints(data);
 
   return (
     <div className={`career-radar-chart ${className}`}>

@@ -7,72 +7,10 @@ interface CompetenceStructureProps {
   className?: string;
 }
 
-// 默认数据
-const defaultCompetenceStructure: CompetenceStructure = {
-  objectiveAbilities: {
-    displayType: 'table',
-    abilities: [
-      {
-        name: 'Project Execution',
-        evidence: 'Derived from project coordination experiences and uploaded resume.',
-        confidenceLevel: 'high'
-      },
-      {
-        name: 'Cross-team Communication',
-        evidence: 'Supported by workshop facilitation and team leadership experiences.',
-        confidenceLevel: 'high'
-      },
-      {
-        name: 'Strategic Planning',
-        evidence: 'Evidenced through goal-setting and outcome tracking activities.',
-        confidenceLevel: 'medium'
-      }
-    ]
-  },
-  subjectiveAbilities: {
-    displayType: 'text_blocks',
-    selfStatements: [
-      {
-        label: 'Quick Learning',
-        userInput: 'You consistently adapt to new environments and acquire new skills rapidly.',
-        insight: 'This adaptability is a key strength for transitioning into your target industry.'
-      },
-      {
-        label: 'Abstract Thinking',
-        userInput: 'You excel at connecting concepts and seeing patterns across different domains.',
-        insight: 'This cognitive flexibility will serve you well in complex problem-solving scenarios.'
-      }
-    ]
-  },
-  developmentPotential: {
-    skills: [
-      {
-        name: 'Data Analysis Tools',
-        currentStatus: 'Beginner level with basic Excel skills',
-        suggestion: 'Consider taking online courses in SQL, Python, or Tableau to enhance your analytical toolkit.',
-        priority: 'high'
-      },
-      {
-        name: 'Technical Communication',
-        currentStatus: 'Strong verbal communication, developing written technical skills',
-        suggestion: 'Practice creating technical documentation and presenting complex ideas to non-technical audiences.',
-        priority: 'medium'
-      },
-      {
-        name: 'Industry-Specific Knowledge',
-        currentStatus: 'General business understanding, limited industry depth',
-        suggestion: 'Engage with industry publications, attend webinars, and connect with professionals in your target field.',
-        priority: 'high'
-      }
-    ]
-  },
-  structureSummary: {
-    evaluationText: 'You show strong execution ability backed by solid team experience and analytical thinking. Your combination of interpersonal skills and strategic mindset creates a foundation for leadership roles. Expanding your technical tool fluency and industry-specific knowledge will help you unlock broader opportunities in data-enhanced environments and position you as a well-rounded professional in your target industry.'
-  }
-};
+// 默认数据已移除 - 只使用真实AI数据
 
 export const CompetenceStructureComponent: React.FC<CompetenceStructureProps> = ({
-  data = defaultCompetenceStructure,
+  data,
   isLoading = false,
   className = ''
 }) => {
@@ -92,7 +30,22 @@ export const CompetenceStructureComponent: React.FC<CompetenceStructureProps> = 
           animation: 'spin 1s linear infinite',
           margin: '0 auto 1rem'
         }}></div>
-        <p>Analyzing your competence structure...</p>
+        <p>Analyzing your competence structure with real AI...</p>
+      </div>
+    );
+  }
+
+  // 只有真实数据才显示，不使用默认数据
+  if (!data) {
+    return (
+      <div className={`competence-structure-no-data ${className}`} style={{
+        padding: '2rem',
+        textAlign: 'center',
+        color: '#6b7280'
+      }}>
+        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🚫</div>
+        <h3 style={{ margin: '0 0 0.5rem 0' }}>No Real AI Data</h3>
+        <p style={{ margin: 0, fontSize: '0.9rem' }}>Only real AI analysis will be displayed</p>
       </div>
     );
   }
