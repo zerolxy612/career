@@ -223,6 +223,19 @@
   border-radius: 3px;
 }
 
+/* 客观能力(O)选中卡片中的文本元素特殊背景颜色 */
+.selected-card.objective-ability .card-content h4 {
+  background: #b9cfff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+}
+
+.selected-card.objective-ability .card-content p {
+  background: #b9cfff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+}
+
 .remove-card-btn {
   position: absolute;
   top: 0.5rem;
