@@ -487,10 +487,12 @@ export default function CombinationPage() {
       activeId: active.id,
       overId: over?.id,
       isOverCustomArea: over?.id === 'custom-area',
+      selectedOption: selectedOption,
       timestamp: new Date().toISOString()
     });
 
-    if (over?.id === 'custom-area') {
+    // 只有在Custom选项时才允许拖拽添加卡片
+    if (over?.id === 'custom-area' && selectedOption === 'custom') {
       const card = allCards.find(c => c.id === active.id);
       if (card && !selectedCards.some(c => c.id === card.id)) {
         console.log('✅ Adding card to selection:', card.cardPreview.experienceName);
@@ -500,6 +502,8 @@ export default function CombinationPage() {
       } else {
         console.log('❌ Card already selected or not found');
       }
+    } else if (over?.id === 'custom-area' && selectedOption !== 'custom') {
+      console.log('❌ Drag not allowed in AI recommendation mode');
     }
 
     setDraggedCard(null);
@@ -588,7 +592,7 @@ export default function CombinationPage() {
       isDragging,
     } = useDraggable({
       id: card.id,
-      disabled: isSelected,
+      disabled: isSelected || selectedOption !== 'custom', // 在非Custom选项时禁用拖拽
     });
 
     const style = transform ? {
@@ -761,12 +765,15 @@ export default function CombinationPage() {
                         <h4>{card.cardPreview.experienceName}</h4>
                         <p>{card.cardPreview.oneSentenceSummary}</p>
                       </div>
-                      <button
-                        className="remove-card-btn"
-                        onClick={() => handleCardSelect(card)}
-                      >
-                        ×
-                      </button>
+                      {/* 只在Custom选项时显示删除按钮 */}
+                      {selectedOption === 'custom' && (
+                        <button
+                          className="remove-card-btn"
+                          onClick={() => handleCardSelect(card)}
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
                   );
                 })}
