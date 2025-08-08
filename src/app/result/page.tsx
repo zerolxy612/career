@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ExperienceCard } from '@/types/card';
-import { CareerProfileAnalysis, CareerProfileAnalysisRequest, CareerProfileAnalysisResponse } from '@/types/career-profile';
+import { CareerProfileAnalysis, CareerProfileAnalysisResponse } from '@/types/career-profile';
 import CareerRadarChart from '@/components/visualization/CareerRadarChart';
 import CareerAwarenessChart from '@/components/visualization/CareerAwarenessChart';
 import CompetenceStructureComponent from '@/components/CompetenceStructure';
@@ -52,22 +52,22 @@ export default function ResultPage() {
           cardNames: combinationData.cards?.map((c: ExperienceCard) => c.cardPreview?.experienceName) || []
         });
 
-        // Prepare API request
-        const requestData: CareerProfileAnalysisRequest = {
-          userGoal,
-          selectedIndustry: industryData.cardPreview?.fieldName || industryData.fieldName || 'Unknown',
-          selectedCards: combinationData.cards?.map((card: ExperienceCard) => ({
-            id: card.id,
-            experienceName: card.cardPreview.experienceName,
-            category: card.category,
-            cardDetail: card.cardDetail
-          })) || [],
-          combinationContext: combinationData.option ? {
-            combinationName: combinationData.option.name || 'Selected Combination',
-            combinationDescription: combinationData.option.description || '',
-            whyThisCombination: combinationData.option.whyThisCombination || ''
-          } : undefined
-        };
+        // Prepare API request (currently using mock data)
+        // const requestData: CareerProfileAnalysisRequest = {
+        //   userGoal,
+        //   selectedIndustry: industryData.cardPreview?.fieldName || industryData.fieldName || 'Unknown',
+        //   selectedCards: combinationData.cards?.map((card: ExperienceCard) => ({
+        //     id: card.id,
+        //     experienceName: card.cardPreview.experienceName,
+        //     category: card.category,
+        //     cardDetail: card.cardDetail
+        //   })) || [],
+        //   combinationContext: combinationData.option ? {
+        //     combinationName: combinationData.option.name || 'Selected Combination',
+        //     combinationDescription: combinationData.option.description || '',
+        //     whyThisCombination: combinationData.option.whyThisCombination || ''
+        //   } : undefined
+        // };
 
         console.log('📤 [RESULT] Calling career profile analysis API...');
 
@@ -204,14 +204,16 @@ export default function ResultPage() {
         const apiResponse = mockApiResponse;
 
         console.log('✅ [RESULT] Career profile analysis completed:', {
-          hasRadarData: !!apiResponse.data.radarData,
-          hasQuadrantData: !!apiResponse.data.quadrantData,
-          abilityPointsCount: apiResponse.data.abilityPoints?.length || 0,
-          hasCompetenceStructure: !!apiResponse.data.competenceStructure,
-          confidenceScore: apiResponse.data.analysisMetadata?.confidenceScore
+          hasRadarData: !!apiResponse.data?.radarData,
+          hasQuadrantData: !!apiResponse.data?.quadrantData,
+          abilityPointsCount: apiResponse.data?.abilityPoints?.length || 0,
+          hasCompetenceStructure: !!apiResponse.data?.competenceStructure,
+          confidenceScore: apiResponse.data?.analysisMetadata?.confidenceScore
         });
 
-        setCareerProfileData(apiResponse.data);
+        if (apiResponse.data) {
+          setCareerProfileData(apiResponse.data);
+        }
 
       } catch (error) {
         console.error('❌ [RESULT] Error loading career profile data:', error);

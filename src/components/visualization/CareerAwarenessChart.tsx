@@ -71,7 +71,7 @@ const convertToEChartsData = (abilityPoints: AbilityPoint[]) => {
 };
 
 export const CareerAwarenessChart: React.FC<CareerAwarenessChartProps> = ({
-  quadrantData = defaultQuadrantData,
+  quadrantData: _quadrantData = defaultQuadrantData,
   abilityPoints = defaultAbilityPoints,
   className = '',
   isLoading = false
@@ -233,7 +233,7 @@ export const CareerAwarenessChart: React.FC<CareerAwarenessChartProps> = ({
     ],
     tooltip: {
       trigger: 'item',
-      formatter: function(params: any) {
+      formatter: function(params: { data: { name: string; description: string; evidence: string } }) {
         const data = params.data;
         return `
           <div style="padding: 10px; max-width: 250px;">
