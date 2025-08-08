@@ -237,7 +237,7 @@
 
 /* Recommendation Context */
 .recommendation-context {
-  background: #e3f2fd;
+  background: #d7e3ff;
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -248,7 +248,8 @@
   margin: 0 0 1rem 0;
   color: #333;
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 700;
+  text-align: center;
 }
 
 .context-content {
@@ -259,6 +260,7 @@
   margin: 0 0 0.5rem 0;
   color: #666;
   font-size: 0.95rem;
+  text-align: center;
 }
 
 .target-role-name {
@@ -270,19 +272,21 @@
   margin: 0 0 1rem 0;
   color: #666;
   font-size: 0.95rem;
+  text-align: center;
 }
 
 .competencies-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  justify-content: center;
 }
 
 .competency-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: white;
+  background: #b8cfff;
   padding: 0.5rem 1rem;
   border-radius: 20px;
   border: 1px solid rgba(66, 133, 244, 0.1);
