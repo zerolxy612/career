@@ -471,12 +471,6 @@ export default function CombinationPage() {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    // 只有在Custom模式下才处理拖拽开始
-    if (selectedOption !== 'custom') {
-      console.log('❌ Drag not allowed in non-custom mode');
-      return;
-    }
-
     const card = allCards.find(c => c.id === event.active.id);
     console.log('🚀 Drag started:', {
       cardId: event.active.id,
@@ -493,16 +487,8 @@ export default function CombinationPage() {
       activeId: active.id,
       overId: over?.id,
       isOverCustomArea: over?.id === 'custom-area',
-      selectedOption,
       timestamp: new Date().toISOString()
     });
-
-    // 只有在Custom模式下才处理拖拽结束
-    if (selectedOption !== 'custom') {
-      console.log('❌ Drag end not processed in non-custom mode');
-      setDraggedCard(null);
-      return;
-    }
 
     if (over?.id === 'custom-area') {
       const card = allCards.find(c => c.id === active.id);
@@ -602,7 +588,7 @@ export default function CombinationPage() {
       isDragging,
     } = useDraggable({
       id: card.id,
-      disabled: isSelected || selectedOption !== 'custom', // 只有在Custom模式下才能拖拽
+      disabled: isSelected,
     });
 
     const style = transform ? {
@@ -661,13 +647,12 @@ export default function CombinationPage() {
   const DroppableCustomArea = ({ children }: { children: React.ReactNode }) => {
     const { isOver, setNodeRef } = useDroppable({
       id: 'custom-area',
-      disabled: selectedOption !== 'custom', // 只有在Custom模式下才能接受拖拽
     });
 
     return (
       <div
         ref={setNodeRef}
-        className={`custom-area ${isOver && selectedOption === 'custom' ? 'drag-over' : ''}`}
+        className={`custom-area ${isOver ? 'drag-over' : ''}`}
       >
         {children}
       </div>
@@ -776,15 +761,12 @@ export default function CombinationPage() {
                         <h4>{card.cardPreview.experienceName}</h4>
                         <p>{card.cardPreview.oneSentenceSummary}</p>
                       </div>
-                      {/* 移除按钮只在Custom模式下显示 */}
-                      {selectedOption === 'custom' && (
-                        <button
-                          className="remove-card-btn"
-                          onClick={() => handleCardSelect(card)}
-                        >
-                          ×
-                        </button>
-                      )}
+                      <button
+                        className="remove-card-btn"
+                        onClick={() => handleCardSelect(card)}
+                      >
+                        ×
+                      </button>
                     </div>
                   );
                 })}

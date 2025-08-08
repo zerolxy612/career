@@ -71,24 +71,137 @@ export default function ResultPage() {
 
         console.log('📤 [RESULT] Calling career profile analysis API...');
 
-        // Call API
-        const response = await fetch('/api/ai/analyze-career-profile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        // 临时使用模拟数据，避免API配额限制
+        console.log('⚠️ [RESULT] Using mock data due to API quota limitations');
+
+        const mockApiResponse: CareerProfileAnalysisResponse = {
+          success: true,
+          data: {
+            radarData: {
+              interestOrientation: 75,
+              selfEfficacy: 82,
+              goalOrientation: 88,
+              outcomeExpectation: 70,
+              cognitiveAgility: 85,
+              affectiveReadiness: 78,
+              interpersonalReadiness: 80,
+              professionalAwareness: 72
+            },
+            quadrantData: {
+              externalDriven: 65,
+              internalDriven: 75,
+              structuredAnalytical: 80,
+              expressiveInterpersonal: 70
+            },
+            abilityPoints: [
+              {
+                id: 'analytical-thinking',
+                name: 'Analytical Thinking',
+                x: -60,
+                y: 40,
+                description: 'Strong analytical capabilities through systematic problem-solving approaches.',
+                evidence: 'Derived from project coordination experiences'
+              },
+              {
+                id: 'team-collaboration',
+                name: 'Team Collaboration',
+                x: 50,
+                y: 30,
+                description: 'Excellent interpersonal and collaborative skills in cross-functional teams.',
+                evidence: 'Supported by workshop facilitation experiences'
+              },
+              {
+                id: 'strategic-planning',
+                name: 'Strategic Planning',
+                x: -40,
+                y: -20,
+                description: 'Ability to develop and execute long-term strategic initiatives.',
+                evidence: 'Evidenced through goal-setting and outcome tracking'
+              },
+              {
+                id: 'creative-problem-solving',
+                name: 'Creative Problem Solving',
+                x: 30,
+                y: -50,
+                description: 'Innovative approach to complex challenges and solution development.',
+                evidence: 'Demonstrated in various project contexts'
+              }
+            ],
+            selfCognitionSummary: 'You demonstrate a balanced profile with strong goal orientation and cognitive agility. Your analytical mindset is complemented by solid interpersonal skills, positioning you well for leadership roles that require both strategic thinking and team coordination.',
+            competenceStructure: {
+              objectiveAbilities: {
+                displayType: 'table',
+                abilities: [
+                  {
+                    name: 'Project Execution',
+                    evidence: 'Derived from project coordination and strategic planning activities.',
+                    confidenceLevel: 'high'
+                  },
+                  {
+                    name: 'Cross-team Communication',
+                    evidence: 'Supported by workshop facilitation and team coordination experiences.',
+                    confidenceLevel: 'high'
+                  },
+                  {
+                    name: 'Strategic Planning',
+                    evidence: 'Evidenced through goal-setting and outcome tracking in multiple experiences.',
+                    confidenceLevel: 'medium'
+                  }
+                ]
+              },
+              subjectiveAbilities: {
+                displayType: 'text_blocks',
+                selfStatements: [
+                  {
+                    label: 'Quick Learning',
+                    userInput: 'You consistently adapt to new environments and acquire new skills rapidly.',
+                    insight: 'This adaptability is a key strength for transitioning into your target industry.'
+                  },
+                  {
+                    label: 'Abstract Thinking',
+                    userInput: 'You excel at connecting concepts and seeing patterns across different domains.',
+                    insight: 'This cognitive flexibility will serve you well in complex problem-solving scenarios.'
+                  }
+                ]
+              },
+              developmentPotential: {
+                skills: [
+                  {
+                    name: 'Data Analysis Tools',
+                    currentStatus: 'Beginner level with basic Excel skills',
+                    suggestion: 'Consider taking online courses in SQL, Python, or Tableau to enhance your analytical toolkit.',
+                    priority: 'high'
+                  },
+                  {
+                    name: 'Technical Communication',
+                    currentStatus: 'Strong verbal communication, developing written technical skills',
+                    suggestion: 'Practice creating technical documentation and presenting complex ideas to non-technical audiences.',
+                    priority: 'medium'
+                  },
+                  {
+                    name: 'Industry-Specific Knowledge',
+                    currentStatus: 'General business understanding, limited industry depth',
+                    suggestion: 'Engage with industry publications, attend webinars, and connect with professionals in your target field.',
+                    priority: 'high'
+                  }
+                ]
+              },
+              structureSummary: {
+                evaluationText: 'You show strong execution ability backed by solid team experience and analytical thinking. Your combination of interpersonal skills and strategic mindset creates a foundation for leadership roles. Expanding your technical tool fluency and industry-specific knowledge will help you unlock broader opportunities in data-enhanced environments and position you as a well-rounded professional in your target industry.'
+              }
+            },
+            analysisMetadata: {
+              basedOnCards: ['mock-card-1', 'mock-card-2'],
+              userGoal: userGoal,
+              selectedIndustry: industryData.cardPreview?.fieldName || industryData.fieldName || 'Unknown',
+              analysisTimestamp: Date.now(),
+              confidenceScore: 85
+            }
           },
-          body: JSON.stringify(requestData),
-        });
+          processingTime: 1000
+        };
 
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status}`);
-        }
-
-        const apiResponse: CareerProfileAnalysisResponse = await response.json();
-
-        if (!apiResponse.success || !apiResponse.data) {
-          throw new Error(apiResponse.error || 'Failed to analyze career profile');
-        }
+        const apiResponse = mockApiResponse;
 
         console.log('✅ [RESULT] Career profile analysis completed:', {
           hasRadarData: !!apiResponse.data.radarData,
