@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Log the complete user input to console
-    consoleLog.userInput('生成求职信API', `目标岗位: ${targetPosition}, 目标: ${userGoal}`, experienceCards);
+    consoleLog.userInput('生成求职信API', `目标岗位: ${targetPosition}, 目标: ${userGoal}`, []);
 
     if (!targetPosition || !userGoal || !experienceCards || experienceCards.length === 0) {
       console.error('❌ [API] Missing required parameters');
