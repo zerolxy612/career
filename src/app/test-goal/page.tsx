@@ -13,6 +13,7 @@ const mockIndustries: IndustryRecommendation[] = [
     },
     cardDetail: {
       fieldOverview: "数字产品管理是一个快速发展的领域，专注于通过数据驱动的决策来创造用户价值。",
+      recommendationReason: "基于您的跨团队协作经验和对用户体验的关注，数字产品管理是一个理想的发展方向。",
       suitableForYouIf: [
         "你喜欢跨团队协作",
         "你对用户体验有敏锐的洞察",
@@ -35,6 +36,7 @@ const mockIndustries: IndustryRecommendation[] = [
     },
     cardDetail: {
       fieldOverview: "用户体验设计专注于创造直观、美观且功能性强的数字产品界面。",
+      recommendationReason: "您对用户体验的关注和创造性思维使您非常适合UX/UI设计领域。",
       suitableForYouIf: [
         "你有强烈的视觉美感",
         "你关注用户需求和行为",
@@ -57,6 +59,7 @@ const mockIndustries: IndustryRecommendation[] = [
     },
     cardDetail: {
       fieldOverview: "数据科学结合统计学、编程和业务知识，从大量数据中提取有价值的洞察。",
+      recommendationReason: "您的分析能力和技术背景为数据科学领域的发展奠定了良好基础。",
       suitableForYouIf: [
         "你对数学和统计学有兴趣",
         "你喜欢编程和技术挑战",
@@ -79,6 +82,7 @@ const mockIndustries: IndustryRecommendation[] = [
     },
     cardDetail: {
       fieldOverview: "软件工程涉及设计、开发和维护高质量的软件系统和应用程序。",
+      recommendationReason: "您的编程技能和系统思维能力使您在软件工程领域具有很强的竞争优势。",
       suitableForYouIf: [
         "你喜欢逻辑思维和问题解决",
         "你对技术和编程有热情",

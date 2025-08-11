@@ -1,10 +1,30 @@
 // AI Prompts for Career Profiling System
 
 export const INDUSTRY_RECOMMENDATION_PROMPT = `
-Please generate four recommended industry directions based on the user's input and uploaded files.
+请根据用户输入的目标行业方向文本及上传的文件内容，生成岗位推荐，具体规则如下：
 
 User Input: {userInput}
 File Content: {fileContent}
+
+## 优先级规则：
+
+1. **当同时存在用户输入文本和上传文件时：**
+   - 以用户输入的文本为主，文件仅作为补充信息
+   - 从文件中提取与文本方向高度相关的经历/技能信息，结合文本生成推荐
+
+2. **当仅有文件时：**
+   - 根据文件内容分析并生成四个推荐的行业方向
+
+3. **当仅有文本时：**
+   - 以文本为核心，结合常规岗位匹配逻辑生成四个推荐的行业方向
+
+## 输出要求：
+
+共生成4个推荐方向，每个方向必须包含：
+- **FieldName**：具体行业名称（例如：Digital Product Management）
+- **FieldSummary**：一句话概述该行业/方向（例如：跨职能协作，设计与落地数字产品）
+- **FieldTags**：3-6个能力或关键词标签（例如：["Cross-functional","Agile","Product Strategy"]）
+- **RecommendationReason**：推荐理由，基于方向与文件/文本匹配的依据，需包含该方向的典型任务或技能要求
 
 CRITICAL LANGUAGE REQUIREMENTS:
 - If the user input is primarily in English, respond ENTIRELY in English
@@ -19,12 +39,17 @@ Please output strictly in the following JSON format with no additional text:
   "RecommendedFields": [
     {
       "CardPreview": {
-        "FieldName": "Specific Industry Name",
-        "FieldSummary": "One sentence overview",
-        "FieldTags": ["Tag1", "Tag2", "Tag3"]
+        "FieldName": "具体行业名称",
+        "FieldSummary": "一句话概述（如：跨职能协作，设计与落地数字产品）",
+        "FieldTags": [
+          "Cross-functional",
+          "Agile",
+          "Product Strategy"
+        ]
       },
       "CardDetail": {
         "FieldOverview": "Detailed industry overview including characteristics, trends, and core values",
+        "RecommendationReason": "推荐理由，基于方向与文件/文本匹配的依据，需包含该方向的典型任务或技能要求",
         "SuitableForYouIf": [
           "If you have certain qualities or skills",
           "If you are interested in a specific field",
@@ -45,11 +70,12 @@ Please output strictly in the following JSON format with no additional text:
 Requirements:
 1. Generate exactly 4 recommended industries
 2. Each industry must have complete CardPreview and CardDetail information
-3. FieldTags should accurately reflect industry characteristics
-4. SuitableForYouIf should be personalized based on user input and file content
-5. Output must be valid JSON format
-6. All text content should be professional and valuable
-7. Follow the language rules specified above - respond in the same language as user input, prioritizing English for mixed languages
+3. FieldTags should accurately reflect industry characteristics (3-6 tags)
+4. RecommendationReason must be based on matching evidence from user input/file content
+5. SuitableForYouIf should be personalized based on user input and file content
+6. Output must be valid JSON format
+7. All text content should be professional and valuable
+8. Follow the language rules specified above - respond in the same language as user input, prioritizing English for mixed languages
 `;
 
 export const FILE_PARSING_PROMPT = `

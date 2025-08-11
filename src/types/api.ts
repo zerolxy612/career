@@ -82,6 +82,7 @@ export interface IndustryCardPreview {
 
 export interface IndustryCardDetail {
   fieldOverview: string;
+  recommendationReason: string;
   suitableForYouIf: string[];
   typicalTasksAndChallenges: string[];
   fieldTags: string[];

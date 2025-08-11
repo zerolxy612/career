@@ -29,12 +29,14 @@ interface RawFieldData {
   };
   CardDetail?: {
     FieldOverview?: string;
+    RecommendationReason?: string;
     SuitableForYouIf?: string[];
     TypicalTasksAndChallenges?: string[];
     FieldTags?: string[];
   };
   cardDetail?: {
     fieldOverview?: string;
+    recommendationReason?: string;
     suitableForYouIf?: string[];
     typicalTasksAndChallenges?: string[];
     fieldTags?: string[];
@@ -128,6 +130,7 @@ export default function Home() {
           },
           cardDetail: {
             fieldOverview: field.CardDetail?.FieldOverview || field.cardDetail?.fieldOverview || 'No overview available',
+            recommendationReason: field.CardDetail?.RecommendationReason || field.cardDetail?.recommendationReason || 'No recommendation reason provided',
             suitableForYouIf: field.CardDetail?.SuitableForYouIf || field.cardDetail?.suitableForYouIf || [],
             typicalTasksAndChallenges: field.CardDetail?.TypicalTasksAndChallenges || field.cardDetail?.typicalTasksAndChallenges || [],
             fieldTags: field.CardDetail?.FieldTags || field.cardDetail?.fieldTags || []
