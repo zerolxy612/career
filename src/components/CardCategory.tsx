@@ -161,8 +161,8 @@ const DirectionContent: React.FC<{
           (Your own experience cards)
         </p>
 
-        {/* Real experience cards - only user_input type */}
-        {direction.cards.filter(card => card.source.type === 'user_input').length > 0 ? (
+        {/* Real experience cards - user_input and uploaded_resume types */}
+        {direction.cards.filter(card => card.source.type === 'user_input' || card.source.type === 'uploaded_resume').length > 0 ? (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -170,11 +170,12 @@ const DirectionContent: React.FC<{
             marginBottom: '1rem'
           }}>
             {direction.cards
-              .filter(card => card.source.type === 'user_input')
+              .filter(card => card.source.type === 'user_input' || card.source.type === 'uploaded_resume')
               .map(card => (
                 <ExperienceCard
                   key={card.id}
                   card={card}
+                  type="real"
                   onClick={() => onCardClick?.(card.id)}
                   onDelete={() => onDeleteCard?.(card.id)}
                 />
@@ -235,10 +236,10 @@ const DirectionContent: React.FC<{
           gap: '1rem',
           alignItems: 'stretch'
         }}>
-          {/* AI suggested cards - includes both ai_generated and uploaded_resume */}
+          {/* AI suggested cards - only ai_generated type (guessed experiences) */}
           {(() => {
             const aiCards = direction.cards.filter(card =>
-              card.source.type === 'ai_generated' || card.source.type === 'uploaded_resume'
+              card.source.type === 'ai_generated'
             );
 
             console.log('🔍 [CARD_CATEGORY] AI suggested cards filter result:', {

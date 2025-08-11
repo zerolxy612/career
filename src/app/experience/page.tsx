@@ -31,6 +31,15 @@ interface AICardDetail {
   反思与结果总结: string;
   高光总结句: string;
   生成来源: AIGenerationSource;
+  灰色提示?: {
+    经历名称?: string;
+    一句话概述?: string;
+    背景与情境说明?: string;
+    我的角色与任务?: string;
+    任务细节描述?: string;
+    反思与结果总结?: string;
+    高光总结句?: string;
+  };
 }
 
 interface AICardResponse {
@@ -41,6 +50,7 @@ interface AICardResponse {
 
 interface AIGeneratedCardsResponse {
   经验卡片推荐: AICardResponse[];
+  AI推测经历?: AICardResponse[];
 }
 
 // 内部组件，使用useSearchParams
@@ -273,7 +283,8 @@ function ExperiencePageContent() {
   // 🔧 UNIFIED FIX: 处理首页AI响应的专用函数
   const processHomepageAIResponse = async (aiResponse: AIGeneratedCardsResponse, fileCount: number) => {
     console.log('📁 [HOMEPAGE_PROCESS] Processing AI response from homepage:', {
-      cardsCount: aiResponse.经验卡片推荐?.length || 0,
+      realCardsCount: aiResponse.经验卡片推荐?.length || 0,
+      aiSuggestedCardsCount: aiResponse.AI推测经历?.length || 0,
       fileCount
     });
 
@@ -282,14 +293,23 @@ function ExperiencePageContent() {
       return;
     }
 
-    // 转换AI响应为ExperienceCard格式
-    const experienceCards = aiResponse.经验卡片推荐
+    // 处理真实经历卡片
+    const realCards = aiResponse.经验卡片推荐
       .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
       .map((card: AICardResponse) => convertAICardToExperienceCard(card, true, true)); // fromHomepage=true, forceUploadedResume=true
 
+    // 处理AI推测经历卡片
+    const aiSuggestedCards = (aiResponse.AI推测经历 || [])
+      .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
+      .map((card: AICardResponse) => convertAICardToExperienceCard(card, true, false)); // fromHomepage=true, AI推测卡片
+
+    // 合并所有卡片
+    const experienceCards = [...realCards, ...aiSuggestedCards];
+
     console.log('🔄 [HOMEPAGE_PROCESS] Converted cards:', {
-      originalCount: aiResponse.经验卡片推荐.length,
-      convertedCount: experienceCards.length,
+      realCardsCount: realCards.length,
+      aiSuggestedCardsCount: aiSuggestedCards.length,
+      totalCardsCount: experienceCards.length,
       sourceTypes: experienceCards.map(c => c.source.type)
     });
 
@@ -416,12 +436,24 @@ function ExperiencePageContent() {
         taskDetails: safeGet(aiCard.详情卡展示, '任务细节描述', ''),
         reflectionAndResults: safeGet(aiCard.详情卡展示, '反思与结果总结', ''),
         highlightSentence: safeGet(aiCard.详情卡展示, '高光总结句', ''),
-        editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence']
+        editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence'],
+        // 添加灰色提示支持
+        placeholderHints: aiCard.详情卡展示?.灰色提示 ? {
+          experienceName: safeGet(aiCard.详情卡展示.灰色提示, '经历名称', ''),
+          oneSentenceSummary: safeGet(aiCard.详情卡展示.灰色提示, '一句话概述', ''),
+          backgroundContext: safeGet(aiCard.详情卡展示.灰色提示, '背景与情境说明', ''),
+          myRoleAndTasks: safeGet(aiCard.详情卡展示.灰色提示, '我的角色与任务', ''),
+          taskDetails: safeGet(aiCard.详情卡展示.灰色提示, '任务细节描述', ''),
+          reflectionAndResults: safeGet(aiCard.详情卡展示.灰色提示, '反思与结果总结', ''),
+          highlightSentence: safeGet(aiCard.详情卡展示.灰色提示, '高光总结句', '')
+        } : undefined
       },
       completionLevel: calculateCompletionLevel(),
       source: {
         // 🔧 FIX: Improved source type detection logic with force override
-        type: forceUploadedResume ? 'uploaded_resume' : determineSourceType(safeGet(aiCard.详情卡展示?.生成来源, '类型'), fromHomepage)
+        type: forceUploadedResume ? 'uploaded_resume' :
+              (safeGet(aiCard.详情卡展示?.生成来源, '类型') === 'ai_generated' || safeGet(aiCard.详情卡展示?.生成来源, '类型') === 'AI推测') ? 'ai_generated' :
+              determineSourceType(safeGet(aiCard.详情卡展示?.生成来源, '类型'), fromHomepage)
       },
       createdAt: new Date(),
       updatedAt: new Date()
@@ -737,16 +769,25 @@ function ExperiencePageContent() {
         return;
       }
 
-      const newCards = aiResponse.经验卡片推荐
+      // 处理真实经历卡片
+      const realCards = aiResponse.经验卡片推荐
         .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
         .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, true)); // forceUploadedResume=true
 
+      // 处理AI推测经历卡片
+      const aiSuggestedCards = (aiResponse.AI推测经历 || [])
+        .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
+        .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, false)); // AI推测卡片
+
+      // 合并所有卡片
+      const newCards = [...realCards, ...aiSuggestedCards];
+
       console.log('🔄 [EXPERIENCE_UPLOAD] Converted cards:', {
-        originalCount: aiResponse.经验卡片推荐.length,
-        convertedCount: newCards.length,
+        realCardsCount: realCards.length,
+        aiSuggestedCardsCount: aiSuggestedCards.length,
+        totalCardsCount: newCards.length,
         sourceTypes: newCards.map((c: ExperienceCard) => c.source.type),
-        cardCategories: newCards.map((c: ExperienceCard) => ({ name: c.cardPreview.experienceName, category: c.category })),
-        aiResponseCategories: aiResponse.经验卡片推荐.map((c: AICardResponse) => ({ name: c.小卡展示?.经历名称, category: c.卡片分组 }))
+        cardCategories: newCards.map((c: ExperienceCard) => ({ name: c.cardPreview.experienceName, category: c.category, source: c.source.type }))
       });
 
       // 🔧 SMART CLASSIFICATION: 通过CardDataManager智能添加卡片

@@ -25,6 +25,15 @@ export interface CardDetail {
   reflectionAndResults: string;
   highlightSentence: string;
   editableFields: string[];
+  placeholderHints?: {
+    experienceName?: string;
+    oneSentenceSummary?: string;
+    backgroundContext?: string;
+    myRoleAndTasks?: string;
+    taskDetails?: string;
+    reflectionAndResults?: string;
+    highlightSentence?: string;
+  };
 }
 
 export type CardCategory = 'Focus Match' | 'Growth Potential' | 'Foundation Skills';

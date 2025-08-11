@@ -75,31 +75,73 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
   const cardDescription = card?.cardPreview?.oneSentenceSummary || description || 'No description available';
   const completion = completionPercentage ?? (card ? calculateActualCompletionPercentage(card) : 0);
 
-  // 🔧 FIX: Correct card type determination logic
-  const cardType = card?.source?.type === 'user_input' ? 'real' : 'ai-suggested';
+  // 🔧 UPDATED: Card type determination logic
+  // If type is explicitly passed, use it; otherwise determine from card source
+  const cardType = type || (
+    card?.source?.type === 'user_input' || card?.source?.type === 'uploaded_resume'
+      ? 'real'
+      : 'ai-suggested'
+  );
+
+  // Get card-type specific styles
+  const getCardStyles = () => {
+    if (cardType === 'real') {
+      return {
+        border: '1px solid #0ea5e9',
+        borderRadius: '8px',
+        padding: '1rem',
+        backgroundColor: '#f0f9ff', // Light blue for real experiences
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.2s ease',
+        position: 'relative' as const
+      };
+    } else if (cardType === 'ai-suggested') {
+      return {
+        border: '1px solid #eab308',
+        borderRadius: '8px',
+        padding: '1rem',
+        backgroundColor: '#fefce8', // Light yellow for AI suggestions
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.2s ease',
+        position: 'relative' as const
+      };
+    }
+
+    return {
+      border: '1px solid #e5e7eb',
+      borderRadius: '8px',
+      padding: '1rem',
+      backgroundColor: '#f0f5ff', // Default light purple
+      cursor: onClick ? 'pointer' : 'default',
+      transition: 'all 0.2s ease',
+      position: 'relative' as const
+    };
+  };
+
+  const cardStyles = getCardStyles();
 
   return (
     <div
       className={`experience-card ${cardType} ${className}`}
-      style={{
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        padding: '1rem',
-        backgroundColor: '#f0f5ff',
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.2s ease',
-        position: 'relative'
-      }}
+      style={cardStyles}
       onClick={onClick}
       onMouseOver={(e) => {
         if (onClick) {
-          e.currentTarget.style.backgroundColor = '#e6f2ff';
-          e.currentTarget.style.borderColor = '#d1d5db';
+          if (cardType === 'real') {
+            e.currentTarget.style.backgroundColor = '#e0f2fe';
+            e.currentTarget.style.border = '1px solid #0284c7';
+          } else if (cardType === 'ai-suggested') {
+            e.currentTarget.style.backgroundColor = '#fef3c7';
+            e.currentTarget.style.border = '1px solid #d97706';
+          } else {
+            e.currentTarget.style.backgroundColor = '#e6f2ff';
+            e.currentTarget.style.border = '1px solid #d1d5db';
+          }
         }
       }}
       onMouseOut={(e) => {
-        e.currentTarget.style.backgroundColor = '#f0f5ff';
-        e.currentTarget.style.borderColor = '#e5e7eb';
+        e.currentTarget.style.backgroundColor = cardStyles.backgroundColor;
+        e.currentTarget.style.border = cardStyles.border;
       }}
     >
       {/* Completion Progress Bar */}

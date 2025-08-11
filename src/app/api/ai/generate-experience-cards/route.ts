@@ -180,7 +180,10 @@ export async function POST(request: NextRequest) {
     console.log('🎉 [API] Response data:', {
       hasExperienceCards: !!parsedResponse.经验卡片推荐,
       cardsCount: parsedResponse.经验卡片推荐?.length || 0,
-      firstCardName: parsedResponse.经验卡片推荐?.[0]?.小卡展示?.经历名称 || 'N/A'
+      firstCardName: parsedResponse.经验卡片推荐?.[0]?.小卡展示?.经历名称 || 'N/A',
+      hasAISuggestedCards: !!parsedResponse.AI推测经历,
+      aiSuggestedCardsCount: parsedResponse.AI推测经历?.length || 0,
+      firstAISuggestedCardName: parsedResponse.AI推测经历?.[0]?.小卡展示?.经历名称 || 'N/A'
     });
 
     // 🔍 [DEBUG] 添加文件解析详情到响应中，供前端调试使用
