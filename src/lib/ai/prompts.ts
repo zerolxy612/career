@@ -441,9 +441,9 @@ export const JOB_RECOMMENDATION_PROMPT = `
 5. 所有内容要专业、准确且有价值
 `;
 
-// Similar Jobs Recommendation Prompt - 基于选中岗位的相似岗位推荐
+// Similar Jobs Recommendation Prompt - Adjacent Filed Suggestion区域的跨领域岗位推荐
 export const SIMILAR_JOBS_RECOMMENDATION_PROMPT = `
-你是一个职业画像系统中的相似岗位推荐解释模块。请根据以下要求，生成推荐岗位的"相似推荐弹窗内容"，用于解释系统为什么在当前岗位目标基础上推荐另一个相似岗位：
+你是一个职业画像系统中的相似岗位推荐解释模块。请根据以下要求，生成推荐岗位的"相似推荐弹窗内容"，用于解释系统为什么在当前岗位目标基础上推荐另一个相似岗位，请注意，这些岗位必须与目标岗位领域不同（跨领域推荐），但核心能力相似：
 
 用户信息：
 - 选中的目标岗位：{selectedJob}
@@ -452,7 +452,7 @@ export const SIMILAR_JOBS_RECOMMENDATION_PROMPT = `
 
 请根据以下要求执行任务：
 1. 当前用户已被推荐一个岗位方向（Target Role），例如 "Content Analyst"。
-2. 你需要参考用户的过往经历卡片（Experience Cards）内容，理解用户具备的核心能力（如分析能力、执行协调、跨团队沟通等），然后推荐一个与该岗位方向相似的方向的四个岗位（Suggested Role），例如 "Marketing Data Coordinator"；
+2. 你需要参考用户的过往经历卡片（Experience Cards）内容，理解用户具备的核心能力（如分析能力、执行协调、跨团队沟通等），然后推荐一个与该岗位方向相似的方向的四个岗位（Suggested Role），四个岗位彼此之间也需有所区分，不可过度相似，例如 "Marketing Data Coordinator"。
 3. 每个岗位需要包含以下信息：
   - Target Position（岗位方向名称）
   - Match Level（推荐匹配程度，1–5 星）
@@ -517,11 +517,12 @@ Please strictly return the result as a valid JSON object following the exact str
 }
 
 要求：
-1. 推荐4个相似岗位，必须真实存在，基于实际招聘市场数据
-2. 匹配度应该在3-5之间（因为是相似岗位）
-3. 能力相似点应该有4个，每个都要有合适的emoji图标
-4. 推荐理由要具体且有逻辑性
-5. 所有内容要专业、准确且有价值
+1. 推荐4个跨领域岗位，必须与目标岗位领域不同，但核心能力相似，必须真实存在，基于实际招聘市场数据
+2. 四个岗位彼此之间也需有所区分，不可过度相似
+3. 匹配度应该在3-5之间（因为是相似岗位）
+4. 能力相似点应该有4个，每个都要有合适的emoji图标
+5. 推荐理由要具体且有逻辑性，基于用户卡片内容与表达能力
+6. 所有内容要专业、准确且有价值，不得捏造不真实技能或岗位职责
 `;
 
 // Cover Letter Generation Prompt - 基于岗位和经验卡片生成个性化求职信
