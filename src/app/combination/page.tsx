@@ -83,9 +83,7 @@ export default function CombinationPage() {
   );
   const [combinationOptions, setCombinationOptions] = useState<CombinationOption[]>([
     { id: 'custom', name: 'Custom', description: 'Build your own combination', isSelected: true },
-    { id: 'option1', name: 'Option 1', description: 'Loading...', isSelected: false, isLoading: false },
-    { id: 'option2', name: 'Option 2', description: 'Loading...', isSelected: false, isLoading: false },
-    { id: 'option3', name: 'Option 3', description: 'Loading...', isSelected: false, isLoading: false },
+    { id: 'option1', name: 'Option', description: 'Loading...', isSelected: false, isLoading: false },
   ]);
 
   useEffect(() => {
@@ -115,48 +113,28 @@ export default function CombinationPage() {
 
       // 🔧 NEW: 获取动态方向并更新组合选项
       const dynamicDirections = CardDataManager.getDynamicDirections();
-      if (dynamicDirections && dynamicDirections.length === 3) {
-        console.log('🎯 [COMBINATION] Loading dynamic directions for options:', {
+      if (dynamicDirections && dynamicDirections.length >= 1) {
+        console.log('🎯 [COMBINATION] Loading dynamic directions for option:', {
           directionTitles: dynamicDirections.map(d => d.方向标题)
         });
 
-        // 保持选项名称固定，不修改显示名称
+        // 只保留一个推荐选项
         setCombinationOptions(prev => [
           prev[0], // Keep Custom option unchanged
           {
             ...prev[1],
-            name: 'Option 1',
+            name: 'Option',
             description: 'AI recommendation based on your profile (auto-apply)'
-          },
-          {
-            ...prev[2],
-            name: 'Option 2',
-            description: 'Alternative approach for your goals (auto-apply)'
-          },
-          {
-            ...prev[3],
-            name: 'Option 3',
-            description: 'Comprehensive skill showcase (auto-apply)'
           }
         ]);
       } else {
-        console.log('⚠️ [COMBINATION] No dynamic directions found, using default options');
+        console.log('⚠️ [COMBINATION] No dynamic directions found, using default option');
         setCombinationOptions(prev => [
           prev[0], // Keep Custom option unchanged
           {
             ...prev[1],
-            name: 'Option 1',
+            name: 'Option',
             description: 'AI recommendation based on your profile (auto-apply)'
-          },
-          {
-            ...prev[2],
-            name: 'Option 2',
-            description: 'Alternative approach for your goals (auto-apply)'
-          },
-          {
-            ...prev[3],
-            name: 'Option 3',
-            description: 'Comprehensive skill showcase (auto-apply)'
           }
         ]);
       }
