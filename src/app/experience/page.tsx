@@ -76,9 +76,9 @@ function ExperiencePageContent() {
 
   // Calculate completion percentage for experience data
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
-    // Exclude _cardId from calculation
+    // Exclude _cardId and _placeholderHints from calculation
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { _cardId, ...fieldsToCheck } = data;
+    const { _cardId, _placeholderHints, ...fieldsToCheck } = data;
     const fields = Object.values(fieldsToCheck);
 
     // Filter out empty fields and placeholder text
@@ -380,8 +380,10 @@ function ExperiencePageContent() {
       }
     };
 
-    // Calculate completion level based on actual content
+    // Calculate completion level based on actual content and source type
     const calculateCompletionLevel = (): CompletionLevel => {
+      // 🔧 UPDATED: 现在AI推测卡片的字段都是空的，自然计算为0%完成度
+
       const fields = [
         safeGet(aiCard.小卡展示, '经历名称'),
         safeGet(aiCard.小卡展示, '时间与地点'),
@@ -408,7 +410,8 @@ function ExperiencePageContent() {
           trimmedField.includes('结果信息缺失') ||
           trimmedField.includes('时间地点信息缺失') ||
           trimmedField === '[待补充]' ||
-          trimmedField === '[信息缺失]';
+          trimmedField === '[信息缺失]' ||
+          trimmedField.startsWith('（例如：'); // AI推测的占位符文本
 
         return !isPlaceholder;
       });
@@ -420,34 +423,77 @@ function ExperiencePageContent() {
       return 'complete';
     };
 
+    // 🔧 FIX: 检查是否为AI推测卡片，决定字段内容
+    const sourceType = safeGet(aiCard.详情卡展示?.生成来源, '类型');
+    const hasPlaceholderHints = aiCard.详情卡展示?.灰色提示;
+    const isAIGenerated = sourceType === 'ai_generated' || sourceType === 'AI推测';
+    const isAISuggestedCard = (isAIGenerated || hasPlaceholderHints) && !forceUploadedResume;
+
     return {
       id: cardId,
       category: category,
-      cardPreview: {
+      cardPreview: isAISuggestedCard ? {
+        // AI推测卡片：预览字段也为空，使用placeholder
+        experienceName: safeGet(aiCard.小卡展示, '经历名称', 'Untitled Experience'), // 保留标题用于识别
+        timeAndLocation: '', // 空字段
+        oneSentenceSummary: '' // 空字段
+      } : {
+        // 真实卡片：使用实际内容
         experienceName: safeGet(aiCard.小卡展示, '经历名称', 'Untitled Experience'),
         timeAndLocation: safeGet(aiCard.小卡展示, '时间与地点', 'Time and location not specified'),
         oneSentenceSummary: safeGet(aiCard.小卡展示, '一句话概述', 'No summary available')
       },
-      cardDetail: {
-        experienceName: safeGet(aiCard.详情卡展示, '经历名称', 'Untitled Experience'),
-        timeAndLocation: safeGet(aiCard.详情卡展示, '时间与地点', 'Time and location not specified'),
-        backgroundContext: safeGet(aiCard.详情卡展示, '背景与情境说明', ''),
-        myRoleAndTasks: safeGet(aiCard.详情卡展示, '我的角色与任务', ''),
-        taskDetails: safeGet(aiCard.详情卡展示, '任务细节描述', ''),
-        reflectionAndResults: safeGet(aiCard.详情卡展示, '反思与结果总结', ''),
-        highlightSentence: safeGet(aiCard.详情卡展示, '高光总结句', ''),
-        editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence'],
-        // 添加灰色提示支持
-        placeholderHints: aiCard.详情卡展示?.灰色提示 ? {
-          experienceName: safeGet(aiCard.详情卡展示.灰色提示, '经历名称', ''),
-          oneSentenceSummary: safeGet(aiCard.详情卡展示.灰色提示, '一句话概述', ''),
-          backgroundContext: safeGet(aiCard.详情卡展示.灰色提示, '背景与情境说明', ''),
-          myRoleAndTasks: safeGet(aiCard.详情卡展示.灰色提示, '我的角色与任务', ''),
-          taskDetails: safeGet(aiCard.详情卡展示.灰色提示, '任务细节描述', ''),
-          reflectionAndResults: safeGet(aiCard.详情卡展示.灰色提示, '反思与结果总结', ''),
-          highlightSentence: safeGet(aiCard.详情卡展示.灰色提示, '高光总结句', '')
-        } : undefined
-      },
+      cardDetail: (() => {
+        // 🔧 FIX: AI推测卡片的字段应该为空，占位符内容放到placeholderHints中
+        const hasPlaceholderHints = aiCard.详情卡展示?.灰色提示;
+        const sourceType = safeGet(aiCard.详情卡展示?.生成来源, '类型');
+        const isAIGenerated = sourceType === 'ai_generated' || sourceType === 'AI推测';
+
+        if ((isAIGenerated || hasPlaceholderHints) && !forceUploadedResume) {
+          // AI推测卡片：字段为空，使用灰色提示
+          return {
+            experienceName: '', // 空字段
+            timeAndLocation: '', // 空字段
+            backgroundContext: '', // 空字段
+            myRoleAndTasks: '', // 空字段
+            taskDetails: '', // 空字段
+            reflectionAndResults: '', // 空字段
+            highlightSentence: '', // 空字段
+            editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence'],
+            // 将原本的字段内容作为placeholder提示
+            placeholderHints: {
+              experienceName: safeGet(aiCard.详情卡展示, '经历名称', ''),
+              timeAndLocation: safeGet(aiCard.详情卡展示, '时间与地点', ''),
+              backgroundContext: safeGet(aiCard.详情卡展示, '背景与情境说明', ''),
+              myRoleAndTasks: safeGet(aiCard.详情卡展示, '我的角色与任务', ''),
+              taskDetails: safeGet(aiCard.详情卡展示, '任务细节描述', ''),
+              reflectionAndResults: safeGet(aiCard.详情卡展示, '反思与结果总结', ''),
+              highlightSentence: safeGet(aiCard.详情卡展示, '高光总结句', '')
+            }
+          };
+        } else {
+          // 真实卡片：使用实际字段内容
+          return {
+            experienceName: safeGet(aiCard.详情卡展示, '经历名称', 'Untitled Experience'),
+            timeAndLocation: safeGet(aiCard.详情卡展示, '时间与地点', 'Time and location not specified'),
+            backgroundContext: safeGet(aiCard.详情卡展示, '背景与情境说明', ''),
+            myRoleAndTasks: safeGet(aiCard.详情卡展示, '我的角色与任务', ''),
+            taskDetails: safeGet(aiCard.详情卡展示, '任务细节描述', ''),
+            reflectionAndResults: safeGet(aiCard.详情卡展示, '反思与结果总结', ''),
+            highlightSentence: safeGet(aiCard.详情卡展示, '高光总结句', ''),
+            editableFields: ['experienceName', 'timeAndLocation', 'backgroundContext', 'myRoleAndTasks', 'taskDetails', 'reflectionAndResults', 'highlightSentence'],
+            placeholderHints: aiCard.详情卡展示?.灰色提示 ? {
+              experienceName: safeGet(aiCard.详情卡展示.灰色提示, '经历名称', ''),
+              oneSentenceSummary: safeGet(aiCard.详情卡展示.灰色提示, '一句话概述', ''),
+              backgroundContext: safeGet(aiCard.详情卡展示.灰色提示, '背景与情境说明', ''),
+              myRoleAndTasks: safeGet(aiCard.详情卡展示.灰色提示, '我的角色与任务', ''),
+              taskDetails: safeGet(aiCard.详情卡展示.灰色提示, '任务细节描述', ''),
+              reflectionAndResults: safeGet(aiCard.详情卡展示.灰色提示, '反思与结果总结', ''),
+              highlightSentence: safeGet(aiCard.详情卡展示.灰色提示, '高光总结句', '')
+            } : undefined
+          };
+        }
+      })(),
       completionLevel: calculateCompletionLevel(),
       source: {
         // 🔧 FIX: Improved source type detection logic with force override
@@ -492,7 +538,8 @@ function ExperiencePageContent() {
         eventProcess: foundCard.cardDetail.taskDetails,
         reflection: foundCard.cardDetail.reflectionAndResults,
         oneLineHighlight: foundCard.cardDetail.highlightSentence,
-        _cardId: foundCard.id // 添加卡片ID用于编辑识别
+        _cardId: foundCard.id, // 添加卡片ID用于编辑识别
+        _placeholderHints: foundCard.cardDetail.placeholderHints // 添加AI建议的灰色提示文本
       };
       setCurrentCardData(cardData);
     } else {

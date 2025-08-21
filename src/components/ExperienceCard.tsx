@@ -234,22 +234,22 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
       {/* Card Description */}
       <p style={{
         fontSize: '0.8rem',
-        color: '#666',
+        color: cardType === 'ai-suggested' ? '#999' : '#666',
         margin: 0,
         lineHeight: '1.4'
       }}>
-        {cardDescription}
+        {cardType === 'ai-suggested' ? `${cardDescription} (AI建议可输入内容)` : cardDescription}
       </p>
 
       {/* Time and Location (if available) */}
       {card?.cardPreview?.timeAndLocation && (
         <p style={{
           fontSize: '0.7rem',
-          color: '#999',
+          color: cardType === 'ai-suggested' ? '#bbb' : '#999',
           margin: '0.5rem 0 0 0',
           fontStyle: 'italic'
         }}>
-          {card.cardPreview.timeAndLocation}
+          {cardType === 'ai-suggested' ? `${card.cardPreview.timeAndLocation} (AI建议可输入内容)` : card.cardPreview.timeAndLocation}
         </p>
       )}
     </div>
@@ -258,6 +258,8 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
 
 // Helper function to calculate actual completion percentage from card data
 function calculateActualCompletionPercentage(card: ExperienceCardType): number {
+  // 🔧 UPDATED: 现在AI推测卡片的字段都是空的，自然计算为0%完成度
+
   const fields = [
     card.cardPreview.experienceName,
     card.cardPreview.timeAndLocation,
@@ -284,7 +286,9 @@ function calculateActualCompletionPercentage(card: ExperienceCardType): number {
       trimmedField.includes('结果信息缺失') ||
       trimmedField.includes('时间地点信息缺失') ||
       trimmedField === '[待补充]' ||
-      trimmedField === '[信息缺失]';
+      trimmedField === '[信息缺失]' ||
+      trimmedField.startsWith('（例如：') || // AI推测的占位符文本
+      trimmedField.includes('(AI建议可输入内容)'); // AI建议标识
 
     return !isPlaceholder;
   });

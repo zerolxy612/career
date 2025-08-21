@@ -16,6 +16,15 @@ export interface ExperienceDetailData {
   reflection: string;
   oneLineHighlight: string;
   _cardId?: string; // Internal field to track which card is being edited
+  _placeholderHints?: {
+    experienceName?: string;
+    oneSentenceSummary?: string;
+    backgroundContext?: string;
+    myRoleAndTasks?: string;
+    taskDetails?: string;
+    reflectionAndResults?: string;
+    highlightSentence?: string;
+  }; // AI建议的灰色提示文本
 }
 
 export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
@@ -66,7 +75,7 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
     // Exclude _cardId from calculation
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _cardId, ...fieldsToCheck } = data;
-    const fields = Object.values(fieldsToCheck);
+    const fields = Object.values(fieldsToCheck).filter(field => typeof field === 'string');
 
     // Filter out empty fields and placeholder text
     const filledFields = fields.filter(field => {
@@ -81,7 +90,9 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
         trimmedField.includes('结果信息缺失') ||
         trimmedField.includes('时间地点信息缺失') ||
         trimmedField === '[待补充]' ||
-        trimmedField === '[信息缺失]';
+        trimmedField === '[信息缺失]' ||
+        trimmedField.startsWith('（例如：') || // AI推测的占位符文本
+        trimmedField.includes('(AI建议可输入内容)'); // AI建议标识
 
       return !isPlaceholder;
     });
@@ -126,10 +137,16 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
     fieldName: keyof ExperienceDetailData,
     label: string,
     placeholder: string,
-    isTextarea: boolean = false
+    isTextarea: boolean = false,
+    hintKey?: string
   ) => {
     const isEditing = editingField === fieldName;
     const value = formData[fieldName];
+
+    // 获取AI建议的灰色提示文本
+    const aiHint = hintKey && formData._placeholderHints ? formData._placeholderHints[hintKey as keyof typeof formData._placeholderHints] : undefined;
+    const displayPlaceholder = aiHint || placeholder;
+    const isAIHint = !!aiHint;
 
     return (
       <div style={{
@@ -160,7 +177,7 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
               value={value}
               onChange={(e) => handleFieldChange(fieldName, e.target.value)}
               onBlur={handleFieldBlur}
-              placeholder={placeholder}
+              placeholder={displayPlaceholder}
               autoFocus
               style={{
                 width: '100%',
@@ -181,7 +198,7 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
               value={value}
               onChange={(e) => handleFieldChange(fieldName, e.target.value)}
               onBlur={handleFieldBlur}
-              placeholder={placeholder}
+              placeholder={displayPlaceholder}
               autoFocus
               style={{
                 width: '100%',
@@ -197,12 +214,23 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
         ) : (
           <div style={{
             fontSize: '0.9rem',
-            color: value ? '#374151' : '#9ca3af',
+            color: value ? '#374151' : (isAIHint ? '#999' : '#9ca3af'),
             lineHeight: '1.5',
             minHeight: '1.2rem',
             whiteSpace: 'pre-wrap'
           }}>
-            {value || placeholder}
+            {/* 🔧 SIMPLIFIED: 现在AI推测卡片的字段都是空的，直接显示placeholder */}
+            {value || displayPlaceholder}
+            {!value && isAIHint && (
+              <span style={{
+                color: '#bbb',
+                fontSize: '0.8rem',
+                fontStyle: 'italic',
+                marginLeft: '0.5rem'
+              }}>
+                (AI建议可输入内容)
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -312,13 +340,13 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
           overflow: 'auto',
           padding: '1.5rem'
         }}>
-          {renderField('experienceName', 'Experience Name:', 'Enter experience name...')}
-          {renderField('locationAndTime', 'Location & Time:', 'e.g., Beijing | July 2024 - September 2024')}
-          {renderField('scenarioIntroduction', 'Scenario Introduction:', 'Describe the background and context...', true)}
-          {renderField('myRole', 'My Role:', 'Describe your role and responsibilities...', true)}
-          {renderField('eventProcess', 'Event Summary:', 'Detail the process and tasks you completed...', true)}
-          {renderField('reflection', 'Personal Reflection & Outcome Summary:', 'Summarize your learnings, experiences and achievements...', true)}
-          {renderField('oneLineHighlight', 'One-line Highlight:', 'Summarize the most impactful or memorable aspect in one sentence...')}
+          {renderField('experienceName', 'Experience Name:', 'Enter experience name...', false, 'experienceName')}
+          {renderField('locationAndTime', 'Location & Time:', 'e.g., Beijing | July 2024 - September 2024', false, 'timeAndLocation')}
+          {renderField('scenarioIntroduction', 'Scenario Introduction:', 'Describe the background and context...', true, 'backgroundContext')}
+          {renderField('myRole', 'My Role:', 'Describe your role and responsibilities...', true, 'myRoleAndTasks')}
+          {renderField('eventProcess', 'Event Summary:', 'Detail the process and tasks you completed...', true, 'taskDetails')}
+          {renderField('reflection', 'Personal Reflection & Outcome Summary:', 'Summarize your learnings, experiences and achievements...', true, 'reflectionAndResults')}
+          {renderField('oneLineHighlight', 'One-line Highlight:', 'Summarize the most impactful or memorable aspect in one sentence...', false, 'highlightSentence')}
         </div>
 
         {/* Footer */}
