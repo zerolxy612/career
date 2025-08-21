@@ -230,7 +230,7 @@ export const CareerAwarenessChart: React.FC<CareerAwarenessChartProps> = ({
       // 🔧 FIX: 添加位置配置，确保tooltip不会超出视窗
       confine: true,
       // 设置tooltip的位置策略
-      position: function (point: number[], _params: any, _dom: HTMLElement, _rect: any, size: { contentSize: number[], viewSize: number[] }) {
+      position: function (point: number[], _params: unknown, _dom: HTMLElement, _rect: unknown, size: { contentSize: number[], viewSize: number[] }) {
         // 获取tooltip的尺寸
         const tooltipWidth = size.contentSize[0];
         const tooltipHeight = size.contentSize[1];

@@ -140,7 +140,9 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
     hintKey?: string
   ) => {
     const isEditing = editingField === fieldName;
-    const value = formData[fieldName];
+    // Ensure value is always a string for input/textarea elements
+    const rawValue = formData[fieldName];
+    const value = typeof rawValue === 'string' ? rawValue : '';
 
     // 获取AI建议的灰色提示文本
     const aiHint = hintKey && formData._placeholderHints ? formData._placeholderHints[hintKey as keyof typeof formData._placeholderHints] : undefined;
