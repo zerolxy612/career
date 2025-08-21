@@ -4,9 +4,10 @@ import { SimilarJobDirection } from '@/types/job';
 interface SimilarJobCardProps {
   job: SimilarJobDirection;
   index: number;
+  onClick?: () => void;
 }
 
-const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job }) => {
+const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job, onClick }) => {
   // 处理匹配等级，支持数字和字符串格式
   const getMatchLevel = (level: number | string): number => {
     if (typeof level === 'string') {
@@ -47,6 +48,7 @@ const SimilarJobCard: React.FC<SimilarJobCardProps> = ({ job }) => {
     <div
       className="similar-job-card"
       style={{ backgroundColor: getBackgroundColor(matchLevel) }}
+      onClick={onClick}
     >
       {/* 工作标题和匹配度 - 左右布局 */}
       <div className="job-header">

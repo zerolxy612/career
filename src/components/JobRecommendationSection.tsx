@@ -246,6 +246,27 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
     }
   };
 
+  // 🔧 NEW: 处理相似岗位点击，直接显示详情弹窗
+  const handleSimilarJobSelect = (similarJob: SimilarJobDirection) => {
+    // 将SimilarJobDirection转换为JobDirection格式
+    const convertedJob: JobDirection = {
+      target_position: similarJob.target_position,
+      match_level: typeof similarJob.match_level === 'string'
+        ? (similarJob.match_level.match(/★/g) || []).length || 3
+        : similarJob.match_level,
+      direction_summary: similarJob.direction_summary,
+      recommendation_reason: similarJob.recommendation_reason,
+      explore_instruction: similarJob.explore_instruction,
+      based_on_experience_cards: similarJob.based_on_experience_cards,
+      job_requirements: similarJob.job_requirements,
+      direction_tags: similarJob.direction_tags
+    };
+
+    // 设置为当前选中的岗位并显示详情弹窗
+    setSelectedJob(convertedJob);
+    setIsModalOpen(true);
+  };
+
   // 刷新推荐
   const handleRefresh = () => {
     loadJobRecommendations(true);
@@ -424,6 +445,7 @@ const JobRecommendationSection: React.FC<JobRecommendationSectionProps> = ({ car
                 key={`${job.target_position}-${index}`}
                 job={job}
                 index={index}
+                onClick={() => handleSimilarJobSelect(job)}
               />
             ))}
           </div>
