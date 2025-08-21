@@ -72,9 +72,8 @@ export const ExperienceCardDetail: React.FC<ExperienceCardDetailProps> = ({
 
   // Calculate completion percentage
   const calculateCompletionPercentage = (data: ExperienceDetailData): number => {
-    // Exclude _cardId from calculation
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { _cardId, ...fieldsToCheck } = data;
+    // 🔧 FIX: 只计算实际的字段，排除内部字段
+    const { _cardId, _placeholderHints, ...fieldsToCheck } = data;
     const fields = Object.values(fieldsToCheck).filter(field => typeof field === 'string');
 
     // Filter out empty fields and placeholder text

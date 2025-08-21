@@ -260,10 +260,8 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
 function calculateActualCompletionPercentage(card: ExperienceCardType): number {
   // 🔧 UPDATED: 现在AI推测卡片的字段都是空的，自然计算为0%完成度
 
+  // 🔧 FIX: 只计算详情页的字段，与详情页保持一致
   const fields = [
-    card.cardPreview.experienceName,
-    card.cardPreview.timeAndLocation,
-    card.cardPreview.oneSentenceSummary,
     card.cardDetail.experienceName,
     card.cardDetail.timeAndLocation,
     card.cardDetail.backgroundContext,
