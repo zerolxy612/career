@@ -212,21 +212,49 @@ export const CareerAwarenessChart: React.FC<CareerAwarenessChartProps> = ({
       formatter: function(params: { data: { name: string; description: string; evidence: string } }) {
         const data = params.data;
         return `
-          <div style="padding: 10px; max-width: 250px;">
-            <div style="font-weight: 600; color: #1f2937; margin-bottom: 6px; font-size: 14px;">${data.name}</div>
-            <div style="color: #4b5563; font-size: 12px; margin-bottom: 6px; line-height: 1.4;">${data.description}</div>
-            <div style="color: #6b7280; font-size: 11px; line-height: 1.3;">${data.evidence}</div>
+          <div style="padding: 12px; max-width: 320px; word-wrap: break-word; white-space: normal;">
+            <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 14px; word-wrap: break-word;">${data.name}</div>
+            <div style="color: #4b5563; font-size: 12px; margin-bottom: 8px; line-height: 1.5; word-wrap: break-word; white-space: normal;">${data.description}</div>
+            <div style="color: #6b7280; font-size: 11px; line-height: 1.4; word-wrap: break-word; white-space: normal;">${data.evidence}</div>
           </div>
         `;
       },
-      backgroundColor: 'rgba(255, 255, 255, 0.96)',
+      backgroundColor: 'rgba(255, 255, 255, 0.98)',
       borderColor: '#d1d5db',
       borderWidth: 1,
-      borderRadius: 6,
+      borderRadius: 8,
       textStyle: {
         color: '#1f2937'
       },
-      extraCssText: 'box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'
+      extraCssText: 'box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.12); z-index: 9999;',
+      // 🔧 FIX: 添加位置配置，确保tooltip不会超出视窗
+      confine: true,
+      // 设置tooltip的位置策略
+      position: function (point: number[], _params: any, _dom: HTMLElement, _rect: any, size: { contentSize: number[], viewSize: number[] }) {
+        // 获取tooltip的尺寸
+        const tooltipWidth = size.contentSize[0];
+        const tooltipHeight = size.contentSize[1];
+        const viewWidth = size.viewSize[0];
+        const viewHeight = size.viewSize[1];
+
+        // 计算最佳位置
+        let x = point[0] + 10; // 默认在鼠标右侧
+        let y = point[1] - tooltipHeight / 2; // 垂直居中
+
+        // 如果右侧空间不够，显示在左侧
+        if (x + tooltipWidth > viewWidth) {
+          x = point[0] - tooltipWidth - 10;
+        }
+
+        // 确保不超出上下边界
+        if (y < 0) {
+          y = 10;
+        } else if (y + tooltipHeight > viewHeight) {
+          y = viewHeight - tooltipHeight - 10;
+        }
+
+        return [x, y];
+      }
     }
   };
 
