@@ -264,6 +264,37 @@ export class CardDataManager {
   }
 
   /**
+   * 🔧 NEW: 删除指定的卡片
+   */
+  static removeCard(cardId: string): boolean {
+    const session = this.getCurrentSession();
+    if (!session) {
+      console.error('❌ [CardDataManager] No active session found');
+      return false;
+    }
+
+    const initialCount = session.cards.length;
+    session.cards = session.cards.filter(card => card.id !== cardId);
+    const finalCount = session.cards.length;
+
+    if (initialCount === finalCount) {
+      console.warn('⚠️ [CardDataManager] Card not found:', cardId);
+      return false;
+    }
+
+    // 保存更新后的会话数据
+    localStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+
+    console.log('✅ [CardDataManager] Card removed successfully:', {
+      cardId,
+      removedCount: initialCount - finalCount,
+      remainingCards: finalCount
+    });
+
+    return true;
+  }
+
+  /**
    * 存储动态生成的方向分类
    */
   static setDynamicDirections(directions: DynamicDirection[]): boolean {

@@ -260,6 +260,7 @@ const DirectionContent: React.FC<{
                   card={card}
                   type="ai-suggested"
                   onClick={() => onCardClick?.(card.id)}
+                  onDelete={() => onDeleteCard?.(card.id)}
                 />
               ));
           })()}

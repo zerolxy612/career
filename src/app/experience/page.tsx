@@ -671,19 +671,30 @@ function ExperiencePageContent() {
   };
 
   const handleDeleteCard = (cardId: string) => {
-    // Remove from saved cards
-    setSavedCards(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(cardId);
-      return newMap;
-    });
+    console.log('🗑️ [DELETE_CARD] Deleting card:', cardId);
 
-    // Remove from directions
-    const updatedDirections = directions.map(dir => ({
-      ...dir,
-      cards: dir.cards.filter(card => card.id !== cardId)
-    }));
-    setDirections(updatedDirections);
+    // 🔧 FIX: 从CardDataManager中删除卡片
+    const success = CardDataManager.removeCard(cardId);
+
+    if (success) {
+      console.log('✅ [DELETE_CARD] Card removed from CardDataManager');
+
+      // 更新本地状态
+      setSavedCards(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(cardId);
+        return newMap;
+      });
+
+      // 从CardDataManager获取更新后的方向数据
+      const updatedDirections = CardDataManager.getDirectionsData();
+      setDirections(updatedDirections);
+
+      console.log('✅ [DELETE_CARD] Card deleted successfully and UI updated');
+    } else {
+      console.error('❌ [DELETE_CARD] Failed to remove card from CardDataManager');
+      alert('Failed to delete card. Please try again.');
+    }
   };
 
   // 🔧 UNIFIED FIX: Experience页面文件上传 - 工作流2
