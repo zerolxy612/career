@@ -4,6 +4,38 @@ import { EXPERIENCE_EXTRACTION_PROMPT } from '@/lib/ai/prompts';
 import { consoleLog } from '@/lib/logger';
 import { parseFiles, formatParsedContentForAI, ParsedFileContent } from '@/lib/fileParser';
 
+// Define types for AI response structure
+interface AICardResponse {
+  卡片分组: string;
+  小卡展示: {
+    经历名称: string;
+    时间与地点: string;
+    一句话概述: string;
+  };
+  详情卡展示: {
+    经历名称: string;
+    时间与地点: string;
+    背景与情境说明: string;
+    我的角色与任务: string;
+    任务细节描述: string;
+    反思与结果总结: string;
+    高光总结句: string;
+    生成来源: {
+      类型: string;
+      置信度?: string;
+    };
+    灰色提示?: {
+      经历名称?: string;
+      一句话概述?: string;
+      背景与情境说明?: string;
+      我的角色与任务?: string;
+      任务细节描述?: string;
+      反思与结果总结?: string;
+      高光总结句?: string;
+    };
+  };
+}
+
 
 
 export async function POST(request: NextRequest) {
@@ -197,7 +229,7 @@ export async function POST(request: NextRequest) {
 
       // 记录详细的卡片分组信息
       if (parsedResponse.AI推测经历) {
-        const groupCounts = parsedResponse.AI推测经历.reduce((acc: Record<string, number>, card: any) => {
+        const groupCounts = parsedResponse.AI推测经历.reduce((acc: Record<string, number>, card: AICardResponse) => {
           const group = card.卡片分组 || 'Unknown';
           acc[group] = (acc[group] || 0) + 1;
           return acc;

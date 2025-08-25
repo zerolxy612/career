@@ -9,7 +9,7 @@
  * 5. 支持三种工作流：首页上传、Experience页面上传、手动创建
  */
 
-import { ExperienceCard, CardDirection } from '@/types/card';
+import { ExperienceCard, CardDirection, CardCategory } from '@/types/card';
 
 // 动态方向数据结构
 interface DynamicDirection {
@@ -641,7 +641,7 @@ export class CardDataManager {
       const cardName = card.cardPreview.experienceName;
       const assignedDirection = classificationMap.get(cardName);
 
-      let newCategory: 'Focus Match' | 'Growth Potential' | 'Foundation Skills' = card.category;
+      let newCategory: CardCategory = card.category;
 
       // 根据分配的方向更新category
       if (assignedDirection) {
