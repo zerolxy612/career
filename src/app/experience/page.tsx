@@ -63,6 +63,7 @@ function ExperiencePageContent() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [currentCardData, setCurrentCardData] = useState<ExperienceDetailData | undefined>(undefined);
+  const [currentDirectionId, setCurrentDirectionId] = useState<string | undefined>(undefined); // 🔧 NEW: 存储当前选择的方向ID
   const [savedCards, setSavedCards] = useState<Map<string, ExperienceDetailData>>(new Map());
 
   const [isGeneratingCards, setIsGeneratingCards] = useState(true); // 初始为true
@@ -299,9 +300,30 @@ function ExperiencePageContent() {
       .map((card: AICardResponse) => convertAICardToExperienceCard(card, true, true)); // fromHomepage=true, forceUploadedResume=true
 
     // 处理AI推测经历卡片
-    const aiSuggestedCards = (aiResponse.AI推测经历 || [])
+    const rawAISuggestedCards = aiResponse.AI推测经历 || [];
+    console.log('🔍 [HOMEPAGE_PROCESS] Raw AI推测经历 data:', {
+      count: rawAISuggestedCards.length,
+      cards: rawAISuggestedCards.map((card: AICardResponse, index: number) => ({
+        index,
+        hasSmallCard: !!card?.小卡展示,
+        hasDetailCard: !!card?.详情卡展示,
+        cardGroup: card?.卡片分组,
+        cardName: card?.小卡展示?.经历名称
+      }))
+    });
+
+    const aiSuggestedCards = rawAISuggestedCards
       .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
       .map((card: AICardResponse) => convertAICardToExperienceCard(card, true, false)); // fromHomepage=true, AI推测卡片
+
+    // 🔧 VALIDATION: 验证AI推测卡片数量
+    if (aiSuggestedCards.length < 6) {
+      console.warn('⚠️ [HOMEPAGE_PROCESS] AI推测卡片数量不足:', {
+        expected: 6,
+        actual: aiSuggestedCards.length,
+        filtered: rawAISuggestedCards.length - aiSuggestedCards.length
+      });
+    }
 
     // 合并所有卡片
     const experienceCards = [...realCards, ...aiSuggestedCards];
@@ -549,16 +571,20 @@ function ExperiencePageContent() {
     setIsDetailModalOpen(true);
   };
 
-  const handleCreateNewCard = () => {
-    console.log('Create new card clicked');
+  const handleCreateNewCard = (directionId: string) => {
+    console.log('🔧 [CREATE_CARD] Create new card clicked for direction:', directionId);
     setHasInteracted(true);
     setCurrentCardData(undefined); // Create new card
+
+    // 🔧 FIX: 存储当前选择的方向ID，用于创建卡片时分配到正确的方向
+    setCurrentDirectionId(directionId);
     setIsDetailModalOpen(true);
   };
 
   const handleDetailModalClose = () => {
     setIsDetailModalOpen(false);
     setCurrentCardData(undefined);
+    setCurrentDirectionId(undefined); // 🔧 FIX: 清理方向ID
   };
 
   // 🔧 UNIFIED FIX: 手动创建/编辑卡片 - 工作流3
@@ -612,11 +638,21 @@ function ExperiencePageContent() {
       alert(`Experience card updated successfully! Completion: ${completionPercentage}%`);
     } else {
       // 🔧 UNIFIED FIX: 创建新卡片并通过CardDataManager管理
-      console.log('➕ [MANUAL_CARD] Creating new manual card');
+      console.log('➕ [MANUAL_CARD] Creating new manual card for direction:', currentDirectionId);
+
+      // 🔧 FIX: 根据currentDirectionId确定正确的category
+      const targetDirection = directions.find(dir => dir.id === currentDirectionId);
+      const category = targetDirection?.title || 'Focus Match'; // 默认为Focus Match
+
+      console.log('🎯 [MANUAL_CARD] Target direction found:', {
+        directionId: currentDirectionId,
+        directionTitle: targetDirection?.title,
+        assignedCategory: category
+      });
 
       const newCard: ExperienceCard = {
         id: `manual-card-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        category: 'Focus Match' as const,
+        category: category, // 🔧 FIX: 直接使用动态方向标题
         cardPreview: {
           experienceName: data.experienceName || 'Untitled Experience',
           timeAndLocation: data.locationAndTime || '',
@@ -668,6 +704,7 @@ function ExperiencePageContent() {
 
     setIsDetailModalOpen(false);
     setCurrentCardData(undefined);
+    setCurrentDirectionId(undefined); // 🔧 FIX: 清理方向ID
   };
 
   const handleDeleteCard = (cardId: string) => {
@@ -833,9 +870,30 @@ function ExperiencePageContent() {
         .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, true)); // forceUploadedResume=true
 
       // 处理AI推测经历卡片
-      const aiSuggestedCards = (aiResponse.AI推测经历 || [])
+      const rawAISuggestedCards = aiResponse.AI推测经历 || [];
+      console.log('🔍 [EXPERIENCE_UPLOAD] Raw AI推测经历 data:', {
+        count: rawAISuggestedCards.length,
+        cards: rawAISuggestedCards.map((card: AICardResponse, index: number) => ({
+          index,
+          hasSmallCard: !!card?.小卡展示,
+          hasDetailCard: !!card?.详情卡展示,
+          cardGroup: card?.卡片分组,
+          cardName: card?.小卡展示?.经历名称
+        }))
+      });
+
+      const aiSuggestedCards = rawAISuggestedCards
         .filter((card: AICardResponse) => card && card.小卡展示 && card.详情卡展示)
         .map((card: AICardResponse) => convertAICardToExperienceCard(card, false, false)); // AI推测卡片
+
+      // 🔧 VALIDATION: 验证AI推测卡片数量
+      if (aiSuggestedCards.length < 6) {
+        console.warn('⚠️ [EXPERIENCE_UPLOAD] AI推测卡片数量不足:', {
+          expected: 6,
+          actual: aiSuggestedCards.length,
+          filtered: rawAISuggestedCards.length - aiSuggestedCards.length
+        });
+      }
 
       // 合并所有卡片
       const newCards = [...realCards, ...aiSuggestedCards];

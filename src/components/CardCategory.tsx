@@ -6,7 +6,7 @@ interface CardCategoryProps {
   direction: CardDirection;
   onToggle: (directionId: string) => void;
   onCardClick?: (cardId: string) => void;
-  onCreateNewCard?: () => void;
+  onCreateNewCard?: (directionId: string) => void; // 🔧 FIX: 传递方向ID
   onDeleteCard?: (cardId: string) => void;
   isFirstDirection?: boolean;
 }
@@ -128,7 +128,7 @@ export const CardCategory: React.FC<CardCategoryProps> = ({
 const DirectionContent: React.FC<{
   direction: CardDirection;
   onCardClick?: (cardId: string) => void;
-  onCreateNewCard?: () => void;
+  onCreateNewCard?: (directionId: string) => void; // 🔧 FIX: 传递方向ID
   onDeleteCard?: (cardId: string) => void;
   isFirstDirection?: boolean;
 }> = ({ direction, onCardClick, onCreateNewCard, onDeleteCard, isFirstDirection = false }) => {
@@ -269,7 +269,7 @@ const DirectionContent: React.FC<{
           <ExperienceCard
             type="create-new"
             title="Create New Experience Card"
-            onClick={onCreateNewCard}
+            onClick={() => onCreateNewCard?.(direction.id)} // 🔧 FIX: 传递方向ID
           />
         </div>
       </div>

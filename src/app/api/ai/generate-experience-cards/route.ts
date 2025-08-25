@@ -186,6 +186,28 @@ export async function POST(request: NextRequest) {
       firstAISuggestedCardName: parsedResponse.AI推测经历?.[0]?.小卡展示?.经历名称 || 'N/A'
     });
 
+    // 🔧 VALIDATION: 验证AI推测卡片数量
+    const aiSuggestedCount = parsedResponse.AI推测经历?.length || 0;
+    if (aiSuggestedCount < 6) {
+      console.warn('⚠️ [API] AI推测卡片数量不足:', {
+        expected: 6,
+        actual: aiSuggestedCount,
+        missing: 6 - aiSuggestedCount
+      });
+
+      // 记录详细的卡片分组信息
+      if (parsedResponse.AI推测经历) {
+        const groupCounts = parsedResponse.AI推测经历.reduce((acc: Record<string, number>, card: any) => {
+          const group = card.卡片分组 || 'Unknown';
+          acc[group] = (acc[group] || 0) + 1;
+          return acc;
+        }, {});
+        console.warn('⚠️ [API] AI推测卡片分组统计:', groupCounts);
+      }
+    } else {
+      console.log('✅ [API] AI推测卡片数量正确:', aiSuggestedCount);
+    }
+
     // 🔍 [DEBUG] 添加文件解析详情到响应中，供前端调试使用
     const responseWithDebugInfo = {
       ...parsedResponse,

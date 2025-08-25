@@ -36,7 +36,7 @@ export interface CardDetail {
   };
 }
 
-export type CardCategory = 'Focus Match' | 'Growth Potential' | 'Foundation Skills';
+export type CardCategory = 'Focus Match' | 'Growth Potential' | 'Foundation Skills' | string; // 🔧 FIX: 支持动态方向标题
 
 export type CompletionLevel = 'incomplete' | 'partial' | 'complete';
 

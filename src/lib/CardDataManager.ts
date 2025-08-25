@@ -559,28 +559,53 @@ export class CardDataManager {
       return result;
     }
 
-    // 简单的分配策略：
-    // 1. 优先按照原有的category分配
-    // 2. 如果没有category信息，按照对齐程度分配
-    // 3. 平均分配以确保每个方向都有卡片
+    // 获取当前会话的动态方向信息
+    const session = this.getCurrentSession();
+    const dynamicDirections = session?.dynamicDirections || [];
+
+    console.log('🔄 [CardDataManager] Grouping cards by dynamic directions:', {
+      totalCards: cards.length,
+      dynamicDirectionsCount: dynamicDirections.length,
+      dynamicDirectionTitles: dynamicDirections.map(d => d.方向标题),
+      cardCategories: cards.map(c => ({ name: c.cardPreview.experienceName, category: c.category }))
+    });
 
     cards.forEach((card, index) => {
       let targetDirectionIndex = 0;
 
-      // 根据原有category映射到新方向
-      switch (card.category) {
-        case 'Focus Match':
-          targetDirectionIndex = 0; // 第一个方向（通常是核心匹配）
-          break;
-        case 'Growth Potential':
-          targetDirectionIndex = 1; // 第二个方向（通常是发展潜力）
-          break;
-        case 'Foundation Skills':
-          targetDirectionIndex = 2; // 第三个方向（通常是基础技能）
-          break;
-        default:
-          // 如果没有明确的category，按索引轮流分配
-          targetDirectionIndex = index % 3;
+      // 🔧 FIX: 优先按照动态方向标题匹配
+      const matchingDirectionIndex = dynamicDirections.findIndex(dir => dir.方向标题 === card.category);
+
+      if (matchingDirectionIndex !== -1) {
+        // 找到匹配的动态方向
+        targetDirectionIndex = matchingDirectionIndex;
+        console.log('✅ [CardDataManager] Card matched to dynamic direction:', {
+          cardName: card.cardPreview.experienceName,
+          cardCategory: card.category,
+          matchedDirection: dynamicDirections[matchingDirectionIndex].方向标题,
+          directionIndex: matchingDirectionIndex
+        });
+      } else {
+        // 降级到传统category映射
+        switch (card.category) {
+          case 'Focus Match':
+            targetDirectionIndex = 0;
+            break;
+          case 'Growth Potential':
+            targetDirectionIndex = 1;
+            break;
+          case 'Foundation Skills':
+            targetDirectionIndex = 2;
+            break;
+          default:
+            // 如果没有明确的category，按索引轮流分配
+            targetDirectionIndex = index % 3;
+            console.log('⚠️ [CardDataManager] Card assigned by fallback logic:', {
+              cardName: card.cardPreview.experienceName,
+              cardCategory: card.category,
+              assignedIndex: targetDirectionIndex
+            });
+        }
       }
 
       result[targetDirectionIndex].push(card);
